@@ -1,0 +1,47 @@
+\documentclass{article}
+\usepackage[style = numeric, backend = biber]{biblatex}
+\usepackage{graphicx, paralist, listings, fancybox, geometry, caption, floatrow, xcolor, color, colortbl, fancyhdr, amsmath, mathtools}
+\usepackage{fouriernc}
+\usepackage[T1]{fontenc}
+\geometry{a4paper, top = 15mm, left = 5mm, right = 5mm, bottom = 17mm}
+\fancypagestyle{plain}{
+\fancyhead[L]{\texttt{ndvar} documentation}
+\fancyhead[R]{\textsc{\texttt{ndvar} development team}}
+\fancyfoot[C]{\thepage}
+\addtolength\footskip{12pt}}
+\definecolor{table_green}{rgb}{0, 0.6, 0}
+\title{\texttt{ndvar} Documentaion}
+\author{\texttt{ndvar} Development Team}
+\date{}
+\newcommand{\md}[1]{\frac{D#1}{Dt}}
+\newcommand{\omegabi}{\text{{\osgbi ω}}}
+\newcommand{\mubi}{\text{{\osgbi μ}}}
+\newcommand{\sigmabi}{\text{{\osgbi σ}}}
+\newcommand{\epsilonbi}{\text{{\osgbi ϵ}}}
+\newcommand{\etabi}{\text{{\osgbi η}}}
+\newcommand{\zetabi}{\text{{\osgbi ζ}}}
+\addbibresource{/home/max/my_texts/references.bib}
+\DeclareFieldFormat[article]{title}{{#1}}
+
+\begin{document}
+
+\maketitle
+
+\appendix
+
+\printbibliography
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
