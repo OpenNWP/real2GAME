@@ -2,7 +2,7 @@
 # Github repository: https://github.com/MHBalsmeier/ndvar
 
 echo "Starting the assimilation process ..."
-mpirun -np 1 ./ndvar
+mpirun -np 1 ./bin/ndvar $year $month $day $hour
 # valgrind ./test_generator $test_id
 if [ $? -ne 0 ]
 then

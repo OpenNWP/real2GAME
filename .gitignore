@@ -1,0 +1,6 @@
+# these files are too large
+build
+*.pyc
+*.nc
+*.txt
+ndvar
