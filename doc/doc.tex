@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass{report}
 \usepackage[style = numeric, backend = biber]{biblatex}
 \usepackage{graphicx, paralist, listings, fancybox, geometry, caption, floatrow, xcolor, color, colortbl, fancyhdr, amsmath, mathtools}
 \usepackage{fouriernc}
@@ -27,16 +27,25 @@
 
 \maketitle
 
-\section{3D-var}
-\label{sec:3d-var}
+\chapter{3D-Var}
+\label{chap:3d-var}
 
-Let $\mathbf{X}$ be the state vector of the model atmosphere and $\mathbf{X}_B$ be the background state vector from a previous forecast. $\mathbf{Y}$ shall denounce the vector of observations valid at the analysis time. $\mathbf{Y}$ differs from $\mathbf{X}$ in size and the elements of $\mathbf{Y}$ are not observed at model grid points nor are they the prognostic model variables. Meta data must be available about the elements of $\mathbf{Y}$ containing information about the points of observation and what has actually been measured. The procedure \textit{3D-var} is based on the minimization of a cost function $J = J\left(\mathbf{X}\right) \geq 0$ containing three terms:
+
+Let $\mathbf{X}$ be the state vector of the model atmosphere and $\mathbf{X}_B$ be the background state vector from a previous forecast. $\mathbf{Y}$ shall denounce the vector of observations valid at the analysis time. $\mathbf{Y}$ differs from $\mathbf{X}$ in size and the elements of $\mathbf{Y}$ are not observed at model grid points nor are they the prognostic model variables. Meta data must be available about the elements of $\mathbf{Y}$ containing information about the points of observation and what has actually been measured. The procedure \textit{3D-var} is based on the minimization of a cost function $J = J\left(\mathbf{X}\right) \geq 0$ containing two terms:
 %
 \begin{itemize}
 \item The distance between the analysis and the background state.
 \item The distance between the analysis and the observations.
-\item The distance between the analysis and the balance equation. This term vanishes at high resolutions.
 \end{itemize}
+
+\section{One observation}
+\label{sec:one_observation}
+
+\section{Two observations}
+\label{sec:two_observations}
+
+\section{N observations}
+\label{sec:n_observations}
 
 Thus, one arrives at
 %
@@ -68,10 +77,16 @@ holds. From Eq. one obtains
 \nabla J = 2\overleftrightarrow{A}_B\left(\mathbf{X} - \mathbf{X}_B\right) + 2\overleftrightarrow{A}_O\left(\mathbf{Y} - \overleftrightarrow{H}\mathbf{X}\right).
 \end{eqnarray}
 
+\section{Taking into account the balance equation}
+\label{sec:taking_into_account_the_balance_equation}
+
+\section{Technicalities}
+\label{sec:technicalities_3d-var}
+
 The observations used come from a time window $\left[-\frac{T}{2}, \frac{T}{2}\right]$ around the analysis time and are all taken to be valid at the analysis time. $T = 3$ h is a typical value..
 
-\section{4D-var}
-\label{sec:4d-var}
+\chapter{4D-Var}
+\label{chap:4d-var}
 
 \textit{4D-Var} is based on 3D-var but also takes the time dimension into account. The cost function $J$ is generalized as
 %
@@ -97,6 +112,10 @@ J_n = \left(\mathbf{Y}_n - \overleftrightarrow{H}_n\overleftrightarrow{M}_n\math
 }}
 \end{center}
 %
+
+\section{Technicalities}
+\label{sec:technicalities_4d-var}
+
 The observations used come from a time window $\left[-\frac{T}{2}, \frac{T}{2}\right]$ around the analysis time and are taken to be valid at individual time steps $n\Delta t$. $T = 6$ h and $\Delta t = 15$ min are typical values.
 
 \appendix
