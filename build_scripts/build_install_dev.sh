@@ -1,4 +1,12 @@
-aim_dir=~/compiled/ndvar
+# This source file is part of NDVAR, which is released under the MIT license.
+# Github repository: https://github.com/MHBalsmeier/ndvar
+
+aim_dir=~/compiled/ndvar_dev
+if [ -d $aim_dir ]
+then
+rm -r $aim_dir
+fi
+mkdir $aim_dir
 if [ -d $aim_dir/bin ]
 then
 rm -r $aim_dir/bin
@@ -7,21 +15,21 @@ if [ -d $aim_dir/input ]
 then
 rm -r $aim_dir/input
 fi
-if [ -d $aim_dir/run_configs ]
+if [ -d $aim_dir/run_scripts ]
 then
-rm -r $aim_dir/run_configs
+rm -r $aim_dir/run_scripts
 fi
-if [ -d build ]
+if [ -d ../build ]
 then
-rm -r build
+rm -r ../build
 fi
 mkdir $aim_dir/input
-mkdir build && cd build
-cmake -DCMAKE_INSTALL_PREFIX=$aim_dir ..
+mkdir ../build && cd ../build
+cmake -DCMAKE_INSTALL_PREFIX=$aim_dir ../core
 make
 ctest
 make install
-cp ../run.sh $aim_dir
-cp -r ../run_configs $aim_dir
-chmod +x $aim_dir/run.sh
+cp ../core/run.sh $aim_dir/bin
+cp -r ../run_scripts $aim_dir
+chmod +x $aim_dir/bin/run.sh
 cd ..
