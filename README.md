@@ -1,4 +1,4 @@
-Will become a toolkit for 3D and 4D variational data assimilation for a wide range of geophysical models.
+3D and 4D variational data assimilation for a wide range of geophysical models.
 
 # Building
 
