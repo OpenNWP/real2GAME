@@ -1,9 +1,0 @@
-// explanation of columns:
-// quantity_id | lat / deg | lon / deg | z above geoid / m | value
-// quantitiy ids:
-// 0	pressure / Pa
-// 1	temperature / K
-// 2	u / m / s
-// 3	v & m / s
-// 4	relative humidity / %
-0 0.0 0.0 5000 50000

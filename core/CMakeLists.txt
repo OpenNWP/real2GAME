@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.10)
+project(ndvar VERSION 0.0)
+set(CMAKE_C_COMPILER mpicc)
+add_executable(
+ndvar src/coordinator.c)
+add_definitions(-Wall)
+find_package(OpenMP)
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+target_link_libraries(ndvar m netcdf geos95 atmostracers)
+install(TARGETS ndvar DESTINATION bin)
+enable_testing()
