@@ -20,3 +20,5 @@
 	cd ndvar
 
 ## Compilation
+
+In order to compile the model, cd into the directory build\_scripts and execute the shell script build\_install.sh. Scripts with the suffix \_dev are installing to a destination where new versions can be tested.
