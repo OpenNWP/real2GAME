@@ -1,4 +1,4 @@
-# This source file is part of NDVAR (GAME), which is released under the MIT license.
+# This source file is part of ndvar (GAME), which is released under the MIT license.
 # Github repository: https://github.com/MHBalsmeier/ndvar
 
 echo "Starting the assimilation process ..."

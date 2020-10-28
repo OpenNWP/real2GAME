@@ -1,4 +1,4 @@
-# This source file is part of NDVAR, which is released under the MIT license.
+# This source file is part of ndvar, which is released under the MIT license.
 # Github repository: https://github.com/MHBalsmeier/ndvar
 
 aim_dir=~/compiled/ndvar
