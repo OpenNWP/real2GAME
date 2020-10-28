@@ -1,5 +1,15 @@
 3D and 4D variational data assimilation for a wide range of geophysical models.
 
+# Documents
+
+## Scientific derivation
+
+The scientific derivations of the assimilation techniques can be found in my textbook on theoretical meteotology (in German): [Kompendium Theoretische Meteorologie](https://raw.githubusercontent.com/MHBalsmeier/kompendium/master/kompendium.pdf).
+
+## Documentation
+
+The documentation of the code can be found in the subdirectory doc.
+
 # Building
 
 ## Dependencies
