@@ -3,7 +3,12 @@
 # This source file is part of ndvar, which is released under the MIT license.
 # Github repository: https://github.com/MHBalsmeier/ndvar
 
+echo "This is ndvar."
 echo "Starting the assimilation process ..."
+echo "analysis year: "$year
+echo "analysis month: "$month
+echo "analysis day: "$day
+echo "analysis hour: "$hour
 mpirun -np 1 ../bin/ndvar $year $month $day $hour $model_input_directory
 # valgrind ./test_generator $test_id
 if [ $? -ne 0 ]
