@@ -46,6 +46,9 @@ int main(int argc, char *argv[])
     len = strlen(argv[4]);
     char *hour = malloc((len + 1)*sizeof(char));
     strcpy(hour, argv[4]);
+    len = strlen(argv[5]);
+    char *model_home_dir = malloc((len + 1)*sizeof(char));
+    strcpy(model_home_dir, argv[5]);
 	int ORO_ID = 3;
     double *direction = malloc(NO_OF_VECTORS_H*sizeof(double));
     double *latitude_scalar = malloc(NO_OF_SCALARS_H*sizeof(double));
@@ -58,11 +61,11 @@ int main(int argc, char *argv[])
     int ncid_grid, retval;
     int GEO_PROP_FILE_LENGTH = 100;
     char *GEO_PROP_FILE_PRE = malloc((GEO_PROP_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(GEO_PROP_FILE_PRE, "/home/max/compiled/game_dev/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(GEO_PROP_FILE_PRE, "%s/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
     GEO_PROP_FILE_LENGTH = strlen(GEO_PROP_FILE_PRE);
     free(GEO_PROP_FILE_PRE);
     char *GEO_PROP_FILE = malloc((GEO_PROP_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(GEO_PROP_FILE, "/home/max/compiled/game_dev/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(GEO_PROP_FILE, "%s/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
     if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
         NCERR(retval);
     free(GEO_PROP_FILE);
@@ -103,11 +106,11 @@ int main(int argc, char *argv[])
         NCERR(retval);
     int OUTPUT_FILE_LENGTH = 100;
     char *OUTPUT_FILE_PRE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(OUTPUT_FILE_PRE, "/home/max/compiled/game_dev/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", year, month, day, hour, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(OUTPUT_FILE_PRE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year, month, day, hour, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
     OUTPUT_FILE_LENGTH = strlen(OUTPUT_FILE_PRE);
     free(OUTPUT_FILE_PRE);
     char *OUTPUT_FILE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(OUTPUT_FILE, "/home/max/compiled/game_dev/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", year, month, day, hour, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(OUTPUT_FILE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year, month, day, hour, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
     double *pressure_background = malloc(NO_OF_SCALARS*sizeof(double));
     double *temperature_background = malloc(NO_OF_SCALARS*sizeof(double));
     double *density_dry_background = malloc(NO_OF_SCALARS*sizeof(double));
@@ -275,6 +278,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
+    free(model_home_dir);
 	free(temperature);
 	free(density_dry);
 	free(rel_humidity);
