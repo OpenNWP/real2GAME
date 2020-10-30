@@ -34,7 +34,6 @@ make
 ctest
 make install
 cp ../core/run.sh $aim_dir/bin
-cp -r ../run_scripts $aim_dir
-cp -r ../.sh $aim_dir
+cp ../run_script.sh $aim_dir
 chmod +x $aim_dir/bin/run.sh
 cd ..
