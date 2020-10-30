@@ -19,6 +19,10 @@ if [ -d $aim_dir/run_scripts ]
 then
 rm -r $aim_dir/run_scripts
 fi
+if [ -d $aim_dir/.sh ]
+then
+rm -r $aim_dir/.sh
+fi
 if [ -d ../build ]
 then
 rm -r ../build
@@ -31,5 +35,6 @@ ctest
 make install
 cp ../core/run.sh $aim_dir/bin
 cp -r ../run_scripts $aim_dir
+cp -r ../.sh $aim_dir
 chmod +x $aim_dir/bin/run.sh
 cd ..
