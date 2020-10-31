@@ -49,7 +49,8 @@ int main(int argc, char *argv[])
     len = strlen(argv[5]);
     char *model_home_dir = malloc((len + 1)*sizeof(char));
     strcpy(model_home_dir, argv[5]);
-	int ORO_ID = 3;
+	int ORO_ID;
+    ORO_ID = strtod(argv[6], NULL);
     double *direction = malloc(NO_OF_VECTORS_H*sizeof(double));
     double *latitude_scalar = malloc(NO_OF_SCALARS_H*sizeof(double));
     double *longitude_scalar = malloc(NO_OF_SCALARS_H*sizeof(double));

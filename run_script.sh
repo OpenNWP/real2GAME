@@ -8,6 +8,7 @@ analysis_month=${BASH_ARGV[3]}
 analysis_day=${BASH_ARGV[2]}
 analysis_hour=${BASH_ARGV[1]}
 model_home_directory=${BASH_ARGV[0]}
+orography_id=${BASH_ARGV[5]}
 
 # That's it, now the assimilation process will be started.
 source bin/run.sh
