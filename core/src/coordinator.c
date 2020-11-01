@@ -27,14 +27,14 @@ const double TOA = 30000;
 int main(int argc, char *argv[])
 {	
     size_t len = strlen(argv[1]);
-    char *year = malloc((len + 1)*sizeof(char));
-    strcpy(year, argv[1]);
+    char *year_string = malloc((len + 1)*sizeof(char));
+    strcpy(year_string, argv[1]);
     len = strlen(argv[2]);
-    char *month = malloc((len + 1)*sizeof(char));
-    strcpy(month, argv[2]);
+    char *month_string = malloc((len + 1)*sizeof(char));
+    strcpy(month_string, argv[2]);
     len = strlen(argv[3]);
-    char *day = malloc((len + 1)*sizeof(char));
-    strcpy(day, argv[3]);
+    char *day_string = malloc((len + 1)*sizeof(char));
+    strcpy(day_string, argv[3]);
     len = strlen(argv[4]);
     char *hour = malloc((len + 1)*sizeof(char));
     strcpy(hour, argv[4]);
@@ -104,11 +104,11 @@ int main(int argc, char *argv[])
         NCERR(retval);
     int OUTPUT_FILE_LENGTH = 100;
     char *OUTPUT_FILE_PRE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(OUTPUT_FILE_PRE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year, month, day, hour, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(OUTPUT_FILE_PRE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
     OUTPUT_FILE_LENGTH = strlen(OUTPUT_FILE_PRE);
     free(OUTPUT_FILE_PRE);
     char *OUTPUT_FILE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(OUTPUT_FILE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year, month, day, hour, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(OUTPUT_FILE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
     
     // These are the arrays of the background state.
     double *temperature_gas_background = malloc(NO_OF_SCALARS*sizeof(double));
@@ -260,9 +260,9 @@ int main(int argc, char *argv[])
 	free(solid_water_density);
 	free(liquid_water_temp);
 	free(solid_water_temp);
-	free(year);
-	free(month);
-	free(day);
+	free(year_string);
+	free(month_string);
+	free(day_string);
 	free(hour);
     free(wind_background);
     free(temperature_gas_background);
