@@ -53,7 +53,7 @@ do
 filename=
 url=$url_base"/"$analysis_hr"/qv/icon_global_icosahedral_model-level_"$analysis_year$analysis_month$analysis_day$analysis_hr"_000_"$level"_QV.grib2.bz2"
 wget --directory-prefix=../input $url
-bzip2 -d $filename
+bzip2 -d ../input/$filename
 done
 
 
