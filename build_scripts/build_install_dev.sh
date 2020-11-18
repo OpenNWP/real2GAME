@@ -37,3 +37,4 @@ cp ../core/run.sh $aim_dir/bin
 cp ../run_script.sh $aim_dir
 chmod +x $aim_dir/bin/run.sh
 cd ..
+cp -r obs_collector $aim_dir

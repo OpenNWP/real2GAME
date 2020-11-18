@@ -1,9 +1,9 @@
 #!/bin/bash
 
-analysis_year=${BASH_ARGV[0]}
-analysis_month=${BASH_ARGV[1]}
-analysis_day=${BASH_ARGV[2]}
-analysis_hr=${BASH_ARGV[3]}
+analysis_year=${BASH_ARGV[3]}
+analysis_month=${BASH_ARGV[2]}
+analysis_day=${BASH_ARGV[1]}
+analysis_hr=${BASH_ARGV[0]}
 
 # surface height
 wget --directory-prefix=../input "https://opendata.dwd.de/weather/nwp/icon/grib/"$analysis_hr"/hsurf/icon_global_icosahedral_time-invariant_"$analysis_year$analysis_month$analysis_day$analysis_hr"_HSURF.grib2.bz2"
