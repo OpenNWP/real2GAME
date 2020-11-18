@@ -19,6 +19,7 @@ The documentation of the code can be found in the subdirectory doc.
 * CMake (Ubuntu: sudo apt-get install cmake)
 * [atmostracers](https://github.com/MHBalsmeier/atmostracers)
 * OpenMPI (Ubuntu: sudo apt-get install mpich)
+* bzip2 (Ubuntu: sudo apt-get install bzip2)
 * python3 (Ubuntu: sudo apt-get install python3)
 
 ### For developing
