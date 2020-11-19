@@ -1,7 +1,7 @@
 # This source file is part of ndvar, which is released under the MIT license.
 # Github repository: https://github.com/MHBalsmeier/ndvar
 
-aim_dir=~/compiled/ndvar_dev
+aim_dir=~/compiled/ndvar
 if [ -d $aim_dir ]
 then
 rm -r $aim_dir
@@ -29,7 +29,7 @@ rm -r ../build
 fi
 mkdir $aim_dir/input
 mkdir ../build && cd ../build
-cmake -DCMAKE_INSTALL_PREFIX=$aim_dir ../core
+cmake -DCMAKE_INSTALL_PREFIX=$aim_dir ../formatter
 make
 ctest
 make install
@@ -37,3 +37,4 @@ cp ../core/run.sh $aim_dir/bin
 cp ../run_script.sh $aim_dir
 chmod +x $aim_dir/bin/run.sh
 cd ..
+cp -r obs_collector $aim_dir
