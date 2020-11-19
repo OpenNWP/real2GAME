@@ -12,17 +12,26 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "eccodes.h"
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
+#define ERRCODE 3
+#define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(ERRCODE);}
 
 const int NO_OF_OBS_LEVELS_OBS = 3;
-const int NO_OF_FIELDS_PER_LAYER_OBS = 3;
+const int NO_OF_FIELDS_PER_LAYER_OBS = 2;
 const int NO_OF_SURFACE_FIELDS_OBS = 1;
 const int NO_OF_POINTS_PER_LAYER_OBS = 2949120;
 const int NO_OF_OBSERVATIONS = (NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
 
 int main(int argc, char *argv[])
 {
-
+	// defining the levels of the model we want to use
+	int levels_vector[NO_OF_OBS_LEVELS_OBS];
+	levels_vector[0] = 30;
+	levels_vector[1] = 55;
+	levels_vector[2] = 80;
+	
+	// shell arguments
     size_t len = strlen(argv[1]);
     char *year_string = malloc((len + 1)*sizeof(char));
     strcpy(year_string, argv[1]);
@@ -38,22 +47,197 @@ int main(int argc, char *argv[])
     len = strlen(argv[5]);
     char *ndvar_root_dir = malloc((len + 1)*sizeof(char));
     strcpy(ndvar_root_dir, argv[5]);
+	
+	// Properties of the input model's grid.
+	double *latitude_vector_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	double *longitude_vector_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	double *vert_vector_free_atmosphere = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
     
-	// Allocating the memory.
+	int retval, err;
+	codes_handle *handle = NULL;
+	
+	// latitudes of the grid
+	int LAT_OBS_FILE_LENGTH = 100;
+    char *LAT_OBS_FILE_PRE = malloc((LAT_OBS_FILE_LENGTH + 1)*sizeof(char));
+    sprintf(LAT_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    LAT_OBS_FILE_LENGTH = strlen(LAT_OBS_FILE_PRE);
+	free(LAT_OBS_FILE_PRE);
+    char *LAT_OBS_FILE = malloc((LAT_OBS_FILE_LENGTH + 1)*sizeof(char));
+    sprintf(LAT_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    
+	FILE *ECC_FILE;
+	ECC_FILE = fopen(LAT_OBS_FILE, "r");
+	free(LAT_OBS_FILE);
+	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+	if (err != 0)
+		ECCERR(err);
+	size_t NO_OF_POINTS_PER_LAYER_OBS_SIZE_T;
+	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+	if ((retval = codes_get_double_array(handle, "values", &latitude_vector_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+		ECCERR(retval);
+	codes_handle_delete(handle);
+    fclose(ECC_FILE);
+    
+    for (int i = 0; i < NO_OF_POINTS_PER_LAYER_OBS; ++i)
+    {
+    	latitude_vector_one_layer[i] = latitude_vector_one_layer[i]/(2*M_PI);
+    }
+    
+    // longitudes of the grid
+	int LON_OBS_FILE_LENGTH = 100;
+    char *LON_OBS_FILE_PRE = malloc((LON_OBS_FILE_LENGTH + 1)*sizeof(char));
+    sprintf(LON_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    LON_OBS_FILE_LENGTH = strlen(LON_OBS_FILE_PRE);
+	free(LON_OBS_FILE_PRE);
+    char *LON_OBS_FILE = malloc((LON_OBS_FILE_LENGTH + 1)*sizeof(char));
+    sprintf(LON_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    
+	ECC_FILE = fopen(LON_OBS_FILE, "r");
+	free(LON_OBS_FILE);
+	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+	if (err != 0)
+		ECCERR(err);
+	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+	if ((retval = codes_get_double_array(handle, "values", &longitude_vector_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+		ECCERR(retval);
+	codes_handle_delete(handle);
+    fclose(ECC_FILE);
+    
+    for (int i = 0; i < NO_OF_POINTS_PER_LAYER_OBS; ++i)
+    {
+    	longitude_vector_one_layer[i] = longitude_vector_one_layer[i]/(2*M_PI);
+    }
+    
+	// Allocating the memory for the final result.
 	double *latitude_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
 	double *longitude_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
 	double *vert_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
 	double *observations_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
 	int *type_vector = malloc(NO_OF_OBSERVATIONS*sizeof(int));
-	double *pressure_on_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
-	double *temperature_on_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
-	double *spec_hum_on_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	
-	// Freeing parts of the memory.
-	free(pressure_on_layer);
-	free(temperature_on_layer);
-	free(spec_hum_on_layer);
+	double *temperature_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	double *spec_hum_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	
+	for (int level_index = 0; level_index < NO_OF_OBS_LEVELS_OBS; ++level_index)
+	{
+	   	// reading the temperature
+		int TEMPERATURE_FILE_LENGTH = 100;
+		char *TEMPERATURE_FILE_PRE = malloc((TEMPERATURE_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(TEMPERATURE_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_T.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		TEMPERATURE_FILE_LENGTH = strlen(TEMPERATURE_FILE_PRE);
+		free(TEMPERATURE_FILE_PRE);
+		char *TEMPERATURE_FILE = malloc((TEMPERATURE_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(TEMPERATURE_FILE, "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_T.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		
+		ECC_FILE = fopen(TEMPERATURE_FILE, "r");
+		free(TEMPERATURE_FILE);
+		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		if (err != 0)
+			ECCERR(err);
+		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+		if ((retval = codes_get_double_array(handle, "values", &temperature_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+			ECCERR(retval);
+		codes_handle_delete(handle);
+		fclose(ECC_FILE);
+		
+	   	// reading the specific humidity
+		int SPEC_HUM_FILE_LENGTH = 100;
+		char *SPEC_HUM_FILE_PRE = malloc((SPEC_HUM_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(SPEC_HUM_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_QV.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		SPEC_HUM_FILE_LENGTH = strlen(SPEC_HUM_FILE_PRE);
+		free(SPEC_HUM_FILE_PRE);
+		char *SPEC_HUM_FILE = malloc((SPEC_HUM_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(SPEC_HUM_FILE, "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_QV.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		
+		ECC_FILE = fopen(SPEC_HUM_FILE, "r");
+		free(SPEC_HUM_FILE);
+		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		if (err != 0)
+			ECCERR(err);
+		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+		if ((retval = codes_get_double_array(handle, "values", &spec_hum_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+			ECCERR(retval);
+		codes_handle_delete(handle);
+		fclose(ECC_FILE);
+		
+		// writing the coordinates of the grid points
+		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_OBS; ++i)
+		{
+			latitude_vector[level_index*2*NO_OF_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[i];
+			latitude_vector[(level_index*2 + 1)*NO_OF_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[i];
+			
+			longitude_vector[level_index*2*NO_OF_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[i];
+			longitude_vector[(level_index*2 + 1)*NO_OF_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[i];
+			
+			vert_vector[level_index*2*NO_OF_POINTS_PER_LAYER_OBS + i] = vert_vector_free_atmosphere[i];
+			vert_vector[(level_index*2 + 1)*NO_OF_POINTS_PER_LAYER_OBS + i] = vert_vector_free_atmosphere[i];
+			
+			observations_vector[level_index*2*NO_OF_POINTS_PER_LAYER_OBS + i] = temperature_one_layer[i];
+			observations_vector[(level_index*2 + 1)*NO_OF_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[i];
+			
+			type_vector[level_index*2*NO_OF_POINTS_PER_LAYER_OBS + i] = 0;
+			type_vector[(level_index*2 + 1)*NO_OF_POINTS_PER_LAYER_OBS + i] = 2;
+		}
+	}
+	
+    // surface height
+	int SFC_OBS_FILE_LENGTH = 100;
+    char *SFC_OBS_FILE_PRE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
+    sprintf(SFC_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    SFC_OBS_FILE_LENGTH = strlen(SFC_OBS_FILE_PRE);
+	free(SFC_OBS_FILE_PRE);
+    char *SFC_OBS_FILE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
+    sprintf(SFC_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    
+	ECC_FILE = fopen(SFC_OBS_FILE, "r");
+	free(SFC_OBS_FILE);
+	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+	if (err != 0)
+		ECCERR(err);
+	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+	if ((retval = codes_get_double_array(handle, "values", &surface_height[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+		ECCERR(retval);
+	codes_handle_delete(handle);
+    fclose(ECC_FILE);
+	
+    // reading the surface presure
+	double *pressure_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	
+	int SFC_PRES_FILE_LENGTH = 100;
+    char *SFC_PRES_FILE_PRE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
+    sprintf(SFC_PRES_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    SFC_PRES_FILE_LENGTH = strlen(SFC_PRES_FILE_PRE);
+	free(SFC_PRES_FILE_PRE);
+    char *SFC_PRES_FILE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
+    sprintf(SFC_PRES_FILE, "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    
+	ECC_FILE = fopen(SFC_PRES_FILE, "r");
+	free(SFC_PRES_FILE);
+	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+	if (err != 0)
+		ECCERR(err);
+	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+	if ((retval = codes_get_double_array(handle, "values", &pressure_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+		ECCERR(retval);
+	codes_handle_delete(handle);
+    fclose(ECC_FILE);
+	
+	// writing the surface pressure to the observations
+    for (int i = 0; i < NO_OF_POINTS_PER_LAYER_OBS; ++i)
+    {
+    	latitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[i];
+    	
+    	longitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[i];
+    	
+    	vert_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_POINTS_PER_LAYER_OBS + i] = surface_height[i];
+    	
+    	observations_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_POINTS_PER_LAYER_OBS + i] = pressure_one_layer[i];
+    	
+    	type_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_POINTS_PER_LAYER_OBS + i] = 1;
+    }
+    
+    // Writing the observations to a netcdf file.
     int OUTPUT_FILE_LENGTH = 100;
     char *OUTPUT_FILE_PRE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
     sprintf(OUTPUT_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
@@ -62,10 +246,10 @@ int main(int argc, char *argv[])
     char *OUTPUT_FILE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
     sprintf(OUTPUT_FILE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
     
-    // Writing the observations to a netcdf file.
-    int ncid, retval, observation_dimid, latitude_id, longitude_id, vert_id, obervations_id, type_id;
+    int ncid, observation_dimid, latitude_id, longitude_id, vert_id, obervations_id, type_id;
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
+    free(OUTPUT_FILE);
     // Defining the dimensions.
     if ((retval = nc_def_dim(ncid, "observation_index", NO_OF_OBSERVATIONS, &observation_dimid)))
         NCERR(retval);
@@ -99,7 +283,9 @@ int main(int argc, char *argv[])
     	NCERR(retval);
     
     // Freeing the memory.
-    
+	free(pressure_one_layer);
+	free(temperature_one_layer);
+	free(spec_hum_one_layer);
     free(ndvar_root_dir);
 	free(latitude_vector);
 	free(longitude_vector);
@@ -110,6 +296,10 @@ int main(int argc, char *argv[])
 	free(month_string);
 	free(day_string);
 	free(hour_string);
+	free(latitude_vector_one_layer);
+	free(longitude_vector_one_layer);
+	free(vert_vector_free_atmosphere);
+	free(surface_height);
 
 	return 0;
 }
