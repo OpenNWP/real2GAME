@@ -24,6 +24,12 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 // constants specifying the grid
 const double TOA = 30000;
 
+const int NO_OF_LEVELS_OBS = 3;
+const int NO_OF_FIELDS_PER_LAYER_OBS = 3;
+const int NO_OF_SURFACE_FIELDS_OBS = 1;
+const int NO_OF_POINTS_PER_LAYER_OBS = 2949120;
+const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
+
 int main(int argc, char *argv[])
 {	
     size_t len = strlen(argv[1]);
@@ -36,8 +42,8 @@ int main(int argc, char *argv[])
     char *day_string = malloc((len + 1)*sizeof(char));
     strcpy(day_string, argv[3]);
     len = strlen(argv[4]);
-    char *hour = malloc((len + 1)*sizeof(char));
-    strcpy(hour, argv[4]);
+    char *hour_string = malloc((len + 1)*sizeof(char));
+    strcpy(hour_string, argv[4]);
     len = strlen(argv[5]);
     char *model_home_dir = malloc((len + 1)*sizeof(char));
     strcpy(model_home_dir, argv[5]);
@@ -46,8 +52,11 @@ int main(int argc, char *argv[])
     len = strlen(argv[7]);
     char *BACKGROUND_STATE_FILE = malloc((len + 1)*sizeof(char));
     strcpy(BACKGROUND_STATE_FILE, argv[7]);
+    len = strlen(argv[8]);
+    char *ndvar_root_dir = malloc((len + 1)*sizeof(char));
+    strcpy(ndvar_root_dir, argv[8]);
     
-    // The grid properties.
+    // Allocating memory for the grid properties.
     double *direction = malloc(NO_OF_VECTORS_H*sizeof(double));
     double *latitude_scalar = malloc(NO_OF_SCALARS_H*sizeof(double));
     double *longitude_scalar = malloc(NO_OF_SCALARS_H*sizeof(double));
@@ -56,6 +65,8 @@ int main(int argc, char *argv[])
     double *z_scalar = malloc(NO_OF_SCALARS*sizeof(double));
     double *z_vector = malloc(NO_OF_VECTORS*sizeof(double));
     double *gravity_potential = malloc(NO_OF_VECTORS*sizeof(double));
+    
+    // Reading the grid properties.
     int ncid_grid, retval;
     int GEO_PROP_FILE_LENGTH = 100;
     char *GEO_PROP_FILE_PRE = malloc((GEO_PROP_FILE_LENGTH + 1)*sizeof(char));
@@ -104,11 +115,11 @@ int main(int argc, char *argv[])
         NCERR(retval);
     int OUTPUT_FILE_LENGTH = 100;
     char *OUTPUT_FILE_PRE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(OUTPUT_FILE_PRE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(OUTPUT_FILE_PRE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour_string, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
     OUTPUT_FILE_LENGTH = strlen(OUTPUT_FILE_PRE);
     free(OUTPUT_FILE_PRE);
     char *OUTPUT_FILE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(OUTPUT_FILE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(OUTPUT_FILE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour_string, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
     
     // These are the arrays of the background state.
     double *temperature_gas_background = malloc(NO_OF_SCALARS*sizeof(double));
@@ -119,6 +130,8 @@ int main(int argc, char *argv[])
     double *solid_water_density_background = malloc(NO_OF_SCALARS*sizeof(double));
     double *liquid_water_temperature_background = malloc(NO_OF_SCALARS*sizeof(double));
     double *solid_water_temperature_background = malloc(NO_OF_SCALARS*sizeof(double));
+    
+    // Reading the background state.
     int ncid;
     if ((retval = nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
@@ -157,6 +170,49 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_close(ncid)))
         NCERR(retval);
+
+	// Allocating the memory for the observations.
+	double *latitude_vector_obs = malloc(NO_OF_OBSERVATIONS*sizeof(double));
+	double *longitude_vector_obs = malloc(NO_OF_OBSERVATIONS*sizeof(double));
+	double *vert_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
+	double *observations_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
+	int *type_vector = malloc(NO_OF_OBSERVATIONS*sizeof(int));
+    
+    int OBSERVATIONS_FILE_LENGTH = 100;
+    char *OBSERVATIONS_FILE_PRE = malloc((OBSERVATIONS_FILE_LENGTH + 1)*sizeof(char));
+    sprintf(OBSERVATIONS_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    OBSERVATIONS_FILE_LENGTH = strlen(OBSERVATIONS_FILE_PRE);
+    free(OBSERVATIONS_FILE_PRE);
+    char *OBSERVATIONS_FILE = malloc((OBSERVATIONS_FILE_LENGTH + 1)*sizeof(char));
+	sprintf(OBSERVATIONS_FILE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    
+    // Reading the observations.
+    if ((retval = nc_open(OBSERVATIONS_FILE, NC_NOWRITE, &ncid)))
+        NCERR(retval);
+    int latitude_obs_id, longitude_obs_id, vert_id, obervations_id, type_id;
+    // Defining the variables.
+    if ((retval = nc_inq_varid(ncid, "latitude_vector", &latitude_obs_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "longitude_vector", &longitude_obs_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "vert_vector", &vert_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "observations_vector", &obervations_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "type_vector", &type_id)))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, latitude_obs_id, &latitude_vector_obs[0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, longitude_obs_id, &longitude_vector_obs[0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, vert_id, &vert_vector[0])))
+        NCERR(retval);  
+    if ((retval = nc_get_var_double(ncid, obervations_id, &observations_vector[0])))
+        NCERR(retval);    
+    if ((retval = nc_get_var_int(ncid, type_id, &type_vector[0])))
+        NCERR(retval);
+    if ((retval = nc_close(ncid)))
+    	NCERR(retval);
     
     // These are the arrays for the result of the assimilation process.
     double *temperature = malloc(NO_OF_SCALARS*sizeof(double));
@@ -167,6 +223,7 @@ int main(int argc, char *argv[])
     double *solid_water_density = malloc(NO_OF_SCALARS*sizeof(double));
     double *liquid_water_temp = malloc(NO_OF_SCALARS*sizeof(double));
     double *solid_water_temp = malloc(NO_OF_SCALARS*sizeof(double));
+    
     for (int i = 0; i < NO_OF_SCALARS; ++i)
     {
     	temperature[i] = temperature_gas_background[i];
@@ -181,14 +238,6 @@ int main(int argc, char *argv[])
     {
     	wind[i] = wind_background[i];
     }
-    
-    // Freeing the grid properties.
-    free(z_vector);
-    free(latitude_scalar);
-    free(longitude_scalar);
-    free(direction);
-    free(latitude_vector);
-    free(longitude_vector);
     
     // Writing the result to a netcdf file.
     int scalar_dimid, vector_dimid, temp_id, density_dry_id, wind_id, density_vapour_id, density_liquid_id, density_solid_id, temperature_liquid_id, temperature_solid_id;
@@ -251,6 +300,10 @@ int main(int argc, char *argv[])
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
 
+	free(gravity_potential);
+	free(BACKGROUND_STATE_FILE);
+	free(ndvar_root_dir);
+	free(OBSERVATIONS_FILE);
     free(model_home_dir);
 	free(temperature);
 	free(density_dry);
@@ -263,7 +316,7 @@ int main(int argc, char *argv[])
 	free(year_string);
 	free(month_string);
 	free(day_string);
-	free(hour);
+	free(hour_string);
     free(wind_background);
     free(temperature_gas_background);
     free(density_dry_background);
@@ -273,6 +326,17 @@ int main(int argc, char *argv[])
     free(liquid_water_temperature_background);
     free(solid_water_temperature_background);
     free(z_scalar);
+	free(latitude_vector_obs);
+	free(longitude_vector_obs);
+	free(vert_vector);
+	free(observations_vector);
+	free(type_vector);
+    free(z_vector);
+    free(latitude_scalar);
+    free(longitude_scalar);
+    free(direction);
+    free(latitude_vector);
+    free(longitude_vector);
     free(OUTPUT_FILE);
     return 0;
 }
