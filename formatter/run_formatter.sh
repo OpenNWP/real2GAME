@@ -11,5 +11,10 @@ model_home_directory=${BASH_ARGV[0]}
 orography_id=${BASH_ARGV[5]}
 background_file=${BASH_ARGV[6]}
 
-# That's it, now the assimilation process will be started.
-source bin/run.sh
+bin/formatter $analysis_year $analysis_month $analysis_day $analysis_hour
+if [ $? -ne 0 ]
+then
+echo -e ${RED}Formatter failed.$NC
+else
+echo "Observations formatted for the data assimilation sucessfully."
+fi

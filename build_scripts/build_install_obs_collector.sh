@@ -2,39 +2,28 @@
 # Github repository: https://github.com/MHBalsmeier/ndvar
 
 aim_dir=~/compiled/ndvar
-if [ -d $aim_dir ]
+
+if [ ! -d $aim_dir ]
 then
-rm -r $aim_dir
+echo "$aim_dir does not exist. Aborting. Run build_install.sh first."
+exit
 fi
-mkdir $aim_dir
-if [ -d $aim_dir/bin ]
+
+if [ ! -d $aim_dir/bin ]
 then
-rm -r $aim_dir/bin
+echo "$aim_dir/bin does not exist. Aborting. Run build_install.sh first."
+exit
 fi
-if [ -d $aim_dir/input ]
-then
-rm -r $aim_dir/input
-fi
-if [ -d $aim_dir/run_scripts ]
-then
-rm -r $aim_dir/run_scripts
-fi
-if [ -d $aim_dir/.sh ]
-then
-rm -r $aim_dir/.sh
-fi
+
 if [ -d ../build ]
 then
 rm -r ../build
 fi
-mkdir $aim_dir/input
 mkdir ../build && cd ../build
 cmake -DCMAKE_INSTALL_PREFIX=$aim_dir ../formatter
 make
 ctest
 make install
-cp ../core/run.sh $aim_dir/bin
-cp ../run_script.sh $aim_dir
-chmod +x $aim_dir/bin/run.sh
+cp ../formatter/run_formatter.sh $aim_dir/bin
 cd ..
 cp -r obs_collector $aim_dir
