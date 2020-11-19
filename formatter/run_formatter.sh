@@ -16,5 +16,5 @@ if [ $? -ne 0 ]
 then
 echo -e ${RED}Formatter failed.$NC
 else
-echo "Observations formatted for the data assimilation sucessfully."
+echo "Observations formatted for the data assimilation successfully."
 fi
