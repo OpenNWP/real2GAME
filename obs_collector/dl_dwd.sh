@@ -38,6 +38,12 @@ url=$url_base"/"$analysis_hour"/ps/"$filename
 wget --directory-prefix=../input $url
 bzip2 -d ../input/$filename
 
+# total precipitation
+filename="icon_global_icosahedral_single-level_"$analysis_year$analysis_month$analysis_day$analysis_hour"_001_TOT_PREC.grib2.bz2"
+url=$url_base"/"$analysis_hour"/tot_prec/"$filename
+wget --directory-prefix=../input $url
+bzip2 -d ../input/$filename
+
 # loop over desired model levels
 for level in ${levels_vector[@]}
 do

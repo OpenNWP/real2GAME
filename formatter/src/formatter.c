@@ -7,6 +7,7 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 // 0: temperature
 // 1: pressure
 // 2: specific humidity
+// 3: total precipitation rate
 
 #include <netcdf.h>
 #include <stdio.h>
@@ -19,7 +20,7 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 
 const int NO_OF_OBS_LEVELS_OBS = 3;
 const int NO_OF_FIELDS_PER_LAYER_OBS = 2;
-const int NO_OF_SURFACE_FIELDS_OBS = 1;
+const int NO_OF_SURFACE_FIELDS_OBS = 2;
 // the number of points per layer of the input model
 const int NO_OF_POINTS_PER_LAYER_OBS = 2949120;
 // the number of points per layer that are actually picked for the assimilation process
@@ -249,6 +250,42 @@ int main(int argc, char *argv[])
     	type_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 1;
     }
     
+    // reading the total precipitation rate
+	double *tot_prec = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	
+	int TOT_PREC_FILE_LENGTH = 100;
+    char *TOT_PREC_FILE_PRE = malloc((TOT_PREC_FILE_LENGTH + 1)*sizeof(char));
+    sprintf(TOT_PREC_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_001_TOT_PREC.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    TOT_PREC_FILE_LENGTH = strlen(TOT_PREC_FILE_PRE);
+	free(TOT_PREC_FILE_PRE);
+    char *TOT_PREC_FILE = malloc((TOT_PREC_FILE_LENGTH + 1)*sizeof(char));
+    sprintf(TOT_PREC_FILE, "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_001_TOT_PREC.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    
+	ECC_FILE = fopen(TOT_PREC_FILE, "r");
+	free(TOT_PREC_FILE);
+	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+	if (err != 0)
+		ECCERR(err);
+	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+	if ((retval = codes_get_double_array(handle, "values", &tot_prec[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+		ECCERR(retval);
+	codes_handle_delete(handle);
+    fclose(ECC_FILE);
+	
+	// writing the total precipitation rate to the observations
+    for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
+    {
+    	latitude_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
+    	
+    	longitude_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
+    	
+    	vert_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = tot_prec[chosen_indices[i]];
+    	
+    	observations_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = pressure_one_layer[chosen_indices[i]];
+    	
+    	type_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 1;
+    }
+    
     // Writing the observations to a netcdf file.
     int OUTPUT_FILE_LENGTH = 100;
     char *OUTPUT_FILE_PRE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
@@ -295,6 +332,7 @@ int main(int argc, char *argv[])
     	NCERR(retval);
     
     // Freeing the memory.
+    free(tot_prec);
     free(chosen_indices);
 	free(pressure_one_layer);
 	free(temperature_one_layer);
