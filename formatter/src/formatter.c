@@ -20,8 +20,12 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 const int NO_OF_OBS_LEVELS_OBS = 3;
 const int NO_OF_FIELDS_PER_LAYER_OBS = 2;
 const int NO_OF_SURFACE_FIELDS_OBS = 1;
+// the number of points per layer of the input model
 const int NO_OF_POINTS_PER_LAYER_OBS = 2949120;
+// the number of points per layer that are actually picked for the assimilation process
+const int NO_OF_CHOSEN_POINTS_PER_LAYER = 10242;
 const int NO_OF_OBSERVATIONS = (NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
+const int NO_OF_CHOSEN_OBSERVATIONS = (NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_CHOSEN_POINTS_PER_LAYER;
 
 int main(int argc, char *argv[])
 {
@@ -110,14 +114,22 @@ int main(int argc, char *argv[])
     }
     
 	// Allocating the memory for the final result.
-	double *latitude_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
-	double *longitude_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
-	double *vert_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
-	double *observations_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
-	int *type_vector = malloc(NO_OF_OBSERVATIONS*sizeof(int));
+	double *latitude_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *longitude_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *vert_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	int *type_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(int));
 	
 	double *temperature_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	double *spec_hum_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	
+	// the indices of the chosen points
+	int *chosen_indices = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(int));
+	
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
+	{
+		chosen_indices[i] = NO_OF_OBSERVATIONS/NO_OF_CHOSEN_OBSERVATIONS*i;
+	}
 	
 	for (int level_index = 0; level_index < NO_OF_OBS_LEVELS_OBS; ++level_index)
 	{
@@ -162,22 +174,22 @@ int main(int argc, char *argv[])
 		fclose(ECC_FILE);
 		
 		// writing the coordinates of the grid points
-		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_OBS; ++i)
+		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
 		{
-			latitude_vector[level_index*2*NO_OF_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[i];
-			latitude_vector[(level_index*2 + 1)*NO_OF_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[i];
+			latitude_vector[level_index*2*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
+			latitude_vector[(level_index*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
 			
-			longitude_vector[level_index*2*NO_OF_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[i];
-			longitude_vector[(level_index*2 + 1)*NO_OF_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[i];
+			longitude_vector[level_index*2*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
+			longitude_vector[(level_index*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
 			
-			vert_vector[level_index*2*NO_OF_POINTS_PER_LAYER_OBS + i] = vert_vector_free_atmosphere[i];
-			vert_vector[(level_index*2 + 1)*NO_OF_POINTS_PER_LAYER_OBS + i] = vert_vector_free_atmosphere[i];
+			vert_vector[level_index*2*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = vert_vector_free_atmosphere[chosen_indices[i]];
+			vert_vector[(level_index*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = vert_vector_free_atmosphere[chosen_indices[i]];
 			
-			observations_vector[level_index*2*NO_OF_POINTS_PER_LAYER_OBS + i] = temperature_one_layer[i];
-			observations_vector[(level_index*2 + 1)*NO_OF_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[i];
+			observations_vector[level_index*2*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = temperature_one_layer[chosen_indices[i]];
+			observations_vector[(level_index*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = spec_hum_one_layer[chosen_indices[i]];
 			
-			type_vector[level_index*2*NO_OF_POINTS_PER_LAYER_OBS + i] = 0;
-			type_vector[(level_index*2 + 1)*NO_OF_POINTS_PER_LAYER_OBS + i] = 2;
+			type_vector[level_index*2*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 0;
+			type_vector[(level_index*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 2;
 		}
 	}
 	
@@ -224,17 +236,17 @@ int main(int argc, char *argv[])
     fclose(ECC_FILE);
 	
 	// writing the surface pressure to the observations
-    for (int i = 0; i < NO_OF_POINTS_PER_LAYER_OBS; ++i)
+    for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
     {
-    	latitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[i];
+    	latitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
     	
-    	longitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[i];
+    	longitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
     	
-    	vert_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_POINTS_PER_LAYER_OBS + i] = surface_height[i];
+    	vert_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = surface_height[chosen_indices[i]];
     	
-    	observations_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_POINTS_PER_LAYER_OBS + i] = pressure_one_layer[i];
+    	observations_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = pressure_one_layer[chosen_indices[i]];
     	
-    	type_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_POINTS_PER_LAYER_OBS + i] = 1;
+    	type_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 1;
     }
     
     // Writing the observations to a netcdf file.
@@ -251,7 +263,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     free(OUTPUT_FILE);
     // Defining the dimensions.
-    if ((retval = nc_def_dim(ncid, "observation_index", NO_OF_OBSERVATIONS, &observation_dimid)))
+    if ((retval = nc_def_dim(ncid, "observation_index", NO_OF_CHOSEN_OBSERVATIONS, &observation_dimid)))
         NCERR(retval);
     // Defining the variables.
     if ((retval = nc_def_var(ncid, "latitude_vector", NC_DOUBLE, 1, &observation_dimid, &latitude_id)))
@@ -283,6 +295,7 @@ int main(int argc, char *argv[])
     	NCERR(retval);
     
     // Freeing the memory.
+    free(chosen_indices);
 	free(pressure_one_layer);
 	free(temperature_one_layer);
 	free(spec_hum_one_layer);
