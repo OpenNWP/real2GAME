@@ -21,9 +21,6 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 #define OMEGA (7.292115e-5)
 #define C_D_P 1005.0
 
-// constants specifying the grid
-const double TOA = 30000;
-
 const int NO_OF_LEVELS_OBS = 3;
 const int NO_OF_FIELDS_PER_LAYER_OBS = 2;
 const int NO_OF_SURFACE_FIELDS_OBS = 2;
@@ -55,6 +52,11 @@ int main(int argc, char *argv[])
     len = strlen(argv[8]);
     char *ndvar_root_dir = malloc((len + 1)*sizeof(char));
     strcpy(ndvar_root_dir, argv[8]);
+	int NO_OF_ORO_LAYERS;
+    NO_OF_ORO_LAYERS = strtod(argv[9], NULL);
+	int TOA;
+	TOA = strtod(argv[10], NULL);
+	printf("background state file: %s\n", BACKGROUND_STATE_FILE);
     
     // Allocating memory for the grid properties.
     double *direction = malloc(NO_OF_VECTORS_H*sizeof(double));
@@ -70,14 +72,15 @@ int main(int argc, char *argv[])
     int ncid_grid, retval;
     int GEO_PROP_FILE_LENGTH = 100;
     char *GEO_PROP_FILE_PRE = malloc((GEO_PROP_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(GEO_PROP_FILE_PRE, "%s/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(GEO_PROP_FILE_PRE, "%s/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
     GEO_PROP_FILE_LENGTH = strlen(GEO_PROP_FILE_PRE);
     free(GEO_PROP_FILE_PRE);
     char *GEO_PROP_FILE = malloc((GEO_PROP_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(GEO_PROP_FILE, "%s/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(GEO_PROP_FILE, "%s/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
+	printf("grid file: %s\n", GEO_PROP_FILE);
+	printf("redaing grid file ...\n");
     if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
         NCERR(retval);
-    free(GEO_PROP_FILE);
     int direction_id, latitude_scalar_id, longitude_scalar_id, latitude_vector_id, longitude_vector_id, z_scalar_id, z_vector_id, gravity_potential_id, stretching_parameter_grid_id;
     double stretching_parameter_grid;
     if ((retval = nc_inq_varid(ncid_grid, "direction", &direction_id)))
@@ -118,13 +121,15 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_close(ncid_grid)))
         NCERR(retval);
+	printf("Grid file read.\n");
+	
     int OUTPUT_FILE_LENGTH = 100;
     char *OUTPUT_FILE_PRE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(OUTPUT_FILE_PRE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour_string, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(OUTPUT_FILE_PRE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour_string, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
     OUTPUT_FILE_LENGTH = strlen(OUTPUT_FILE_PRE);
     free(OUTPUT_FILE_PRE);
     char *OUTPUT_FILE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(OUTPUT_FILE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour_string, RES_ID, NO_OF_LAYERS, (int) TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(OUTPUT_FILE, "%s/input/%s%s%s%s_nwp_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour_string, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
     
     // These are the arrays of the background state.
     double *temperature_gas_background = malloc(NO_OF_SCALARS*sizeof(double));
@@ -137,6 +142,7 @@ int main(int argc, char *argv[])
     double *solid_water_temperature_background = malloc(NO_OF_SCALARS*sizeof(double));
     
     // Reading the background state.
+	printf("reading background state ...\n");
     int ncid;
     if ((retval = nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
@@ -180,14 +186,16 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_close(ncid)))
         NCERR(retval);
+	printf("Background state read.\n");
 
 	// Comparing the stretching parameters of the grid and the background state.
 	if (stretching_parameter_grid != stretching_parameter_state)
 	{
-		printf("stretching_parameters of grid and background state do not conform.");
+		printf("stretching_parameters of grid and background state do not conform.\n");
 		printf("Aborting.\n");
 		exit(1);
 	}
+    free(GEO_PROP_FILE);
 	double stretching_parameter = stretching_parameter_grid;	
 	
 	// Allocating the memory for the observations.

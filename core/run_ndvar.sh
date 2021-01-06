@@ -11,6 +11,8 @@ model_home_directory=${BASH_ARGV[0]}
 orography_id=${BASH_ARGV[5]}
 background_file=${BASH_ARGV[6]}
 ndvar_root_dir=${BASH_ARGV[7]}
+orography_layers=${BASH_ARGV[8]}
+toa=${BASH_ARGV[9]}
 
 echo "This is ndvar."
 echo "Copyright (C) 2020 The ndvar development team."
@@ -19,7 +21,7 @@ echo "analysis year: "$analysis_year
 echo "analysis month: "$analysis_month
 echo "analysis day: "$analysis_day
 echo "analysis hour: "$analysis_hour
-mpirun -np 1 bin/ndvar $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $ndvar_root_dir
+mpirun -np 1 bin/ndvar $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $ndvar_root_dir $orography_layers $toa
 if [ $? -ne 0 ]
 then
 echo -e ${RED}Data assimilation failed.$NC
