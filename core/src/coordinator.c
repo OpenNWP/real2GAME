@@ -270,8 +270,8 @@ int main(int argc, char *argv[])
     }
     
     // Writing the result to a netcdf file.
-    printf("output file: %s", OUTPUT_FILE);
-    printf("writing result to output file ...");
+    printf("output file: %s\n", OUTPUT_FILE);
+    printf("writing result to output file ...\n");
     int scalar_dimid, vector_dimid, temp_id, density_dry_id, wind_id, density_vapour_id, density_liquid_id, density_solid_id, temperature_liquid_id, temperature_solid_id, single_double_dimid, stretching_parameter_id;
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
-    printf("Result successfully written.");
+    printf("Result successfully written.\n");
 
 	free(gravity_potential);
 	free(BACKGROUND_STATE_FILE);
