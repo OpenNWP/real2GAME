@@ -212,8 +212,10 @@ int main(int argc, char *argv[])
     free(OBSERVATIONS_FILE_PRE);
     char *OBSERVATIONS_FILE = malloc((OBSERVATIONS_FILE_LENGTH + 1)*sizeof(char));
 	sprintf(OBSERVATIONS_FILE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	printf("observations file: %s\n", OBSERVATIONS_FILE);
     
     // Reading the observations.
+	printf("reading observations ...\n");
     if ((retval = nc_open(OBSERVATIONS_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
     int latitude_obs_id, longitude_obs_id, vert_id, obervations_id, type_id;
@@ -240,6 +242,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
+	printf("Observations read.\n");
     
     // These are the arrays for the result of the assimilation process.
     double *temperature = malloc(NO_OF_SCALARS*sizeof(double));
@@ -267,6 +270,8 @@ int main(int argc, char *argv[])
     }
     
     // Writing the result to a netcdf file.
+    printf("output file: %s", OUTPUT_FILE);
+    printf("writing result to output file ...");
     int scalar_dimid, vector_dimid, temp_id, density_dry_id, wind_id, density_vapour_id, density_liquid_id, density_solid_id, temperature_liquid_id, temperature_solid_id, single_double_dimid, stretching_parameter_id;
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
@@ -332,6 +337,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
+    printf("Result successfully written.");
 
 	free(gravity_potential);
 	free(BACKGROUND_STATE_FILE);
