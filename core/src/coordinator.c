@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     char *GEO_PROP_FILE = malloc((GEO_PROP_FILE_LENGTH + 1)*sizeof(char));
     sprintf(GEO_PROP_FILE, "%s/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
 	printf("grid file: %s\n", GEO_PROP_FILE);
-	printf("redaing grid file ...\n");
+	printf("reading grid file ...\n");
     if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
         NCERR(retval);
     int direction_id, latitude_scalar_id, longitude_scalar_id, latitude_vector_id, longitude_vector_id, z_scalar_id, z_vector_id, gravity_potential_id, stretching_parameter_grid_id;
