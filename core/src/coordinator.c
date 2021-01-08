@@ -29,7 +29,7 @@ const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO
 // the number of observations that will actually be used (must be <= NO_OF_OBSERVATIONS)
 int NO_OF_USED_OBSERVATIONS = 1;
 
-int interpolate_bg_to_obs(double [], double [], double [], double [], double [], double [], double [], double []);
+int interpolate_bg_to_obs(double [], double [], double [], double [], double [], double [], double [], double [], double [][NO_OF_SCALARS]);
 
 int main(int argc, char *argv[])
 {	
@@ -254,6 +254,7 @@ int main(int argc, char *argv[])
     	NCERR(retval);
 	printf("Observations read.\n");
 	
+	// Begin of the actual assimilation.
 	// setting up the vector of used observations (for now, only the temperature field is used)
     double *used_obs_vector = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
     double *lat_used_obs = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
@@ -267,9 +268,72 @@ int main(int argc, char *argv[])
     	z_used_obs[i] = vert_vector[i*NO_OF_SCALARS/NO_OF_USED_OBSERVATIONS];
     }
     
-	// Begin of the actual assimilation.
-	// setting up the gain matrix
+    // setting up the measurement error covariance matrix
+    double (*obs_error_cov)[NO_OF_USED_OBSERVATIONS] = malloc(sizeof(double[NO_OF_USED_OBSERVATIONS][NO_OF_USED_OBSERVATIONS]));
+    double temperature_error_obs = 0.2;
+    for (int i = 0; i < NO_OF_USED_OBSERVATIONS; ++i)
+    {
+    	for (int j = 0; j < NO_OF_USED_OBSERVATIONS; ++j)
+    	{
+    		if (i == j)
+    		{
+    			obs_error_cov[i][j] = pow(temperature_error_obs, 2);
+    		}
+    		else
+    		{
+    			obs_error_cov[i][j] = 0;
+    		}
+    	}
+    }
+    
+    // setting up the background error covariance matrix (only the diagonal)
+    double *bg_error_cov = malloc(NO_OF_SCALARS*sizeof(double));
+    double temperature_error_model = 0.2;
+    for (int i = 0; i < NO_OF_SCALARS; ++i)
+    {
+		bg_error_cov[i] = pow(temperature_error_model, 2);
+    }
+    
+    // setting up the observations_operator
+    double (*obs_op)[NO_OF_SCALARS] = malloc(sizeof(double[NO_OF_USED_OBSERVATIONS][NO_OF_SCALARS]));
 	
+	// this vector will contain the values expected for the observations, assuming the background state
+	double *interpolated_model = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
+	// this vector wil contain the product of the model forecast error and the gain matrix
+	double *prod_with_gain_matrix = malloc(NO_OF_SCALARS*sizeof(double));
+	
+	interpolate_bg_to_obs(interpolated_model, lat_used_obs, lon_used_obs, z_used_obs, latitude_scalar, longitude_scalar, z_scalar, temperature_gas_background, obs_op);
+	
+	// now, all the constituents of the gain matrix are known
+	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
+	double (*b_ht)[NO_OF_USED_OBSERVATIONS] = malloc(sizeof(double[NO_OF_SCALARS][NO_OF_USED_OBSERVATIONS]));
+	
+	for (int i = 0; i < NO_OF_SCALARS; ++i)
+	{
+		for (int j = 0; j < NO_OF_USED_OBSERVATIONS; ++j)
+		{
+			b_ht[i][j] = bg_error_cov[i]*obs_op[j][i];
+		}
+	}
+	double (*h_b_ht_plus_r)[NO_OF_USED_OBSERVATIONS] = malloc(sizeof(double[NO_OF_USED_OBSERVATIONS][NO_OF_USED_OBSERVATIONS]));
+	
+	for (int i = 0; i < NO_OF_USED_OBSERVATIONS; ++i)
+	{
+		for (int j = 0; j < NO_OF_USED_OBSERVATIONS; ++j)
+		{
+			h_b_ht_plus_r[i][j] = 0;
+			for (int k = 0; k < NO_OF_SCALARS; ++k)
+			{
+				h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_op[i][k]*b_ht[k][j];
+			}
+			h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_error_cov[i][j];
+		}
+	}
+	
+	// h_b_ht_plus_r needs to be inversed in order to calculate the gain matrix
+	double (*h_b_ht_plus_r_inv)[NO_OF_USED_OBSERVATIONS] = malloc(sizeof(double[NO_OF_USED_OBSERVATIONS][NO_OF_USED_OBSERVATIONS]));
+	
+	// setting up the gain matrix
     double (*gain)[NO_OF_USED_OBSERVATIONS] = malloc(sizeof(double[NO_OF_SCALARS][NO_OF_USED_OBSERVATIONS]));
 	
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
@@ -277,15 +341,19 @@ int main(int argc, char *argv[])
 		for (int j = 0; j < NO_OF_USED_OBSERVATIONS; ++j)
 		{
 			gain[i][j] = 0;
+			for (int k = 0; k < NO_OF_USED_OBSERVATIONS; ++k)
+			{
+				gain[i][j] = gain[i][j] + b_ht[i][k]*h_b_ht_plus_r_inv[k][j];
+			}
 		}
 	}
 	
-	// this vector will contain the values expected for the observations, assuming the background state
-	double *interpolated_model = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
-	// this vector wil contain the product of the model forecast error and the gain matrix
-	double *prod_with_gain_matrix = malloc(NO_OF_SCALARS*sizeof(double));
-	
-	interpolate_bg_to_obs(interpolated_model, lat_used_obs, lon_used_obs, z_used_obs, latitude_scalar, longitude_scalar, z_scalar, temperature_gas_background);
+	free(h_b_ht_plus_r_inv);
+	free(b_ht);
+	free(h_b_ht_plus_r);
+	free(obs_error_cov);
+	free(bg_error_cov);
+	free(obs_op);
 	free(lat_used_obs);
 	free(lon_used_obs);
 	free(z_used_obs);
@@ -453,7 +521,7 @@ int main(int argc, char *argv[])
 }
 
 
-int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
+int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[], double obs_op [][NO_OF_SCALARS])
 {
 	// this functions calculates the expected values for the observations from the background state
 	double weight, sum_of_weights, distance;
@@ -482,6 +550,22 @@ int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], do
 			sum_of_weights += weight;
 		}
 		interpolated_model[i] = interpolated_model[i]/sum_of_weights;
+		
+		// determining the derivative of the interpolation (the observations operator)
+		for (int j = 0; j < NO_OF_SCALARS_H; ++j)
+		{
+			// finding out which layer is the closest to the observation
+			for (int k = 0; k < NO_OF_LAYERS; ++k)
+			{
+				vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + j] - z_used_obs[i]);
+			}
+			min_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
+			// radius does not matter here
+			distance = calculate_distance_h(lat_used_obs[i], lon_used_obs[i], lat_model[j], lon_model[j], 1);
+			// 1/r-interpolation
+			weight = 1/distance;
+			obs_op[i][j] = weight/sum_of_weights;
+		}
 	}
 	return 0;
 }
