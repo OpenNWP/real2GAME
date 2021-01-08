@@ -26,9 +26,19 @@ const int NO_OF_FIELDS_PER_LAYER_OBS = 2;
 const int NO_OF_SURFACE_FIELDS_OBS = 2;
 const int NO_OF_POINTS_PER_LAYER_OBS = 10242;
 const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
+// the number of observations that will actually be used (must be <= NO_OF_OBSERVATIONS)
+int NO_OF_USED_OBSERVATIONS = 1;
+
+int interpolate_bg_to_obs(double interpolated_model[]);
 
 int main(int argc, char *argv[])
 {	
+	if (NO_OF_USED_OBSERVATIONS > NO_OF_OBSERVATIONS)
+	{
+		printf("It is NO_OF_USED_OBSERVATIONS > NO_OF_OBSERVATIONS.\n");
+		printf("Aborting.\n");
+		exit(1);
+	}
     size_t len = strlen(argv[1]);
     char *year_string = malloc((len + 1)*sizeof(char));
     strcpy(year_string, argv[1]);
@@ -243,6 +253,57 @@ int main(int argc, char *argv[])
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
 	printf("Observations read.\n");
+	
+	// setting up the vector of used observations (for now, only the temperature field is used)
+    double *used_obs_vector = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
+    for (int i = 0; i < NO_OF_USED_OBSERVATIONS; ++i)
+    {
+    	used_obs_vector[i] = observations_vector[i*NO_OF_SCALARS/NO_OF_USED_OBSERVATIONS];
+    }
+    
+	// Begin of the actual assimilation.
+	// setting up the gain matrix
+	
+    double (*gain)[NO_OF_USED_OBSERVATIONS] = malloc(sizeof(double[NO_OF_SCALARS][NO_OF_USED_OBSERVATIONS]));
+	
+	for (int i = 0; i < NO_OF_SCALARS; ++i)
+	{	
+		for (int j = 0; j < NO_OF_USED_OBSERVATIONS; ++j)
+		{
+			gain[i][j] = 0;
+		}
+	}
+	
+	// this vector will contain the values expected for the observations, assuming the background state
+	double *interpolated_model = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
+	// this vector wil contain the product of the model forecast error and the gain matrix
+	double *prod_with_gain_matrix = malloc(NO_OF_SCALARS*sizeof(double));
+	
+	interpolate_bg_to_obs(interpolated_model);
+	
+	// multiplying (obs - (interpolated model)) by the gain matrix
+	for (int i = 0; i < NO_OF_SCALARS; ++i)
+	{	
+		prod_with_gain_matrix[i] = 0;
+		for (int j = 0; j < NO_OF_USED_OBSERVATIONS; ++j)
+		{
+			prod_with_gain_matrix[i] += gain[i][j]*(used_obs_vector[j] - interpolated_model[j]);
+		}
+	}
+	
+	free(interpolated_model);
+	
+	double *model_vector = malloc(NO_OF_SCALARS*sizeof(double));
+	
+	for (int i = 0; i < NO_OF_SCALARS; ++i)
+	{
+		model_vector[i] = temperature_gas_background[i] + prod_with_gain_matrix[i];
+	}
+	
+	free(gain);
+	free(prod_with_gain_matrix);
+	free(used_obs_vector);
+	// End of the actual assimilation
     
     // These are the arrays for the result of the assimilation process.
     double *temperature = malloc(NO_OF_SCALARS*sizeof(double));
@@ -256,7 +317,7 @@ int main(int argc, char *argv[])
     
     for (int i = 0; i < NO_OF_SCALARS; ++i)
     {
-    	temperature[i] = temperature_gas_background[i];
+    	temperature[i] = model_vector[i];
     	density_dry[i] = density_dry_background[i];
 		water_vapour_density[i] = water_vapour_density_background[i];
 		liquid_water_density[i] = liquid_water_density_background[i];
@@ -268,6 +329,8 @@ int main(int argc, char *argv[])
     {
     	wind[i] = wind_background[i];
     }
+    
+    free(model_vector);
     
     // Writing the result to a netcdf file.
     printf("output file: %s\n", OUTPUT_FILE);
@@ -381,6 +444,15 @@ int main(int argc, char *argv[])
 }
 
 
+int interpolate_bg_to_obs(double interpolated_model[])
+{
+	// this functions calculates the expected values for the observations from the background state
+	for (int i = 0; i < NO_OF_USED_OBSERVATIONS; ++i)
+	{
+		interpolated_model[i] = 0;
+	}
+	return 0;
+}
 
 
 
