@@ -29,7 +29,7 @@ const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO
 // the number of observations that will actually be used (must be <= NO_OF_OBSERVATIONS)
 int NO_OF_USED_OBSERVATIONS = 1;
 
-int interpolate_bg_to_obs(double interpolated_model[]);
+int interpolate_bg_to_obs(double [], double [], double [], double [], double [], double [], double [], double []);
 
 int main(int argc, char *argv[])
 {	
@@ -256,9 +256,15 @@ int main(int argc, char *argv[])
 	
 	// setting up the vector of used observations (for now, only the temperature field is used)
     double *used_obs_vector = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
+    double *lat_used_obs = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
+    double *lon_used_obs = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
+    double *z_used_obs = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
     for (int i = 0; i < NO_OF_USED_OBSERVATIONS; ++i)
     {
     	used_obs_vector[i] = observations_vector[i*NO_OF_SCALARS/NO_OF_USED_OBSERVATIONS];
+    	lat_used_obs[i] = latitude_vector_obs[i*NO_OF_SCALARS/NO_OF_USED_OBSERVATIONS];
+    	lon_used_obs[i] = longitude_vector_obs[i*NO_OF_SCALARS/NO_OF_USED_OBSERVATIONS];
+    	z_used_obs[i] = vert_vector[i*NO_OF_SCALARS/NO_OF_USED_OBSERVATIONS];
     }
     
 	// Begin of the actual assimilation.
@@ -279,7 +285,10 @@ int main(int argc, char *argv[])
 	// this vector wil contain the product of the model forecast error and the gain matrix
 	double *prod_with_gain_matrix = malloc(NO_OF_SCALARS*sizeof(double));
 	
-	interpolate_bg_to_obs(interpolated_model);
+	interpolate_bg_to_obs(interpolated_model, lat_used_obs, lon_used_obs, z_used_obs, latitude_scalar, longitude_scalar, z_scalar, temperature_gas_background);
+	free(lat_used_obs);
+	free(lon_used_obs);
+	free(z_used_obs);
 	
 	// multiplying (obs - (interpolated model)) by the gain matrix
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
@@ -444,12 +453,35 @@ int main(int argc, char *argv[])
 }
 
 
-int interpolate_bg_to_obs(double interpolated_model[])
+int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
 {
 	// this functions calculates the expected values for the observations from the background state
+	double weight, sum_of_weights, distance;
+	double vert_distance_vector[NO_OF_LAYERS];
+	int min_index;
+	// loop over all observations to which we want to interpolate
 	for (int i = 0; i < NO_OF_USED_OBSERVATIONS; ++i)
 	{
+		// initializing the sum of interpolation weights as well as the interpolated value
+		sum_of_weights = 0;
 		interpolated_model[i] = 0;
+		// loop over all horizontal model gridpoints
+		for (int j = 0; j < NO_OF_SCALARS_H; ++j)
+		{
+			// finding out which layer is the closest to the observation
+			for (int k = 0; k < NO_OF_LAYERS; ++k)
+			{
+				vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + j] - z_used_obs[i]);
+			}
+			min_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
+			// radius does not matter here
+			distance = calculate_distance_h(lat_used_obs[i], lon_used_obs[i], lat_model[j], lon_model[j], 1);
+			// 1/r-interpolation
+			weight = 1/distance;
+			interpolated_model[i] += weight*background[min_index*NO_OF_SCALARS_H + j];
+			sum_of_weights += weight;
+		}
+		interpolated_model[i] = interpolated_model[i]/sum_of_weights;
 	}
 	return 0;
 }
