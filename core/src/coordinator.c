@@ -24,21 +24,14 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 const int NO_OF_LEVELS_OBS = 3;
 const int NO_OF_FIELDS_PER_LAYER_OBS = 2;
 const int NO_OF_SURFACE_FIELDS_OBS = 2;
-const int NO_OF_POINTS_PER_LAYER_OBS = 10242;
+const int NO_OF_POINTS_PER_LAYER_OBS = 10;
 const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
 // the number of observations that will actually be used (must be <= NO_OF_OBSERVATIONS)
-int NO_OF_USED_OBSERVATIONS = 1;
 
 int interpolate_bg_to_obs(double [], double [], double [], double [], double [], double [], double [], double [], double [][NO_OF_SCALARS]);
 
 int main(int argc, char *argv[])
 {	
-	if (NO_OF_USED_OBSERVATIONS > NO_OF_OBSERVATIONS)
-	{
-		printf("It is NO_OF_USED_OBSERVATIONS > NO_OF_OBSERVATIONS.\n");
-		printf("Aborting.\n");
-		exit(1);
-	}
     size_t len = strlen(argv[1]);
     char *year_string = malloc((len + 1)*sizeof(char));
     strcpy(year_string, argv[1]);
@@ -255,25 +248,13 @@ int main(int argc, char *argv[])
 	printf("Observations read.\n");
 	
 	// Begin of the actual assimilation.
-	// setting up the vector of used observations (for now, only the temperature field is used)
-    double *used_obs_vector = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
-    double *lat_used_obs = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
-    double *lon_used_obs = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
-    double *z_used_obs = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
-    for (int i = 0; i < NO_OF_USED_OBSERVATIONS; ++i)
-    {
-    	used_obs_vector[i] = observations_vector[i*NO_OF_SCALARS/NO_OF_USED_OBSERVATIONS];
-    	lat_used_obs[i] = latitude_vector_obs[i*NO_OF_SCALARS/NO_OF_USED_OBSERVATIONS];
-    	lon_used_obs[i] = longitude_vector_obs[i*NO_OF_SCALARS/NO_OF_USED_OBSERVATIONS];
-    	z_used_obs[i] = vert_vector[i*NO_OF_SCALARS/NO_OF_USED_OBSERVATIONS];
-    }
     
     // setting up the measurement error covariance matrix
-    double (*obs_error_cov)[NO_OF_USED_OBSERVATIONS] = malloc(sizeof(double[NO_OF_USED_OBSERVATIONS][NO_OF_USED_OBSERVATIONS]));
+    double (*obs_error_cov)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
     double temperature_error_obs = 0.2;
-    for (int i = 0; i < NO_OF_USED_OBSERVATIONS; ++i)
+    for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
     {
-    	for (int j = 0; j < NO_OF_USED_OBSERVATIONS; ++j)
+    	for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
     	{
     		if (i == j)
     		{
@@ -295,31 +276,31 @@ int main(int argc, char *argv[])
     }
     
     // setting up the observations_operator
-    double (*obs_op)[NO_OF_SCALARS] = malloc(sizeof(double[NO_OF_USED_OBSERVATIONS][NO_OF_SCALARS]));
+    double (*obs_op)[NO_OF_SCALARS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_SCALARS]));
 	
 	// this vector will contain the values expected for the observations, assuming the background state
-	double *interpolated_model = malloc(NO_OF_USED_OBSERVATIONS*sizeof(double));
+	double *interpolated_model = malloc(NO_OF_OBSERVATIONS*sizeof(double));
 	// this vector wil contain the product of the model forecast error and the gain matrix
 	double *prod_with_gain_matrix = malloc(NO_OF_SCALARS*sizeof(double));
 	
-	interpolate_bg_to_obs(interpolated_model, lat_used_obs, lon_used_obs, z_used_obs, latitude_scalar, longitude_scalar, z_scalar, temperature_gas_background, obs_op);
+	interpolate_bg_to_obs(interpolated_model, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, temperature_gas_background, obs_op);
 	
 	// now, all the constituents of the gain matrix are known
 	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
-	double (*b_ht)[NO_OF_USED_OBSERVATIONS] = malloc(sizeof(double[NO_OF_SCALARS][NO_OF_USED_OBSERVATIONS]));
+	double (*b_ht)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_SCALARS][NO_OF_OBSERVATIONS]));
 	
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
-		for (int j = 0; j < NO_OF_USED_OBSERVATIONS; ++j)
+		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
 		{
 			b_ht[i][j] = bg_error_cov[i]*obs_op[j][i];
 		}
 	}
-	double (*h_b_ht_plus_r)[NO_OF_USED_OBSERVATIONS] = malloc(sizeof(double[NO_OF_USED_OBSERVATIONS][NO_OF_USED_OBSERVATIONS]));
+	double (*h_b_ht_plus_r)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
 	
-	for (int i = 0; i < NO_OF_USED_OBSERVATIONS; ++i)
+	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
 	{
-		for (int j = 0; j < NO_OF_USED_OBSERVATIONS; ++j)
+		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
 		{
 			h_b_ht_plus_r[i][j] = 0;
 			for (int k = 0; k < NO_OF_SCALARS; ++k)
@@ -331,22 +312,53 @@ int main(int argc, char *argv[])
 	}
 	
 	// h_b_ht_plus_r needs to be inversed in order to calculate the gain matrix
-	double (*h_b_ht_plus_r_inv)[NO_OF_USED_OBSERVATIONS] = malloc(sizeof(double[NO_OF_USED_OBSERVATIONS][NO_OF_USED_OBSERVATIONS]));
+	// this is actually the main task of 3D-Var
+	double (*h_b_ht_plus_r_inv)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
+	// firstly, the inverse is initialized with the original matrix
+	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
+	{
+		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
+		{
+			h_b_ht_plus_r_inv[i][j] = h_b_ht_plus_r[i][j];
+		}
+	}
 	
-	// setting up the gain matrix
-    double (*gain)[NO_OF_USED_OBSERVATIONS] = malloc(sizeof(double[NO_OF_SCALARS][NO_OF_USED_OBSERVATIONS]));
+	// Gaussian downwarrds
+	double factor = 0;
+	// starting with the second line, down to the lowest line
+	for (int i = 1; i < NO_OF_OBSERVATIONS; ++i)
+	{
+		factor = -h_b_ht_plus_r_inv[i][i - 1]/h_b_ht_plus_r_inv[i - 1][i - 1];
+		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
+		{
+			h_b_ht_plus_r_inv[i][j] = h_b_ht_plus_r_inv[i][j] + factor*h_b_ht_plus_r_inv[i - 1][j];
+		}
+	}
+	// Gaussian upwards
+	// starting with the last but one line, then going up to the first
+	for (int i = NO_OF_OBSERVATIONS - 2; i >= 0; --i)
+	{
+		factor = -h_b_ht_plus_r_inv[i][i + 1]/h_b_ht_plus_r_inv[i + 1][i + 1];
+		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
+		{
+			h_b_ht_plus_r_inv[i][j] = h_b_ht_plus_r_inv[i][j] + factor*h_b_ht_plus_r_inv[i + 1][j];
+		}
+	}
 	
+	// now, the gain matrix can finally be put together
+    double (*gain)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_SCALARS][NO_OF_OBSERVATIONS]));
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{	
-		for (int j = 0; j < NO_OF_USED_OBSERVATIONS; ++j)
+		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
 		{
 			gain[i][j] = 0;
-			for (int k = 0; k < NO_OF_USED_OBSERVATIONS; ++k)
+			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
 			{
 				gain[i][j] = gain[i][j] + b_ht[i][k]*h_b_ht_plus_r_inv[k][j];
 			}
 		}
 	}
+	// now, the main job is already done
 	
 	free(h_b_ht_plus_r_inv);
 	free(b_ht);
@@ -354,17 +366,14 @@ int main(int argc, char *argv[])
 	free(obs_error_cov);
 	free(bg_error_cov);
 	free(obs_op);
-	free(lat_used_obs);
-	free(lon_used_obs);
-	free(z_used_obs);
 	
 	// multiplying (obs - (interpolated model)) by the gain matrix
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{	
 		prod_with_gain_matrix[i] = 0;
-		for (int j = 0; j < NO_OF_USED_OBSERVATIONS; ++j)
+		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
 		{
-			prod_with_gain_matrix[i] += gain[i][j]*(used_obs_vector[j] - interpolated_model[j]);
+			prod_with_gain_matrix[i] += gain[i][j]*(observations_vector[j] - interpolated_model[j]);
 		}
 	}
 	
@@ -379,7 +388,7 @@ int main(int argc, char *argv[])
 	
 	free(gain);
 	free(prod_with_gain_matrix);
-	free(used_obs_vector);
+	free(observations_vector);
 	// End of the actual assimilation
     
     // These are the arrays for the result of the assimilation process.
@@ -528,7 +537,7 @@ int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], do
 	double vert_distance_vector[NO_OF_LAYERS];
 	int min_index;
 	// loop over all observations to which we want to interpolate
-	for (int i = 0; i < NO_OF_USED_OBSERVATIONS; ++i)
+	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
 	{
 		// initializing the sum of interpolation weights as well as the interpolated value
 		sum_of_weights = 0;
