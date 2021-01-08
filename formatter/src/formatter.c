@@ -19,12 +19,12 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(ERRCODE);}
 
 const int NO_OF_OBS_LEVELS_OBS = 3;
-const int NO_OF_FIELDS_PER_LAYER_OBS = 2;
-const int NO_OF_SURFACE_FIELDS_OBS = 2;
+const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
+const int NO_OF_SURFACE_FIELDS_OBS = 0;
 // the number of points per layer of the input model
 const int NO_OF_POINTS_PER_LAYER_OBS = 2949120;
 // the number of points per layer that are actually picked for the assimilation process
-const int NO_OF_CHOSEN_POINTS_PER_LAYER = 10;
+const int NO_OF_CHOSEN_POINTS_PER_LAYER = 100;
 const int NO_OF_OBSERVATIONS = (NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
 const int NO_OF_CHOSEN_OBSERVATIONS = (NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_CHOSEN_POINTS_PER_LAYER;
 
@@ -177,113 +177,134 @@ int main(int argc, char *argv[])
 		// writing the coordinates of the grid points
 		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
 		{
-			latitude_vector[level_index*2*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
-			latitude_vector[(level_index*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
-			
-			longitude_vector[level_index*2*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
-			longitude_vector[(level_index*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
-			
-			vert_vector[level_index*2*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = vert_vector_free_atmosphere[chosen_indices[i]];
-			vert_vector[(level_index*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = vert_vector_free_atmosphere[chosen_indices[i]];
-			
-			observations_vector[level_index*2*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = temperature_one_layer[chosen_indices[i]];
-			observations_vector[(level_index*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = spec_hum_one_layer[chosen_indices[i]];
-			
-			type_vector[level_index*2*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 0;
-			type_vector[(level_index*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 2;
+			for (int j = 0; j < NO_OF_FIELDS_PER_LAYER_OBS; ++j)
+			{
+				latitude_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
+				longitude_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
+				vert_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = vert_vector_free_atmosphere[chosen_indices[i]];
+				
+				if (j == 0)
+				{
+					observations_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = temperature_one_layer[chosen_indices[i]];
+				}
+				if (j == 1)
+				{
+					observations_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = spec_hum_one_layer[chosen_indices[i]];
+				}
+				
+				if (j == 0)
+				{
+					type_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 0;
+				}
+				if (j == 1)
+				{
+					type_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 2;
+				}
+			}
 		}
 	}
 	
-    // surface height
-	int SFC_OBS_FILE_LENGTH = 100;
-    char *SFC_OBS_FILE_PRE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(SFC_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-    SFC_OBS_FILE_LENGTH = strlen(SFC_OBS_FILE_PRE);
-	free(SFC_OBS_FILE_PRE);
-    char *SFC_OBS_FILE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(SFC_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-    
-	ECC_FILE = fopen(SFC_OBS_FILE, "r");
-	free(SFC_OBS_FILE);
-	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
-	if (err != 0)
-		ECCERR(err);
-	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
-	if ((retval = codes_get_double_array(handle, "values", &surface_height[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
-		ECCERR(retval);
-	codes_handle_delete(handle);
-    fclose(ECC_FILE);
-	
-    // reading the surface presure
-	double *pressure_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
-	
-	int SFC_PRES_FILE_LENGTH = 100;
-    char *SFC_PRES_FILE_PRE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(SFC_PRES_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-    SFC_PRES_FILE_LENGTH = strlen(SFC_PRES_FILE_PRE);
-	free(SFC_PRES_FILE_PRE);
-    char *SFC_PRES_FILE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(SFC_PRES_FILE, "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-    
-	ECC_FILE = fopen(SFC_PRES_FILE, "r");
-	free(SFC_PRES_FILE);
-	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
-	if (err != 0)
-		ECCERR(err);
-	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
-	if ((retval = codes_get_double_array(handle, "values", &pressure_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
-		ECCERR(retval);
-	codes_handle_delete(handle);
-    fclose(ECC_FILE);
-	
-	// writing the surface pressure to the observations
-    for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
-    {
-    	latitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
-    	
-    	longitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
-    	
-    	vert_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = surface_height[chosen_indices[i]];
-    	
-    	observations_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = pressure_one_layer[chosen_indices[i]];
-    	
-    	type_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 1;
+	// reading the surface height
+	if (NO_OF_SURFACE_FIELDS_OBS > 0)
+	{
+		int SFC_OBS_FILE_LENGTH = 100;
+		char *SFC_OBS_FILE_PRE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(SFC_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+		SFC_OBS_FILE_LENGTH = strlen(SFC_OBS_FILE_PRE);
+		free(SFC_OBS_FILE_PRE);
+		char *SFC_OBS_FILE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(SFC_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+		
+		ECC_FILE = fopen(SFC_OBS_FILE, "r");
+		free(SFC_OBS_FILE);
+		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		if (err != 0)
+			ECCERR(err);
+		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+		if ((retval = codes_get_double_array(handle, "values", &surface_height[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+			ECCERR(retval);
+		codes_handle_delete(handle);
+		fclose(ECC_FILE);
     }
-    
-    // reading the total precipitation rate
-	double *tot_prec = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	
-	int TOT_PREC_FILE_LENGTH = 100;
-    char *TOT_PREC_FILE_PRE = malloc((TOT_PREC_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(TOT_PREC_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_001_TOT_PREC.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-    TOT_PREC_FILE_LENGTH = strlen(TOT_PREC_FILE_PRE);
-	free(TOT_PREC_FILE_PRE);
-    char *TOT_PREC_FILE = malloc((TOT_PREC_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(TOT_PREC_FILE, "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_001_TOT_PREC.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-    
-	ECC_FILE = fopen(TOT_PREC_FILE, "r");
-	free(TOT_PREC_FILE);
-	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
-	if (err != 0)
-		ECCERR(err);
-	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
-	if ((retval = codes_get_double_array(handle, "values", &tot_prec[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
-		ECCERR(retval);
-	codes_handle_delete(handle);
-    fclose(ECC_FILE);
 	
-	// writing the total precipitation rate to the observations
-    for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
-    {
-    	latitude_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
-    	
-    	longitude_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
-    	
-    	vert_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = tot_prec[chosen_indices[i]];
-    	
-    	observations_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = pressure_one_layer[chosen_indices[i]];
-    	
-    	type_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 1;
+	if (NO_OF_SURFACE_FIELDS_OBS == 2)
+	{
+		// reading the surface presure
+		double *pressure_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+		
+		int SFC_PRES_FILE_LENGTH = 100;
+		char *SFC_PRES_FILE_PRE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(SFC_PRES_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+		SFC_PRES_FILE_LENGTH = strlen(SFC_PRES_FILE_PRE);
+		free(SFC_PRES_FILE_PRE);
+		char *SFC_PRES_FILE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(SFC_PRES_FILE, "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+		
+		ECC_FILE = fopen(SFC_PRES_FILE, "r");
+		free(SFC_PRES_FILE);
+		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		if (err != 0)
+			ECCERR(err);
+		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+		if ((retval = codes_get_double_array(handle, "values", &pressure_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+			ECCERR(retval);
+		codes_handle_delete(handle);
+		fclose(ECC_FILE);
+		
+		// writing the surface pressure to the observations
+		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
+		{
+			latitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
+			
+			longitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
+			
+			vert_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = surface_height[chosen_indices[i]];
+			
+			observations_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = pressure_one_layer[chosen_indices[i]];
+			
+			type_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 1;
+		}
+		
+		// reading the total precipitation rate
+		double *tot_prec = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+		
+		int TOT_PREC_FILE_LENGTH = 100;
+		char *TOT_PREC_FILE_PRE = malloc((TOT_PREC_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(TOT_PREC_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_001_TOT_PREC.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+		TOT_PREC_FILE_LENGTH = strlen(TOT_PREC_FILE_PRE);
+		free(TOT_PREC_FILE_PRE);
+		char *TOT_PREC_FILE = malloc((TOT_PREC_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(TOT_PREC_FILE, "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_001_TOT_PREC.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+		
+		ECC_FILE = fopen(TOT_PREC_FILE, "r");
+		free(TOT_PREC_FILE);
+		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		if (err != 0)
+			ECCERR(err);
+		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+		if ((retval = codes_get_double_array(handle, "values", &tot_prec[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+			ECCERR(retval);
+		codes_handle_delete(handle);
+		fclose(ECC_FILE);
+		
+		// writing the total precipitation rate to the observations
+		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
+		{
+			latitude_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
+			
+			longitude_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
+			
+			vert_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = tot_prec[chosen_indices[i]];
+			
+			observations_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = pressure_one_layer[chosen_indices[i]];
+			
+			type_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 1;
+		}
+    
+    	free(tot_prec);
+		free(pressure_one_layer);
+    
     }
     
     // Writing the observations to a netcdf file.
@@ -332,9 +353,7 @@ int main(int argc, char *argv[])
     	NCERR(retval);
     
     // Freeing the memory.
-    free(tot_prec);
     free(chosen_indices);
-	free(pressure_one_layer);
 	free(temperature_one_layer);
 	free(spec_hum_one_layer);
     free(ndvar_root_dir);

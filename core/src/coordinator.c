@@ -22,9 +22,9 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 #define C_D_P 1005.0
 
 const int NO_OF_LEVELS_OBS = 3;
-const int NO_OF_FIELDS_PER_LAYER_OBS = 2;
-const int NO_OF_SURFACE_FIELDS_OBS = 2;
-const int NO_OF_POINTS_PER_LAYER_OBS = 10;
+const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
+const int NO_OF_SURFACE_FIELDS_OBS = 0;
+const int NO_OF_POINTS_PER_LAYER_OBS = 100;
 const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
 // the number of observations that will actually be used (must be <= NO_OF_OBSERVATIONS)
 
@@ -517,7 +517,6 @@ int main(int argc, char *argv[])
 	free(latitude_vector_obs);
 	free(longitude_vector_obs);
 	free(vert_vector);
-	free(observations_vector);
 	free(type_vector);
     free(z_vector);
     free(latitude_scalar);
