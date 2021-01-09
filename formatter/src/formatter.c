@@ -18,14 +18,19 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 #define ERRCODE 3
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(ERRCODE);}
 
+// number of levels in the free atmosphere from which we want to use data
 const int NO_OF_OBS_LEVELS_OBS = 3;
+// number of fields per layer which we want to use
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
+// no of fields at the surface we want to use
 const int NO_OF_SURFACE_FIELDS_OBS = 0;
 // the number of points per layer of the input model
 const int NO_OF_POINTS_PER_LAYER_OBS = 2949120;
 // the number of points per layer that are actually picked for the assimilation process
 const int NO_OF_CHOSEN_POINTS_PER_LAYER = 10;
+// the total number of available observations
 const int NO_OF_OBSERVATIONS = (NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
+// the number of observations we want to actually use
 const int NO_OF_CHOSEN_OBSERVATIONS = (NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_CHOSEN_POINTS_PER_LAYER;
 
 int main(int argc, char *argv[])
@@ -56,8 +61,6 @@ int main(int argc, char *argv[])
 	// Properties of the input model's grid.
 	double *latitude_vector_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	double *longitude_vector_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
-	double *vert_vector_free_atmosphere = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
-	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
     
 	int retval, err;
 	codes_handle *handle = NULL;
@@ -86,7 +89,7 @@ int main(int argc, char *argv[])
     
     for (int i = 0; i < NO_OF_POINTS_PER_LAYER_OBS; ++i)
     {
-    	latitude_vector_one_layer[i] = latitude_vector_one_layer[i]/(2*M_PI);
+    	latitude_vector_one_layer[i] = 2*M_PI*latitude_vector_one_layer[i]/360;
     }
     
     // longitudes of the grid
@@ -111,7 +114,7 @@ int main(int argc, char *argv[])
     
     for (int i = 0; i < NO_OF_POINTS_PER_LAYER_OBS; ++i)
     {
-    	longitude_vector_one_layer[i] = longitude_vector_one_layer[i]/(2*M_PI);
+    	longitude_vector_one_layer[i] = 2*M_PI*longitude_vector_one_layer[i]/360;
     }
     
 	// Allocating the memory for the final result.
@@ -132,8 +135,32 @@ int main(int argc, char *argv[])
 		chosen_indices[i] = NO_OF_OBSERVATIONS/NO_OF_CHOSEN_OBSERVATIONS*i;
 	}
 	
+	// reading the data from the free atmosphere
+	double *vert_vector_free_atmosphere = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	// loop over all relevant level in the free atmosphere
 	for (int level_index = 0; level_index < NO_OF_OBS_LEVELS_OBS; ++level_index)
 	{
+		
+		// vertical position of the current layer
+		int Z_OBS_FILE_LENGTH = 100;
+		char *Z_OBS_FILE_PRE = malloc((Z_OBS_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(Z_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_%d_HHL.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		Z_OBS_FILE_LENGTH = strlen(Z_OBS_FILE_PRE);
+		free(Z_OBS_FILE_PRE);
+		char *Z_OBS_FILE = malloc((Z_OBS_FILE_LENGTH + 1)*sizeof(char));
+		sprintf(Z_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_%d_HHL.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		
+		ECC_FILE = fopen(Z_OBS_FILE, "r");
+		free(Z_OBS_FILE);
+		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		if (err != 0)
+			ECCERR(err);
+		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+		if ((retval = codes_get_double_array(handle, "values", &vert_vector_free_atmosphere[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+			ECCERR(retval);
+		codes_handle_delete(handle);
+		fclose(ECC_FILE);
+		
 	   	// reading the temperature
 		int TEMPERATURE_FILE_LENGTH = 100;
 		char *TEMPERATURE_FILE_PRE = malloc((TEMPERATURE_FILE_LENGTH + 1)*sizeof(char));
@@ -174,7 +201,7 @@ int main(int argc, char *argv[])
 		codes_handle_delete(handle);
 		fclose(ECC_FILE);
 		
-		// writing the coordinates of the grid points
+		// formatting the observations
 		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
 		{
 			for (int j = 0; j < NO_OF_FIELDS_PER_LAYER_OBS; ++j)
@@ -205,6 +232,7 @@ int main(int argc, char *argv[])
 	}
 	
 	// reading the surface height
+	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	// this only needs to be done if we have surface fields
 	if (NO_OF_SURFACE_FIELDS_OBS > 0)
 	{
@@ -296,9 +324,9 @@ int main(int argc, char *argv[])
 			
 			longitude_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
 			
-			vert_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = tot_prec[chosen_indices[i]];
+			vert_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = surface_height[chosen_indices[i]];
 			
-			observations_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = pressure_one_layer[chosen_indices[i]];
+			observations_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = tot_prec[chosen_indices[i]];
 			
 			type_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 1;
 		}

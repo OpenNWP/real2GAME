@@ -311,36 +311,59 @@ int main(int argc, char *argv[])
 	}
 	
 	// h_b_ht_plus_r needs to be inversed in order to calculate the gain matrix
-	// this is actually the main task of 3D-Var
+	// this is actually the main task of OI
 	double (*h_b_ht_plus_r_inv)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
-	// firstly, the inverse is initialized with the original matrix
+	// firstly, the inverse is initialized with the unity matrix
 	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
 	{
 		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
 		{
-			h_b_ht_plus_r_inv[i][j] = h_b_ht_plus_r[i][j];
+			h_b_ht_plus_r_inv[i][j] = 0;
+			if (i == j)
+			{
+				h_b_ht_plus_r_inv[i][j] = 1;
+			}
 		}
 	}
-	
-	// Gaussian downwarrds
+	// we will start to modify h_b_ht_plus_r now (misuse of name)
+	// Gaussian downwards
 	double factor = 0;
-	// starting with the second line, down to the lowest line
-	for (int i = 1; i < NO_OF_OBSERVATIONS; ++i)
+	// starting with the first line, down to the second but last line
+	for (int i = 0; i < NO_OF_OBSERVATIONS - 1; ++i)
 	{
-		factor = -h_b_ht_plus_r_inv[i][i - 1]/h_b_ht_plus_r_inv[i - 1][i - 1];
+		// dividing the line by h_b_ht_plus_r[i][i]
 		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
 		{
-			h_b_ht_plus_r_inv[i][j] = h_b_ht_plus_r_inv[i][j] + factor*h_b_ht_plus_r_inv[i - 1][j];
+			h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j]/h_b_ht_plus_r[i][i];
+			h_b_ht_plus_r_inv[i][j] = h_b_ht_plus_r_inv[i][j]/h_b_ht_plus_r[i][i];
 		}
+		for (int j = i + 1; j < NO_OF_OBSERVATIONS; ++j)
+		{
+			factor = -h_b_ht_plus_r[j][i];
+			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
+			{
+				h_b_ht_plus_r[j][k] = h_b_ht_plus_r[j][k] + factor*h_b_ht_plus_r[i][k];
+				h_b_ht_plus_r_inv[j][k] = h_b_ht_plus_r_inv[j][k] + factor*h_b_ht_plus_r_inv[i][k];
+			}
+		}
+	}
+	for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
+	{
+		h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][j] = h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][j]/h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][NO_OF_OBSERVATIONS - 1];
+		h_b_ht_plus_r_inv[NO_OF_OBSERVATIONS - 1][j] = h_b_ht_plus_r_inv[NO_OF_OBSERVATIONS - 1][j]/h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][NO_OF_OBSERVATIONS - 1];
 	}
 	// Gaussian upwards
-	// starting with the last but one line, then going up to the first
-	for (int i = NO_OF_OBSERVATIONS - 2; i >= 0; --i)
+	// starting with the last line, then going up to the last but first
+	for (int i = NO_OF_OBSERVATIONS - 1; i >= 1; --i)
 	{
-		factor = -h_b_ht_plus_r_inv[i][i + 1]/h_b_ht_plus_r_inv[i + 1][i + 1];
-		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
+		for (int j = i - 1; j >= 0; --j)
 		{
-			h_b_ht_plus_r_inv[i][j] = h_b_ht_plus_r_inv[i][j] + factor*h_b_ht_plus_r_inv[i + 1][j];
+			factor = -h_b_ht_plus_r[j][i];
+			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
+			{
+				h_b_ht_plus_r[j][k] = h_b_ht_plus_r[j][k] + factor*h_b_ht_plus_r[i][k];
+				h_b_ht_plus_r_inv[j][k] = h_b_ht_plus_r_inv[j][k] + factor*h_b_ht_plus_r_inv[i][k];
+			}
 		}
 	}
 	
@@ -366,7 +389,7 @@ int main(int argc, char *argv[])
 	free(bg_error_cov);
 	free(obs_op);
 	
-	// this vector wil contain the product of the model forecast error and the gain matrix
+	// this vector will contain the product of the model forecast error and the gain matrix
 	double *prod_with_gain_matrix = malloc(NO_OF_SCALARS*sizeof(double));
 	// multiplying (obs - (interpolated model)) by the gain matrix
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
@@ -377,7 +400,6 @@ int main(int argc, char *argv[])
 			prod_with_gain_matrix[i] += gain[i][j]*(observations_vector[j] - interpolated_model[j]);
 		}
 	}
-	
 	free(interpolated_model);
 	
 	double *model_vector = malloc(NO_OF_SCALARS*sizeof(double));
@@ -550,7 +572,7 @@ int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], do
 			{
 				vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + j] - z_used_obs[i]);
 				// initializing the observations operator
-				obs_op[i][j] = 0;
+				obs_op[i][k*NO_OF_SCALARS_H + j] = 0;
 			}
 			min_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
 			// radius does not matter here
