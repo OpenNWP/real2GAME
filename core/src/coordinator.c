@@ -25,7 +25,7 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 const int NO_OF_LEVELS_OBS = 3;
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
 const int NO_OF_SURFACE_FIELDS_OBS = 0;
-const int NO_OF_POINTS_PER_LAYER_OBS = 10;
+const int NO_OF_POINTS_PER_LAYER_OBS = 30;
 const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
 // the number of observations that will actually be used (must be <= NO_OF_OBSERVATIONS)
 
@@ -309,6 +309,7 @@ int main(int argc, char *argv[])
 			h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_error_cov[i][j];
 		}
 	}
+	free(obs_op);
 	
 	// h_b_ht_plus_r needs to be inversed in order to calculate the gain matrix
 	// this is actually the main task of OI
@@ -332,10 +333,11 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < NO_OF_OBSERVATIONS - 1; ++i)
 	{
 		// dividing the line by h_b_ht_plus_r[i][i]
+		factor = 1/h_b_ht_plus_r[i][i];
 		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
 		{
-			h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j]/h_b_ht_plus_r[i][i];
-			h_b_ht_plus_r_inv[i][j] = h_b_ht_plus_r_inv[i][j]/h_b_ht_plus_r[i][i];
+			h_b_ht_plus_r[i][j] = factor*h_b_ht_plus_r[i][j];
+			h_b_ht_plus_r_inv[i][j] = factor*h_b_ht_plus_r_inv[i][j];
 		}
 		for (int j = i + 1; j < NO_OF_OBSERVATIONS; ++j)
 		{
@@ -347,10 +349,11 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+	factor = 1/h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][NO_OF_OBSERVATIONS - 1];
 	for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
 	{
-		h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][j] = h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][j]/h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][NO_OF_OBSERVATIONS - 1];
-		h_b_ht_plus_r_inv[NO_OF_OBSERVATIONS - 1][j] = h_b_ht_plus_r_inv[NO_OF_OBSERVATIONS - 1][j]/h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][NO_OF_OBSERVATIONS - 1];
+		h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][j] = factor*h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][j];
+		h_b_ht_plus_r_inv[NO_OF_OBSERVATIONS - 1][j] = factor*h_b_ht_plus_r_inv[NO_OF_OBSERVATIONS - 1][j];
 	}
 	// Gaussian upwards
 	// starting with the last line, then going up to the last but first
@@ -387,7 +390,6 @@ int main(int argc, char *argv[])
 	free(h_b_ht_plus_r);
 	free(obs_error_cov);
 	free(bg_error_cov);
-	free(obs_op);
 	
 	// this vector will contain the product of the model forecast error and the gain matrix
 	double *prod_with_gain_matrix = malloc(NO_OF_SCALARS*sizeof(double));
