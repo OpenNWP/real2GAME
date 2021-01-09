@@ -1,4 +1,4 @@
-3D and 4D variational data assimilation for a wide range of geophysical models.
+Optimum interpolation (OI), 3D and 4D variational data assimilation for a wide range of geophysical models.
 
 # Documents
 
