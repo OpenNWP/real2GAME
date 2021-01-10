@@ -22,14 +22,15 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 #define C_D_P 1005.0
 #define EPSILON 1e-4
 
-const int NO_OF_LEVELS_OBS = 3;
+const int NO_OF_LEVELS_OBS = 1;
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
 const int NO_OF_SURFACE_FIELDS_OBS = 0;
-const int NO_OF_POINTS_PER_LAYER_OBS = 100;
+const int NO_OF_POINTS_PER_LAYER_OBS = 2;
 const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
 // the number of observations that will actually be used (must be <= NO_OF_OBSERVATIONS)
 
-int interpolate_bg_to_obs(double [], double [], double [], double [], double [], double [], double [], double [], double [][NO_OF_SCALARS]);
+int interpolate_bg_to_obs(double [], double [], double [], double [], double [], double [], double [], double []);
+double obs_op(int, int, double [], double [], double [], double [], double [], double []);
 
 int main(int argc, char *argv[])
 {	
@@ -275,14 +276,11 @@ int main(int argc, char *argv[])
     {
 		bg_error_cov[i] = pow(temperature_error_model, 2);
     }
-    
-    // setting up the observations_operator
-    double (*obs_op)[NO_OF_SCALARS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_SCALARS]));
 	
 	// this vector will contain the values expected for the observations, assuming the background state
 	double *interpolated_model = malloc(NO_OF_OBSERVATIONS*sizeof(double));
 	// interpolating the background state to the observations
-	interpolate_bg_to_obs(interpolated_model, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, temperature_gas_background, obs_op);
+	interpolate_bg_to_obs(interpolated_model, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, temperature_gas_background);
 	
 	// now, all the constituents of the gain matrix are known
 	double (*h_b_ht_plus_r)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
@@ -307,7 +305,7 @@ int main(int argc, char *argv[])
 			h_b_ht_plus_r[i][j] = 0;
 			for (int k = 0; k < NO_OF_SCALARS; ++k)
 			{
-				h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_op[i][k]*bg_error_cov[k]*obs_op[j][k];
+				h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_op(i, k, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar)*bg_error_cov[k]*obs_op(j, k, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar);
 			}
 			h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_error_cov[i][j];
 		}
@@ -394,12 +392,11 @@ int main(int argc, char *argv[])
 			*/
 			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
 			{
-				prod_with_gain_matrix[i] += (bg_error_cov[i]*obs_op[k][i]*h_b_ht_plus_r_inv[k][j])*(observations_vector[j] - interpolated_model[j]);
+				prod_with_gain_matrix[i] += (bg_error_cov[i]*obs_op(k, i, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar)*h_b_ht_plus_r_inv[k][j])*(observations_vector[j] - interpolated_model[j]);
 			}
 		}
 	}
 	free(h_b_ht_plus_r_inv);
-	free(obs_op);
 	free(bg_error_cov);
 	free(interpolated_model);
 	
@@ -552,7 +549,7 @@ int main(int argc, char *argv[])
 }
 
 
-int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[], double obs_op [][NO_OF_SCALARS])
+int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
 {
 	// this functions calculates the expected values for the observations from the background state
 	double weight, sum_of_weights, distance;
@@ -571,8 +568,6 @@ int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], do
 			for (int k = 0; k < NO_OF_LAYERS; ++k)
 			{
 				vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + j] - z_used_obs[i]);
-				// initializing the observations operator
-				obs_op[i][k*NO_OF_SCALARS_H + j] = 0;
 			}
 			min_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
 			// radius does not matter here
@@ -583,27 +578,52 @@ int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], do
 			sum_of_weights += weight;
 		}
 		interpolated_model[i] = interpolated_model[i]/sum_of_weights;
-		
-		// determining the derivative of the interpolation (the observations operator)
-		for (int j = 0; j < NO_OF_SCALARS_H; ++j)
-		{
-			// finding out which layer is the closest to the observation
-			for (int k = 0; k < NO_OF_LAYERS; ++k)
-			{
-				vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + j] - z_used_obs[i]);
-			}
-			min_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
-			// radius does not matter here
-			distance = calculate_distance_h(lat_used_obs[i], lon_used_obs[i], lat_model[j], lon_model[j], 1);
-			// 1/r-interpolation
-			weight = 1/(distance + EPSILON);
-			obs_op[i][min_index*NO_OF_SCALARS_H + j] = weight/sum_of_weights;
-		}
 	}
 	return 0;
 }
 
-
+double obs_op(int obs_index, int model_index, double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[])
+{
+	// this functions calculates the observations operator
+	// How does observations obs_index change, if the model at model_index is changed?
+	// the horizontal index of the model grid point
+	int model_scalar_index_h = fmod(model_index, NO_OF_SCALARS_H);
+	// the vertical index of the model grid point
+	int model_scalar_index_v = (model_index - model_scalar_index_h)/NO_OF_SCALARS_H;
+	// in order to find the interpolation weights, we need to loop over the whole horizontal domain
+	double weights_vector[NO_OF_SCALARS_H];
+	double vert_distance_vector[NO_OF_LAYERS];
+	int min_index;
+	// if model index is vertically too far away from the observation, we can return 0	
+	for (int k = 0; k < NO_OF_LAYERS; ++k)
+	{
+		vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + model_scalar_index_h] - z_used_obs[obs_index]);
+	}
+	min_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
+	if (min_index != model_scalar_index_v)
+	{
+		return 0;
+	}
+	// loop over all horizontal model gridpoints
+	double sum_of_weights, distance;
+	sum_of_weights = 0;
+	for (int j = 0; j < NO_OF_SCALARS_H; ++j)
+	{
+		// finding out which layer is the closest to the observation
+		for (int k = 0; k < NO_OF_LAYERS; ++k)
+		{
+			vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + j] - z_used_obs[obs_index]);
+		}
+		min_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
+		// radius does not matter here
+		distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[j], lon_model[j], 1);
+		// 1/r-interpolation
+		weights_vector[j] = 1/(distance + EPSILON);
+		sum_of_weights += weights_vector[j];
+	}
+	
+	return weights_vector[model_scalar_index_h]/sum_of_weights;
+}
 
 
 

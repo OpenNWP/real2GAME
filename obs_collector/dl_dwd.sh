@@ -2,7 +2,7 @@
 
 url_base="https://opendata.dwd.de/weather/nwp/icon/grib"
 
-levels_vector=(30 55 80)
+levels_vector=(90)
 
 # grid properties
 # surface height
