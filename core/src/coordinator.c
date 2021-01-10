@@ -25,7 +25,7 @@ Github repository: https://github.com/MHBalsmeier/ndvar
 const int NO_OF_LEVELS_OBS = 3;
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
 const int NO_OF_SURFACE_FIELDS_OBS = 0;
-const int NO_OF_POINTS_PER_LAYER_OBS = 30;
+const int NO_OF_POINTS_PER_LAYER_OBS = 100;
 const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
 // the number of observations that will actually be used (must be <= NO_OF_OBSERVATIONS)
 
@@ -285,9 +285,12 @@ int main(int argc, char *argv[])
 	interpolate_bg_to_obs(interpolated_model, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, temperature_gas_background, obs_op);
 	
 	// now, all the constituents of the gain matrix are known
-	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
-	double (*b_ht)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_SCALARS][NO_OF_OBSERVATIONS]));
+	double (*h_b_ht_plus_r)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
 	
+	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
+	/*
+	We substituted for this for efficiency, this definition is only here for clarity.
+	double (*b_ht)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_SCALARS][NO_OF_OBSERVATIONS]));
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
 		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
@@ -295,7 +298,7 @@ int main(int argc, char *argv[])
 			b_ht[i][j] = bg_error_cov[i]*obs_op[j][i];
 		}
 	}
-	double (*h_b_ht_plus_r)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
+	*/
 	
 	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
 	{
@@ -304,12 +307,11 @@ int main(int argc, char *argv[])
 			h_b_ht_plus_r[i][j] = 0;
 			for (int k = 0; k < NO_OF_SCALARS; ++k)
 			{
-				h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_op[i][k]*b_ht[k][j];
+				h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_op[i][k]*bg_error_cov[k]*obs_op[j][k];
 			}
 			h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_error_cov[i][j];
 		}
 	}
-	free(obs_op);
 	
 	// h_b_ht_plus_r needs to be inversed in order to calculate the gain matrix
 	// this is actually the main task of OI
@@ -370,26 +372,10 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	// now, the gain matrix can finally be put together
-    double (*gain)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_SCALARS][NO_OF_OBSERVATIONS]));
-	for (int i = 0; i < NO_OF_SCALARS; ++i)
-	{	
-		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
-		{
-			gain[i][j] = 0;
-			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
-			{
-				gain[i][j] = gain[i][j] + b_ht[i][k]*h_b_ht_plus_r_inv[k][j];
-			}
-		}
-	}
 	// now, the main job is already done
 	
-	free(h_b_ht_plus_r_inv);
-	free(b_ht);
 	free(h_b_ht_plus_r);
 	free(obs_error_cov);
-	free(bg_error_cov);
 	
 	// this vector will contain the product of the model forecast error and the gain matrix
 	double *prod_with_gain_matrix = malloc(NO_OF_SCALARS*sizeof(double));
@@ -399,9 +385,22 @@ int main(int argc, char *argv[])
 		prod_with_gain_matrix[i] = 0;
 		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
 		{
-			prod_with_gain_matrix[i] += gain[i][j]*(observations_vector[j] - interpolated_model[j]);
+			/*
+			for clarity:
+			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
+			{
+				gain[i][j] = gain[i][j] + bg_error_cov[i]*obs_op[k][i]*h_b_ht_plus_r_inv[k][j];
+			}
+			*/
+			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
+			{
+				prod_with_gain_matrix[i] += (bg_error_cov[i]*obs_op[k][i]*h_b_ht_plus_r_inv[k][j])*(observations_vector[j] - interpolated_model[j]);
+			}
 		}
 	}
+	free(h_b_ht_plus_r_inv);
+	free(obs_op);
+	free(bg_error_cov);
 	free(interpolated_model);
 	
 	double *model_vector = malloc(NO_OF_SCALARS*sizeof(double));
@@ -411,7 +410,6 @@ int main(int argc, char *argv[])
 		model_vector[i] = temperature_gas_background[i] + prod_with_gain_matrix[i];
 	}
 	
-	free(gain);
 	free(prod_with_gain_matrix);
 	free(observations_vector);
 	// End of the actual assimilation
