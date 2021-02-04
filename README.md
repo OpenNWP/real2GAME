@@ -1,4 +1,4 @@
-Optimum interpolation (OI), 3D and 4D variational data assimilation for a wide range of geophysical models.
+Optimum interpolation (OI), 3D and 4D variational data assimilation for [GAME](https://github.com/AUN4GFD/game).
 
 # Documents
 
@@ -14,10 +14,10 @@ The documentation of the code can be found in the subdirectory doc.
 
 ## Dependencies
 
-* [geos95](https://github.com/MHBalsmeier/geos95)
+* [geos95](https://github.com/AUN4GFD/geos95)
 * netcdf library (Ubuntu: sudo apt-get libnetcdf-dev)
 * CMake (Ubuntu: sudo apt-get install cmake)
-* [atmostracers](https://github.com/MHBalsmeier/atmostracers)
+* [atmostracers](https://github.com/AUN4GFD/atmostracers)
 * MPICH (Ubuntu: sudo apt-get install mpich)
 * bzip2 (Ubuntu: sudo apt-get install bzip2)
 * python3 (Ubuntu: sudo apt-get install python3)
