@@ -1,4 +1,4 @@
-3D and 4D variational data assimilation for a wide range of geophysical models.
+Optimum interpolation (OI), 3D and 4D variational data assimilation for a wide range of geophysical models.
 
 # Documents
 
@@ -28,7 +28,7 @@ The documentation of the code can be found in the subdirectory doc.
 
 ## Download
 
-	git clone https://github.com/MHBalsmeier/ndvar.git
+	git clone https://github.com/AUN4GFD/ndvar.git
 	cd ndvar
 
 ## Compilation
