@@ -305,7 +305,10 @@ int main(int argc, char *argv[])
 			h_b_ht_plus_r[i][j] = 0;
 			for (int k = 0; k < NO_OF_SCALARS; ++k)
 			{
-				h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_op(i, k, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar)*bg_error_cov[k]*obs_op(j, k, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar);
+				h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j]
+				+ obs_op(i, k, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar)
+				*bg_error_cov[k]
+				*obs_op(j, k, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar);
 			}
 			h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_error_cov[i][j];
 		}
