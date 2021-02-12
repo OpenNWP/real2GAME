@@ -28,8 +28,8 @@ This file coordinates the data assimilation process.
 const int NO_OF_LEVELS_OBS = 6;
 // the number of fields we use on each layer
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
-// the number of surface variables
-const int NO_OF_SURFACE_FIELDS_OBS = 0;
+// the number of surface variables (order: surface pressure, precipitation rate)
+const int NO_OF_SURFACE_FIELDS_OBS = 1;
 // the number of points on each layer
 const int NO_OF_POINTS_PER_LAYER_OBS = 1020;
 // the total number of observations
@@ -264,17 +264,33 @@ int main(int argc, char *argv[])
     // setting up the measurement error covariance matrix
     double *obs_error_cov = malloc(sizeof(double[NO_OF_OBSERVATIONS]));
     double temperature_error_obs = 0.2;
+    double pressure_error_obs = 1;
     for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
     {
-		obs_error_cov[i] = pow(temperature_error_obs, 2);
+    	if (i < NO_OF_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_POINTS_PER_LAYER_OBS)
+    	{
+			obs_error_cov[i] = pow(temperature_error_obs, 2);
+		}
+		else
+		{
+			obs_error_cov[i] = pow(pressure_error_obs, 2);
+		}
     }
     
     // setting up the background error covariance matrix (only the diagonal)
     double *bg_error_cov = malloc(NO_OF_SCALARS*sizeof(double));
     double temperature_error_model = 0.2;
-    for (int i = 0; i < NO_OF_SCALARS; ++i)
+    double pressure_error_model = 2;
+    for (int i = 0; i < NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H; ++i)
     {
-		bg_error_cov[i] = pow(temperature_error_model, 2);
+    	if (i < NO_OF_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H)
+    	{
+			bg_error_cov[i] = pow(temperature_error_model, 2);
+    	}
+    	else
+    	{
+    		bg_error_cov[i] = pow(pressure_error_model, 2);
+    	}
     }
 	
 	// this vector will contain the values expected for the observations, assuming the background state
@@ -376,7 +392,7 @@ int main(int argc, char *argv[])
 	free(obs_error_cov);
 	
 	// this vector will contain the product of the model forecast error and the gain matrix
-	double *prod_with_gain_matrix = calloc(NO_OF_SCALARS, sizeof(double));
+	double *prod_with_gain_matrix = calloc(NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H, sizeof(double));
 	// multiplying (obs - (interpolated model)) by the gain matrix
 	for (int i = 0; i < NO_OF_REL_GRID_POINTS; ++i)
 	{	
@@ -400,9 +416,16 @@ int main(int argc, char *argv[])
 	
 	double *model_vector = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
 	
-	for (int i = 0; i < NO_OF_SCALARS; ++i)
+	for (int i = 0; i < NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H; ++i)
 	{
-		model_vector[i] = temperature_gas_background[i] + prod_with_gain_matrix[i];
+		if (i < NO_OF_SCALARS)
+		{
+			model_vector[i] = temperature_gas_background[i] + prod_with_gain_matrix[i];
+		}
+		else
+		{
+			model_vector[i] = density_dry_background[i - NO_OF_SCALARS_H] + prod_with_gain_matrix[i];
+		}
 	}
 	
 	// the represents the surface pressure for now

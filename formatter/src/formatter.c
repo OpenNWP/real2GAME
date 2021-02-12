@@ -22,8 +22,8 @@ Github repository: https://github.com/AUN4GFD/ndvar
 const int NO_OF_OBS_LEVELS_OBS = 6;
 // number of fields per layer which we want to use
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
-// no of fields at the surface we want to use
-const int NO_OF_SURFACE_FIELDS_OBS = 0;
+// no of fields at the surface we want to use (order: surface pressure, precipitation rate)
+const int NO_OF_SURFACE_FIELDS_OBS = 1;
 // the number of points per layer of the input model
 const int NO_OF_POINTS_PER_LAYER_OBS = 2949120;
 // the number of points per layer that are actually picked for the assimilation process
@@ -259,8 +259,8 @@ int main(int argc, char *argv[])
 		fclose(ECC_FILE);
     }
 	
-	
-	if (NO_OF_SURFACE_FIELDS_OBS == 2)
+	// surface pressure
+	if (NO_OF_SURFACE_FIELDS_OBS >= 1)
 	{
 		// reading the surface presure
 		double *pressure_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
@@ -298,6 +298,12 @@ int main(int argc, char *argv[])
 			type_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 1;
 		}
 		
+		free(pressure_one_layer);
+	}
+	
+	// precipitation rate
+	if (NO_OF_SURFACE_FIELDS_OBS >= 2)
+	{	
 		// reading the total precipitation rate
 		double *tot_prec = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 		
@@ -335,7 +341,6 @@ int main(int argc, char *argv[])
 		}
     
     	free(tot_prec);
-		free(pressure_one_layer);
     
     }
     
