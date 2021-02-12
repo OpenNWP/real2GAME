@@ -2,6 +2,10 @@
 This source file is part of ndvar, which is released under the MIT license.
 Github repository: https://github.com/AUN4GFD/ndvar
 */
+/*
+This file coordinates the data assimilation process.
+*/
+
 
 #include <stdlib.h>
 #include "enum.h"
@@ -22,16 +26,22 @@ Github repository: https://github.com/AUN4GFD/ndvar
 #define C_D_P 1005.0
 #define EPSILON 1e-4
 
+// the number of levels from which we use observations
 const int NO_OF_LEVELS_OBS = 3;
+// the number of fields we use on each layer
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
+// the number of surface variables
 const int NO_OF_SURFACE_FIELDS_OBS = 0;
-const int NO_OF_POINTS_PER_LAYER_OBS = 200;
-const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS; // the number of observations that will actually be used (must be <= NO_OF_OBSERVATIONS)
-const int NO_OF_REL_GRID_POINTS = 5;
+// the number of points on each layer
+const int NO_OF_POINTS_PER_LAYER_OBS = 1300;
+// the total number of observations
+const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
+// the number of model grid points that are used to interpolate to an observation
+const int NO_OF_REL_GRID_POINTS = 10;
 
+// declaring some functions (definitions see end of this file)
 int interpolate_bg_to_obs(double [], double [], double [], double [], double [], double [], double [], double []);
 int obs_op_setup(double [][NO_OF_REL_GRID_POINTS], int [][NO_OF_REL_GRID_POINTS], double [], double [], double [], double [], double [], double []);
-double obs_op(int, int, double [][NO_OF_REL_GRID_POINTS], int [][NO_OF_REL_GRID_POINTS]);
 
 int main(int argc, char *argv[])
 {	
@@ -575,27 +585,36 @@ int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], do
 
 int obs_op_setup(double obs_op_reduced_matrix[][NO_OF_REL_GRID_POINTS], int relevant_gridpoints_matrix[][NO_OF_REL_GRID_POINTS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[])
 {
-	// this functions calculates the observations operator
-	// How do the observations change, if the model state is changed?
+	/*
+	this functions calculates the observations operator
+	this is only done once for efficiency
+	How do the observations change, if the model state is changed?
+	*/
 	// finding the NO_OF_REL_GRID_POINTS closest grid points (horizontally) for each observation
-	int rel_h_index_vector[NO_OF_REL_GRID_POINTS];
-	double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double));
+	int (*rel_h_index_vector)[NO_OF_REL_GRID_POINTS] = malloc(sizeof(int[NO_OF_OBSERVATIONS][NO_OF_REL_GRID_POINTS])); // the vector containing the relevant horizontal model indices for each observation
+	double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double)); // the vector containing the horizontal distances between the observation at hand and each horizontal model gridpoint
 	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
 	{
+		// filling up the dist_vector
 		for (int j = 0; j < NO_OF_SCALARS_H; ++j)
 		{
 			dist_vector[j] = calculate_distance_h(lat_used_obs[i], lon_used_obs[i], lat_model[j], lon_model[j], 1);
 		}
+		// finding the NO_OF_REL_GRID_POINTS closest points
 		for (int j = 0; j < NO_OF_REL_GRID_POINTS; ++j)
 		{
-			rel_h_index_vector[j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
-			dist_vector[rel_h_index_vector[j]] = 2*M_PI;
+			rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
+			dist_vector[rel_h_index_vector[i][j]] = 2*M_PI;
 		}
 	}
+	// dist_vector is no longer needed
 	free(dist_vector);
 	
+	// the vector containing the vertical distance between the observation at hand and the model gridpoints
 	double vert_distance_vector[NO_OF_LAYERS];
+	// the vector containing preliminary interpolation weights
 	double weights_vector[NO_OF_REL_GRID_POINTS];
+	// the closest vertical index
 	int min_vert_index;
 	double sum_of_weights, distance;
 	// fially setting up the reduced observations operator
@@ -608,13 +627,13 @@ int obs_op_setup(double obs_op_reduced_matrix[][NO_OF_REL_GRID_POINTS], int rele
 			// finding out which layer is the closest to the observation
 			for (int k = 0; k < NO_OF_LAYERS; ++k)
 			{
-				vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + rel_h_index_vector[j]] - z_used_obs[obs_index]);
+				vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]] - z_used_obs[obs_index]);
 			}
 			min_vert_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
 			// now we know which gridpoint is relevant to this observation
-			relevant_gridpoints_matrix[obs_index][j] = min_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[j];
+			relevant_gridpoints_matrix[obs_index][j] = min_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j];
 			// radius does not matter here
-			distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[j]], lon_model[rel_h_index_vector[j]], 1);
+			distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
 			// 1/r-interpolation
 			weights_vector[j] = 1/(distance + EPSILON);
 			sum_of_weights += weights_vector[j];
@@ -622,27 +641,14 @@ int obs_op_setup(double obs_op_reduced_matrix[][NO_OF_REL_GRID_POINTS], int rele
 		// the result
 		for (int j = 0; j < NO_OF_REL_GRID_POINTS; ++j)
 		{
+			// we have to divide by the sum of weights here
 			obs_op_reduced_matrix[obs_index][j] = weights_vector[j]/sum_of_weights;
 		}
 	}
+	free(rel_h_index_vector);
+	// returning 0 indicating success
 	return 0;
 }
-
-double obs_op(int obs_index, int model_index, double obs_op_reduced_matrix[][NO_OF_REL_GRID_POINTS], int relevant_gridpoints_matrix[][NO_OF_REL_GRID_POINTS])
-{
-	// this function behaves like a matrix (line index obs_index, column index model_index)
-	// it returns the observations operator which has previously been calculated
-	for (int i = 0; i < NO_OF_REL_GRID_POINTS; ++i)
-	{
-		if (relevant_gridpoints_matrix[obs_index][i] == model_index)
-		{
-			return obs_op_reduced_matrix[obs_index][i];
-		}
-	}
-	return 0;
-}
-
-
 
 
 
