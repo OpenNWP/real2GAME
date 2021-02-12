@@ -38,7 +38,7 @@ const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO
 const int NO_OF_REL_MODEL_DOFS = 10;
 
 // declaring some functions (definitions see end of this file)
-int obs_op_setup(double [], double [][NO_OF_REL_MODEL_DOFS], int [][NO_OF_REL_MODEL_DOFS], double [], double [], double [], double [], double [], double [], double [], double []);
+int obs_op_setup(double [], double [][NO_OF_REL_MODEL_DOFS], int [][NO_OF_REL_MODEL_DOFS], double [], double [], double [], double [], double [], double [], double []);
 
 int main(int argc, char *argv[])
 {
@@ -209,6 +209,20 @@ int main(int argc, char *argv[])
         NCERR(retval);
 	printf("Background state read.\n");
 
+	// saving the relevant part of the background state in one array
+	double *background = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
+	for (int i = 0; i < NO_OF_SCALARS + NO_OF_SCALARS_H; ++i)
+	{
+		if (i < NO_OF_SCALARS)
+		{
+			background[i] = temperature_gas_background[i];
+		}
+		else
+		{
+			background[i] = density_dry_background[i - NO_OF_SCALARS_H];
+		}
+	}
+
 	// Comparing the stretching parameters of the grid and the background state.
 	if (stretching_parameter_grid != stretching_parameter_state)
 	{
@@ -312,7 +326,7 @@ int main(int argc, char *argv[])
 	int (*relevant_model_dofs_matrix)[NO_OF_REL_MODEL_DOFS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_REL_MODEL_DOFS]));
 	
 	// setting up the observations operator
-	obs_op_setup(interpolated_model, obs_op_reduced_matrix, relevant_model_dofs_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, temperature_gas_background, density_dry_background);
+	obs_op_setup(interpolated_model, obs_op_reduced_matrix, relevant_model_dofs_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
 	
 	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
 	{
@@ -423,17 +437,11 @@ int main(int argc, char *argv[])
 	
 	double *model_vector = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
 	
-	for (int i = 0; i < NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H; ++i)
+	for (int i = 0; i < NO_OF_SCALARS + NO_OF_SCALARS_H; ++i)
 	{
-		if (i < NO_OF_SCALARS)
-		{
-			model_vector[i] = temperature_gas_background[i] + prod_with_gain_matrix[i];
-		}
-		else
-		{
-			model_vector[i] = density_dry_background[i - NO_OF_SCALARS_H] + prod_with_gain_matrix[i];
-		}
+		model_vector[i] = background[i] + prod_with_gain_matrix[i];
 	}
+	free(background);
 	
 	// if surface pressure is neglected, this is used as a substitute
 	if (NO_OF_SURFACE_FIELDS_OBS == 0)
@@ -490,6 +498,7 @@ int main(int argc, char *argv[])
     
     free(model_vector);
     
+    // these arrays are not assimilated yet, they are set equal to the background state
     for (int i = 0; i < NO_OF_SCALARS; ++i)
     {
 		water_vapour_density[i] = water_vapour_density_background[i];
@@ -615,7 +624,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DOFS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double temperature_gas_background[], double density_dry_background[])
+int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DOFS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
 {
 	/*
 	this functions calculates the observations operator
@@ -673,7 +682,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 				distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
 				// 1/r-interpolation
 				weights_vector[j] = 1/(distance + EPSILON);
-				interpolated_model[obs_index] += weights_vector[j]*temperature_gas_background[relevant_model_dofs_matrix[obs_index][j]];
+				interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
 				sum_of_weights += weights_vector[j];
 			}
 		}
@@ -696,7 +705,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 					distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
 					// 1/r-interpolation
 					weights_vector[j] = 1/(distance + EPSILON)
-					*R_D*density_dry_background[relevant_model_dofs_matrix[obs_index][j]]
+					*R_D*background[relevant_model_dofs_matrix[obs_index][j]]
 					*exp(-(z_used_obs[obs_index] - z_model[relevant_model_dofs_matrix[obs_index][j]])/SCALE_HEIGHT);
 					sum_of_weights += weights_vector[j];
 					if (j == NO_OF_REL_MODEL_DOFS/2 - 1)
@@ -724,9 +733,9 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 					distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
 					// 1/r-interpolation
 					weights_vector[j] = 1/(distance + EPSILON)
-					*R_D*temperature_gas_background[relevant_model_dofs_matrix[obs_index][j]]
+					*R_D*background[relevant_model_dofs_matrix[obs_index][j]]
 					*exp(-(z_used_obs[obs_index] - z_model[relevant_model_dofs_matrix[obs_index][j]])/SCALE_HEIGHT);
-					interpolated_model[obs_index] += weights_vector[j]*density_dry_background[relevant_model_dofs_matrix[obs_index][j]];
+					interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
 					sum_of_weights += weights_vector[j];
 					if (j == NO_OF_REL_MODEL_DOFS - 1)
 					{
