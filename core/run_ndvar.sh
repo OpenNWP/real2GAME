@@ -15,7 +15,6 @@ orography_layers=${BASH_ARGV[8]}
 toa=${BASH_ARGV[9]}
 
 echo "This is ndvar."
-echo "Copyright (C) 2021 The ndvar development team."
 echo "Starting the assimilation process ..."
 echo "analysis year: "$analysis_year
 echo "analysis month: "$analysis_month
