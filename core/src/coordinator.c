@@ -29,7 +29,7 @@ const int NO_OF_LEVELS_OBS = 6;
 // the number of fields we use on each layer
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
 // the number of surface variables (order: surface pressure, precipitation rate)
-const int NO_OF_SURFACE_FIELDS_OBS = 0;
+const int NO_OF_SURFACE_FIELDS_OBS = 1;
 // the number of points on each layer
 const int NO_OF_POINTS_PER_LAYER_OBS = 1020;
 // the total number of observations
@@ -435,13 +435,14 @@ int main(int argc, char *argv[])
 	free(bg_error_cov);
 	free(interpolated_model);
 	
-	double *model_vector = malloc((NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H)*sizeof(double));
+	double *model_vector = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
 	
 	for (int i = 0; i < NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H; ++i)
 	{
 		model_vector[i] = background[i] + prod_with_gain_matrix[i];
 	}
 	free(background);
+	free(prod_with_gain_matrix);
 	
 	// if surface pressure is neglected, this is used as a substitute
 	if (NO_OF_SURFACE_FIELDS_OBS == 0)
@@ -452,7 +453,6 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	free(prod_with_gain_matrix);
 	free(observations_vector);
 	// End of the actual assimilation
     

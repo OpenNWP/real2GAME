@@ -23,7 +23,7 @@ const int NO_OF_OBS_LEVELS_OBS = 6;
 // number of fields per layer which we want to use
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
 // no of fields at the surface we want to use (order: surface pressure, precipitation rate)
-const int NO_OF_SURFACE_FIELDS_OBS = 0;
+const int NO_OF_SURFACE_FIELDS_OBS = 1;
 // the number of points per layer of the input model
 const int NO_OF_POINTS_PER_LAYER_OBS = 2949120;
 // the number of points per layer that are actually picked for the assimilation process
