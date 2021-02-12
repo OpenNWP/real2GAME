@@ -1,5 +1,5 @@
 # This source file is part of ndvar, which is released under the MIT license.
-# Github repository: https://github.com/MHBalsmeier/ndvar
+# Github repository: https://github.com/AUN4GFD/ndvar
 
 aim_dir=~/compiled/ndvar_dev
 if [ -d $aim_dir ]

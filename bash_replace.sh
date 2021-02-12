@@ -5,6 +5,6 @@
 
 # This script can be used to replace $old_string by $new_string in all files of the project.
 
-old_string="ndvar"
-new_string="ndvar"
+old_string="https:\/\/github.com\/MHBalsmeier\/ndvar"
+new_string="https:\/\/github.com\/AUN4GFD\/ndvar"
 grep -rl $old_string . | xargs sed -i 's/'$old_string'/'$new_string'/g'
