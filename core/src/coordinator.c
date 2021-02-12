@@ -22,15 +22,16 @@ Github repository: https://github.com/AUN4GFD/ndvar
 #define C_D_P 1005.0
 #define EPSILON 1e-4
 
-const int NO_OF_LEVELS_OBS = 1;
+const int NO_OF_LEVELS_OBS = 3;
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
 const int NO_OF_SURFACE_FIELDS_OBS = 0;
-const int NO_OF_POINTS_PER_LAYER_OBS = 2;
-const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
-// the number of observations that will actually be used (must be <= NO_OF_OBSERVATIONS)
+const int NO_OF_POINTS_PER_LAYER_OBS = 200;
+const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS; // the number of observations that will actually be used (must be <= NO_OF_OBSERVATIONS)
+const int NO_OF_REL_GRID_POINTS = 5;
 
 int interpolate_bg_to_obs(double [], double [], double [], double [], double [], double [], double [], double []);
-double obs_op(int, int, double [], double [], double [], double [], double [], double []);
+int obs_op_setup(double [][NO_OF_REL_GRID_POINTS], int [][NO_OF_REL_GRID_POINTS], double [], double [], double [], double [], double [], double []);
+double obs_op(int, int, double [][NO_OF_REL_GRID_POINTS], int [][NO_OF_REL_GRID_POINTS]);
 
 int main(int argc, char *argv[])
 {	
@@ -252,21 +253,11 @@ int main(int argc, char *argv[])
 	// Begin of the actual assimilation.
     
     // setting up the measurement error covariance matrix
-    double (*obs_error_cov)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
+    double *obs_error_cov = malloc(sizeof(double[NO_OF_OBSERVATIONS]));
     double temperature_error_obs = 0.2;
     for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
     {
-    	for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
-    	{
-    		if (i == j)
-    		{
-    			obs_error_cov[i][j] = pow(temperature_error_obs, 2);
-    		}
-    		else
-    		{
-    			obs_error_cov[i][j] = 0;
-    		}
-    	}
+		obs_error_cov[i] = pow(temperature_error_obs, 2);
     }
     
     // setting up the background error covariance matrix (only the diagonal)
@@ -286,31 +277,30 @@ int main(int argc, char *argv[])
 	double (*h_b_ht_plus_r)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
 	
 	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
-	/*
-	We substituted for this for efficiency, this definition is only here for clarity.
-	double (*b_ht)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_SCALARS][NO_OF_OBSERVATIONS]));
-	for (int i = 0; i < NO_OF_SCALARS; ++i)
-	{
-		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
-		{
-			b_ht[i][j] = bg_error_cov[i]*obs_op[j][i];
-		}
-	}
-	*/
+	// setting up the observations operator
+	double (*obs_op_reduced_matrix)[NO_OF_REL_GRID_POINTS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_REL_GRID_POINTS]));
+	int (*relevant_gridpoints_matrix)[NO_OF_REL_GRID_POINTS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_REL_GRID_POINTS]));
+	
+	// setting up the observations operator
+	obs_op_setup(obs_op_reduced_matrix, relevant_gridpoints_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar);
 	
 	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
 	{
 		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
 		{
 			h_b_ht_plus_r[i][j] = 0;
-			for (int k = 0; k < NO_OF_SCALARS; ++k)
+			for (int k = 0; k < NO_OF_REL_GRID_POINTS; ++k)
 			{
-				h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j]
-				+ obs_op(i, k, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar)
-				*bg_error_cov[k]
-				*obs_op(j, k, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar);
+				h_b_ht_plus_r[i][j]
+				= h_b_ht_plus_r[i][j]
+				+ obs_op_reduced_matrix[i][k]
+				*bg_error_cov[relevant_gridpoints_matrix[i][k]]
+				*obs_op_reduced_matrix[j][k];
 			}
-			h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_error_cov[i][j];
+			if (i == j)
+			{
+				h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_error_cov[i];
+			}
 		}
 	}
 	
@@ -379,26 +369,24 @@ int main(int argc, char *argv[])
 	free(obs_error_cov);
 	
 	// this vector will contain the product of the model forecast error and the gain matrix
-	double *prod_with_gain_matrix = malloc(NO_OF_SCALARS*sizeof(double));
+	double *prod_with_gain_matrix = calloc(NO_OF_SCALARS, sizeof(double));
 	// multiplying (obs - (interpolated model)) by the gain matrix
-	for (int i = 0; i < NO_OF_SCALARS; ++i)
+	for (int i = 0; i < NO_OF_REL_GRID_POINTS; ++i)
 	{	
-		prod_with_gain_matrix[i] = 0;
 		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
 		{
-			/*
-			for clarity:
 			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
 			{
-				gain[i][j] = gain[i][j] + bg_error_cov[i]*obs_op[k][i]*h_b_ht_plus_r_inv[k][j];
-			}
-			*/
-			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
-			{
-				prod_with_gain_matrix[i] += (bg_error_cov[i]*obs_op(k, i, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar)*h_b_ht_plus_r_inv[k][j])*(observations_vector[j] - interpolated_model[j]);
+				prod_with_gain_matrix[relevant_gridpoints_matrix[k][i]]
+				+= (bg_error_cov[relevant_gridpoints_matrix[k][i]]
+				*obs_op_reduced_matrix[k][i]
+				*h_b_ht_plus_r_inv[k][j])
+				*(observations_vector[j] - interpolated_model[j]);
 			}
 		}
 	}
+	free(obs_op_reduced_matrix);
+	free(relevant_gridpoints_matrix);
 	free(h_b_ht_plus_r_inv);
 	free(bg_error_cov);
 	free(interpolated_model);
@@ -585,50 +573,74 @@ int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], do
 	return 0;
 }
 
-double obs_op(int obs_index, int model_index, double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[])
+int obs_op_setup(double obs_op_reduced_matrix[][NO_OF_REL_GRID_POINTS], int relevant_gridpoints_matrix[][NO_OF_REL_GRID_POINTS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[])
 {
 	// this functions calculates the observations operator
-	// How does observations obs_index change, if the model at model_index is changed?
-	// the horizontal index of the model grid point
-	int model_scalar_index_h = fmod(model_index, NO_OF_SCALARS_H);
-	// the vertical index of the model grid point
-	int model_scalar_index_v = (model_index - model_scalar_index_h)/NO_OF_SCALARS_H;
-	// in order to find the interpolation weights, we need to loop over the whole horizontal domain
-	double weights_vector[NO_OF_SCALARS_H];
-	double vert_distance_vector[NO_OF_LAYERS];
-	int min_index;
-	// if model index is vertically too far away from the observation, we can return 0	
-	for (int k = 0; k < NO_OF_LAYERS; ++k)
+	// How do the observations change, if the model state is changed?
+	// finding the NO_OF_REL_GRID_POINTS closest grid points (horizontally) for each observation
+	int rel_h_index_vector[NO_OF_REL_GRID_POINTS];
+	double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double));
+	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
 	{
-		vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + model_scalar_index_h] - z_used_obs[obs_index]);
-	}
-	min_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
-	if (min_index != model_scalar_index_v)
-	{
-		return 0;
-	}
-	// loop over all horizontal model gridpoints
-	double sum_of_weights, distance;
-	sum_of_weights = 0;
-	for (int j = 0; j < NO_OF_SCALARS_H; ++j)
-	{
-		// finding out which layer is the closest to the observation
-		for (int k = 0; k < NO_OF_LAYERS; ++k)
+		for (int j = 0; j < NO_OF_SCALARS_H; ++j)
 		{
-			vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + j] - z_used_obs[obs_index]);
+			dist_vector[j] = calculate_distance_h(lat_used_obs[i], lon_used_obs[i], lat_model[j], lon_model[j], 1);
 		}
-		min_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
-		// radius does not matter here
-		distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[j], lon_model[j], 1);
-		// 1/r-interpolation
-		weights_vector[j] = 1/(distance + EPSILON);
-		sum_of_weights += weights_vector[j];
+		for (int j = 0; j < NO_OF_REL_GRID_POINTS; ++j)
+		{
+			rel_h_index_vector[j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
+			dist_vector[rel_h_index_vector[j]] = 2*M_PI;
+		}
 	}
+	free(dist_vector);
 	
-	return weights_vector[model_scalar_index_h]/sum_of_weights;
+	double vert_distance_vector[NO_OF_LAYERS];
+	double weights_vector[NO_OF_REL_GRID_POINTS];
+	int min_vert_index;
+	double sum_of_weights, distance;
+	// fially setting up the reduced observations operator
+	for (int obs_index = 0; obs_index < NO_OF_OBSERVATIONS; ++obs_index)
+	{
+		sum_of_weights = 0;
+		// loop over all relevant horizontal model gridpoints
+		for (int j = 0; j < NO_OF_REL_GRID_POINTS; ++j)
+		{
+			// finding out which layer is the closest to the observation
+			for (int k = 0; k < NO_OF_LAYERS; ++k)
+			{
+				vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + rel_h_index_vector[j]] - z_used_obs[obs_index]);
+			}
+			min_vert_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
+			// now we know which gridpoint is relevant to this observation
+			relevant_gridpoints_matrix[obs_index][j] = min_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[j];
+			// radius does not matter here
+			distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[j]], lon_model[rel_h_index_vector[j]], 1);
+			// 1/r-interpolation
+			weights_vector[j] = 1/(distance + EPSILON);
+			sum_of_weights += weights_vector[j];
+		}
+		// the result
+		for (int j = 0; j < NO_OF_REL_GRID_POINTS; ++j)
+		{
+			obs_op_reduced_matrix[obs_index][j] = weights_vector[j]/sum_of_weights;
+		}
+	}
+	return 0;
 }
 
-
+double obs_op(int obs_index, int model_index, double obs_op_reduced_matrix[][NO_OF_REL_GRID_POINTS], int relevant_gridpoints_matrix[][NO_OF_REL_GRID_POINTS])
+{
+	// this function behaves like a matrix (line index obs_index, column index model_index)
+	// it returns the observations operator which has previously been calculated
+	for (int i = 0; i < NO_OF_REL_GRID_POINTS; ++i)
+	{
+		if (relevant_gridpoints_matrix[obs_index][i] == model_index)
+		{
+			return obs_op_reduced_matrix[obs_index][i];
+		}
+	}
+	return 0;
+}
 
 
 
