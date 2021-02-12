@@ -27,13 +27,13 @@ This file coordinates the data assimilation process.
 #define EPSILON 1e-4
 
 // the number of levels from which we use observations
-const int NO_OF_LEVELS_OBS = 3;
+const int NO_OF_LEVELS_OBS = 6;
 // the number of fields we use on each layer
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
 // the number of surface variables
 const int NO_OF_SURFACE_FIELDS_OBS = 0;
 // the number of points on each layer
-const int NO_OF_POINTS_PER_LAYER_OBS = 1300;
+const int NO_OF_POINTS_PER_LAYER_OBS = 1020;
 // the total number of observations
 const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
 // the number of model grid points that are used to interpolate to an observation

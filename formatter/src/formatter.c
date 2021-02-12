@@ -19,7 +19,7 @@ Github repository: https://github.com/AUN4GFD/ndvar
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(ERRCODE);}
 
 // number of levels in the free atmosphere from which we want to use data
-const int NO_OF_OBS_LEVELS_OBS = 3;
+const int NO_OF_OBS_LEVELS_OBS = 6;
 // number of fields per layer which we want to use
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
 // no of fields at the surface we want to use
@@ -27,7 +27,7 @@ const int NO_OF_SURFACE_FIELDS_OBS = 0;
 // the number of points per layer of the input model
 const int NO_OF_POINTS_PER_LAYER_OBS = 2949120;
 // the number of points per layer that are actually picked for the assimilation process
-const int NO_OF_CHOSEN_POINTS_PER_LAYER = 1300;
+const int NO_OF_CHOSEN_POINTS_PER_LAYER = 1020;
 // the total number of available observations
 const int NO_OF_OBSERVATIONS = (NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
 // the number of observations we want to actually use
@@ -37,9 +37,12 @@ int main(int argc, char *argv[])
 {
 	// defining the levels of the model we want to use
 	int levels_vector[NO_OF_OBS_LEVELS_OBS];
-	levels_vector[0] = 50;
-	levels_vector[1] = 70;
-	levels_vector[2] = 90;
+	levels_vector[0] = 24;
+	levels_vector[1] = 37;
+	levels_vector[2] = 50;
+	levels_vector[3] = 63;
+	levels_vector[4] = 77;
+	levels_vector[5] = 90;
 	
 	// shell arguments
     size_t len = strlen(argv[1]);
