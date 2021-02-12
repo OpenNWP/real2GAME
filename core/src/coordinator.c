@@ -6,7 +6,6 @@ Github repository: https://github.com/AUN4GFD/ndvar
 This file coordinates the data assimilation process.
 */
 
-
 #include <stdlib.h>
 #include "enum.h"
 #include <stdio.h>
@@ -20,11 +19,10 @@ This file coordinates the data assimilation process.
 #define K_B (1.380649e-23)
 #define M_D 0.028964420
 #define R (N_A*K_B)
-#define R_D (R/M_D)
 #define P_0 100000.0
 #define OMEGA (7.292115e-5)
-#define C_D_P 1005.0
 #define EPSILON 1e-4
+#define SCALE_HEIGHT 8000.0
 
 // the number of levels from which we use observations
 const int NO_OF_LEVELS_OBS = 6;
@@ -40,11 +38,12 @@ const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO
 const int NO_OF_REL_GRID_POINTS = 10;
 
 // declaring some functions (definitions see end of this file)
-int interpolate_bg_to_obs(double [], double [], double [], double [], double [], double [], double [], double []);
-int obs_op_setup(double [][NO_OF_REL_GRID_POINTS], int [][NO_OF_REL_GRID_POINTS], double [], double [], double [], double [], double [], double []);
+int obs_op_setup(double [], double [][NO_OF_REL_GRID_POINTS], int [][NO_OF_REL_GRID_POINTS], double [], double [], double [], double [], double [], double [], double []);
 
 int main(int argc, char *argv[])
 {	
+	double R_D = specific_gas_constants_lookup(0);
+	double C_D_P = spec_heat_capacities_p_gas_lookup(0);
     size_t len = strlen(argv[1]);
     char *year_string = malloc((len + 1)*sizeof(char));
     strcpy(year_string, argv[1]);
@@ -280,8 +279,6 @@ int main(int argc, char *argv[])
 	
 	// this vector will contain the values expected for the observations, assuming the background state
 	double *interpolated_model = malloc(NO_OF_OBSERVATIONS*sizeof(double));
-	// interpolating the background state to the observations
-	interpolate_bg_to_obs(interpolated_model, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, temperature_gas_background);
 	
 	// now, all the constituents of the gain matrix are known
 	double (*h_b_ht_plus_r)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
@@ -292,7 +289,7 @@ int main(int argc, char *argv[])
 	int (*relevant_gridpoints_matrix)[NO_OF_REL_GRID_POINTS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_REL_GRID_POINTS]));
 	
 	// setting up the observations operator
-	obs_op_setup(obs_op_reduced_matrix, relevant_gridpoints_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar);
+	obs_op_setup(interpolated_model, obs_op_reduced_matrix, relevant_gridpoints_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, temperature_gas_background);
 	
 	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
 	{
@@ -401,11 +398,17 @@ int main(int argc, char *argv[])
 	free(bg_error_cov);
 	free(interpolated_model);
 	
-	double *model_vector = malloc(NO_OF_SCALARS*sizeof(double));
+	double *model_vector = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
 	
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
 		model_vector[i] = temperature_gas_background[i] + prod_with_gain_matrix[i];
+	}
+	
+	// the represents the surface pressure for now
+	for (int i = 0; i < NO_OF_SCALARS_H; ++i)
+	{
+		model_vector[NO_OF_SCALARS + i] = P_0*exp(-z_scalar[NO_OF_SCALARS - NO_OF_SCALARS_H + i]/SCALE_HEIGHT)/(R_D*model_vector[NO_OF_SCALARS - NO_OF_SCALARS_H + i]);
 	}
 	
 	free(prod_with_gain_matrix);
@@ -425,19 +428,49 @@ int main(int argc, char *argv[])
     for (int i = 0; i < NO_OF_SCALARS; ++i)
     {
     	temperature[i] = model_vector[i];
-    	density_dry[i] = density_dry_background[i];
+    }
+    
+    // density is determined out of the hydrostatic equation
+    int layer_index, h_index;
+    double entropy_value, temperature_mean, delta_temperature, delta_gravity_potential, lower_entropy_value, upper_weight, lower_weight;
+    for (int i = NO_OF_SCALARS - 1; i >= 0; --i)
+    {
+    	layer_index = i/NO_OF_SCALARS_H;
+    	h_index = i - layer_index*NO_OF_SCALARS_H;
+    	// at the lowest layer the density is set using the equation of state, can be considered a boundary condition
+    	if (layer_index == NO_OF_LAYERS - 1)
+    	{
+        	density_dry[i] = model_vector[NO_OF_SCALARS + h_index];
+        }
+        else
+        {
+        	lower_entropy_value = spec_entropy_from_temp(density_dry[i + NO_OF_SCALARS_H], temperature[i + NO_OF_SCALARS_H]);
+            upper_weight = 0.5;
+            lower_weight = 0.5;
+        	temperature_mean = upper_weight*temperature[i] + lower_weight*temperature[i + NO_OF_SCALARS_H];
+        	delta_temperature = temperature[i] - temperature[i + NO_OF_SCALARS_H];
+        	delta_gravity_potential = gravity_potential[i] - gravity_potential[i + NO_OF_SCALARS_H];
+        	entropy_value = lower_entropy_value + (delta_gravity_potential + C_D_P*delta_temperature)/temperature_mean;
+        	density_dry[i] = solve_specific_entropy_for_density(entropy_value, temperature[i]);
+        }
+    }
+    
+    free(model_vector);
+    
+    for (int i = 0; i < NO_OF_SCALARS; ++i)
+    {
 		water_vapour_density[i] = water_vapour_density_background[i];
 		liquid_water_density[i] = liquid_water_density_background[i];
 		solid_water_density[i] = solid_water_density_background[i];
 		liquid_water_temp[i] = liquid_water_temperature_background[i];
 		solid_water_temp[i] = solid_water_temperature_background[i];
     }
+    
+    // wind is set equal to the background wind for now
     for (int i = 0; i < NO_OF_VECTORS; ++i)
     {
     	wind[i] = wind_background[i];
     }
-    
-    free(model_vector);
     
     // Writing the result to a netcdf file.
     printf("output file: %s\n", OUTPUT_FILE);
@@ -549,41 +582,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-
-int interpolate_bg_to_obs(double interpolated_model[], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
-{
-	// this functions calculates the expected values for the observations from the background state
-	double weight, sum_of_weights, distance;
-	double vert_distance_vector[NO_OF_LAYERS];
-	int min_index;
-	// loop over all observations to which we want to interpolate
-	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
-	{
-		// initializing the sum of interpolation weights as well as the interpolated value
-		sum_of_weights = 0;
-		interpolated_model[i] = 0;
-		// loop over all horizontal model gridpoints
-		for (int j = 0; j < NO_OF_SCALARS_H; ++j)
-		{
-			// finding out which layer is the closest to the observation
-			for (int k = 0; k < NO_OF_LAYERS; ++k)
-			{
-				vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + j] - z_used_obs[i]);
-			}
-			min_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
-			// radius does not matter here
-			distance = calculate_distance_h(lat_used_obs[i], lon_used_obs[i], lat_model[j], lon_model[j], 1);
-			// 1/r-interpolation
-			weight = 1/(distance + EPSILON);
-			interpolated_model[i] += weight*background[min_index*NO_OF_SCALARS_H + j];
-			sum_of_weights += weight;
-		}
-		interpolated_model[i] = interpolated_model[i]/sum_of_weights;
-	}
-	return 0;
-}
-
-int obs_op_setup(double obs_op_reduced_matrix[][NO_OF_REL_GRID_POINTS], int relevant_gridpoints_matrix[][NO_OF_REL_GRID_POINTS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[])
+int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_OF_REL_GRID_POINTS], int relevant_gridpoints_matrix[][NO_OF_REL_GRID_POINTS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
 {
 	/*
 	this functions calculates the observations operator
@@ -621,6 +620,7 @@ int obs_op_setup(double obs_op_reduced_matrix[][NO_OF_REL_GRID_POINTS], int rele
 	for (int obs_index = 0; obs_index < NO_OF_OBSERVATIONS; ++obs_index)
 	{
 		sum_of_weights = 0;
+		interpolated_model[obs_index] = 0;
 		// loop over all relevant horizontal model gridpoints
 		for (int j = 0; j < NO_OF_REL_GRID_POINTS; ++j)
 		{
@@ -636,9 +636,13 @@ int obs_op_setup(double obs_op_reduced_matrix[][NO_OF_REL_GRID_POINTS], int rele
 			distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
 			// 1/r-interpolation
 			weights_vector[j] = 1/(distance + EPSILON);
+			interpolated_model[obs_index] += weights_vector[j]*background[relevant_gridpoints_matrix[obs_index][j]];
 			sum_of_weights += weights_vector[j];
 		}
 		// the result
+		// interpolation from background to the observations
+		interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_weights;
+		// observations operator (derivative of the interpolation)
 		for (int j = 0; j < NO_OF_REL_GRID_POINTS; ++j)
 		{
 			// we have to divide by the sum of weights here
@@ -649,7 +653,4 @@ int obs_op_setup(double obs_op_reduced_matrix[][NO_OF_REL_GRID_POINTS], int rele
 	// returning 0 indicating success
 	return 0;
 }
-
-
-
 
