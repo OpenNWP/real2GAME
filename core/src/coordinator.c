@@ -29,7 +29,7 @@ const int NO_OF_LEVELS_OBS = 6;
 // the number of fields we use on each layer
 const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
 // the number of surface variables (order: surface pressure, precipitation rate)
-const int NO_OF_SURFACE_FIELDS_OBS = 1;
+const int NO_OF_SURFACE_FIELDS_OBS = 0;
 // the number of points on each layer
 const int NO_OF_POINTS_PER_LAYER_OBS = 1020;
 // the total number of observations
@@ -642,11 +642,25 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 		{
 			dist_vector[j] = calculate_distance_h(lat_used_obs[i], lon_used_obs[i], lat_model[j], lon_model[j], 1);
 		}
-		// finding the NO_OF_REL_MODEL_DOFS closest points
-		for (int j = 0; j < NO_OF_REL_MODEL_DOFS; ++j)
+		// finding the NO_OF_REL_MODEL_DOFS closest point
+		// free atmosphere
+		if (i < NO_OF_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_POINTS_PER_LAYER_OBS)
 		{
-			rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
-			dist_vector[rel_h_index_vector[i][j]] = 2*M_PI;
+			for (int j = 0; j < NO_OF_REL_MODEL_DOFS; ++j)
+			{
+				rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
+				dist_vector[rel_h_index_vector[i][j]] = 2*M_PI;
+			}
+		}
+		// surface pressure
+		else
+		{
+			for (int j = 0; j < NO_OF_REL_MODEL_DOFS/2; ++j)
+			{
+				rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
+				rel_h_index_vector[i][j + NO_OF_REL_MODEL_DOFS/2] = rel_h_index_vector[i][j];
+				dist_vector[rel_h_index_vector[i][j]] = 2*M_PI;
+			}
 		}
 	}
 	// dist_vector is no longer needed
@@ -658,14 +672,14 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 	double weights_vector[NO_OF_REL_MODEL_DOFS];
 	// the closest vertical index
 	int min_vert_index;
-	double sum_of_weights, distance;
+	double sum_of_interpol_weights, distance;
 	// finally setting up the reduced observations operator
 	for (int obs_index = 0; obs_index < NO_OF_OBSERVATIONS; ++obs_index)
 	{
 		// free atmosphere quantities (temperature, specific humidity)
 		if (obs_index < NO_OF_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_POINTS_PER_LAYER_OBS)
 		{
-			sum_of_weights = 0;
+			sum_of_interpol_weights = 0;
 			interpolated_model[obs_index] = 0;
 			// loop over all relevant horizontal model gridpoints
 			for (int j = 0; j < NO_OF_REL_MODEL_DOFS; ++j)
@@ -683,32 +697,28 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 				// 1/r-interpolation
 				weights_vector[j] = 1/(distance + EPSILON);
 				interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
-				sum_of_weights += weights_vector[j];
+				sum_of_interpol_weights += 1/(distance + EPSILON);
 				if (j == NO_OF_REL_MODEL_DOFS - 1)
 				{
 					for (int k = 0; k < NO_OF_REL_MODEL_DOFS; ++k)
 					{
 						// we have to divide by the sum of weights here
-						obs_op_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_weights;
+						obs_op_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
 					}
-					interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_weights;
+					interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
 				}
 			}
 		}
 		// surface quantities (only surface pressure for now)
 		else
 		{
-			sum_of_weights = 0;
+			sum_of_interpol_weights = 0;
 			interpolated_model[obs_index] = 0;
 			// loop over all relevant horizontal model gridpoints
 			for (int j = 0; j < NO_OF_REL_MODEL_DOFS; ++j)
 			{
 				// radius does not matter here
 				distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
-				// 1/r-interpolation
-				weights_vector[j] = 1/(distance + EPSILON)
-				*R_D*background[relevant_model_dofs_matrix[obs_index][j]]
-				*exp(-(z_used_obs[obs_index] - z_model[relevant_model_dofs_matrix[obs_index][j]])/SCALE_HEIGHT);
 				// we pick the lowest layer here
 				min_vert_index = NO_OF_LAYERS - 1;
 				// How is the suface pressure affected by the temperature in the lowest layer?
@@ -716,37 +726,50 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 				{
 					// now we know which gridpoint is relevant to this observation
 					relevant_model_dofs_matrix[obs_index][j] = min_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j];
-					// the interpolation is done in the second case
-					sum_of_weights += weights_vector[j];
+					// 1/r-interpolation
+					weights_vector[j] = 1/(distance + EPSILON)
+					*R_D*background[relevant_model_dofs_matrix[obs_index][j] + NO_OF_SCALARS_H]
+					*exp(-(z_used_obs[obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]])/SCALE_HEIGHT);
+					sum_of_interpol_weights += 1/(distance + EPSILON);
+					// the result
 					if (j == NO_OF_REL_MODEL_DOFS/2 - 1)
 					{
+						// loop over all relevant gridpoints
 						for (int k = 0; k < NO_OF_REL_MODEL_DOFS/2; ++k)
 						{
 							// we have to divide by the sum of weights here
-							obs_op_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_weights;
+							obs_op_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
 						}
 					}
 				}
 				// How is the suface pressure affected by the density in the lowest layer?
 				else
 				{
-					// as a new interpolation will be conducted now, the sum_of_weights variable has to be reset to zero
+					// as a new interpolation will be conducted now, the sum_of_interpol_weights variable has to be reset to zero
 					if (j == NO_OF_REL_MODEL_DOFS/2)
 					{
-						sum_of_weights = 0;
+						sum_of_interpol_weights = 0;
 					}
 					// now we know which gridpoint is relevant to this observation
 					relevant_model_dofs_matrix[obs_index][j] = (min_vert_index + 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j - NO_OF_REL_MODEL_DOFS/2];
+					// 1/r-interpolation
+					weights_vector[j] = 1/(distance + EPSILON)
+					*R_D*background[relevant_model_dofs_matrix[obs_index][j] - NO_OF_SCALARS_H]
+					*exp(-(z_used_obs[obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]])/SCALE_HEIGHT);
+					// interpoation to the surface pressure
 					interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
-					sum_of_weights += weights_vector[j];
+					sum_of_interpol_weights += 1/(distance + EPSILON);
+					// the result
 					if (j == NO_OF_REL_MODEL_DOFS - 1)
 					{
+						// the interpolation to the surface pressure
+						interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
+						// loop over all relevant gridpoints
 						for (int k = 0; k < NO_OF_REL_MODEL_DOFS/2; ++k)
 						{
 							// we have to divide by the sum of weights here
-							obs_op_reduced_matrix[obs_index][k + NO_OF_REL_MODEL_DOFS/2] = weights_vector[k + NO_OF_REL_MODEL_DOFS/2]/sum_of_weights;
+							obs_op_reduced_matrix[obs_index][k + NO_OF_REL_MODEL_DOFS/2] = weights_vector[k + NO_OF_REL_MODEL_DOFS/2]/sum_of_interpol_weights;
 						}
-						interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_weights;
 					}
 				}
 			}
