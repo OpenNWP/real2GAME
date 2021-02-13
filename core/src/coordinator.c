@@ -8,6 +8,7 @@ This file coordinates the data assimilation process.
 
 #include <stdlib.h>
 #include "enum.h"
+#include "ndvar.h"
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -23,19 +24,6 @@ This file coordinates the data assimilation process.
 #define OMEGA (7.292115e-5)
 #define EPSILON 1e-4
 #define SCALE_HEIGHT 8000.0
-
-// the number of levels from which we use observations
-const int NO_OF_LEVELS_OBS = 6;
-// the number of fields we use on each layer
-const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
-// the number of surface variables (order: surface pressure, precipitation rate)
-const int NO_OF_SURFACE_FIELDS_OBS = 0;
-// the number of points on each layer
-const int NO_OF_POINTS_PER_LAYER_OBS = 1020;
-// the total number of observations
-const int NO_OF_OBSERVATIONS = (NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
-// the number of model grid points that are used to interpolate to an observation
-const int NO_OF_REL_MODEL_DOFS = 10;
 
 // declaring some functions (definitions see end of this file)
 int obs_op_setup(double [], double [][NO_OF_REL_MODEL_DOFS], int [][NO_OF_REL_MODEL_DOFS], double [], double [], double [], double [], double [], double [], double []);
@@ -210,8 +198,8 @@ int main(int argc, char *argv[])
 	printf("Background state read.\n");
 
 	// saving the relevant part of the background state in one array
-	double *background = malloc((NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H)*sizeof(double));
-	for (int i = 0; i < NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H; ++i)
+	double *background = malloc(NO_OF_MODEL_DOFS*sizeof(double));
+	for (int i = 0; i < NO_OF_MODEL_DOFS; ++i)
 	{
 		if (i < NO_OF_SCALARS)
 		{
@@ -298,10 +286,10 @@ int main(int argc, char *argv[])
     }
     
     // setting up the background error covariance matrix (only the diagonal)
-    double *bg_error_cov = malloc((NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H)*sizeof(double));
+    double *bg_error_cov = malloc(NO_OF_MODEL_DOFS*sizeof(double));
     double temperature_error_model = 0.2;
     double pressure_error_model = 2;
-    for (int i = 0; i < NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H; ++i)
+    for (int i = 0; i < NO_OF_MODEL_DOFS; ++i)
     {
     	if (i < NO_OF_SCALARS)
     	{
@@ -318,7 +306,6 @@ int main(int argc, char *argv[])
 	double *interpolated_model = malloc(NO_OF_OBSERVATIONS*sizeof(double));
 	
 	// now, all the constituents of the gain matrix are known
-	double (*h_b_ht_plus_r)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
 	
 	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
 	// setting up the observations operator
@@ -328,121 +315,16 @@ int main(int argc, char *argv[])
 	// setting up the observations operator
 	obs_op_setup(interpolated_model, obs_op_reduced_matrix, relevant_model_dofs_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
 	
-	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
-	{
-		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
-		{
-			h_b_ht_plus_r[i][j] = 0;
-			for (int k = 0; k < NO_OF_REL_MODEL_DOFS; ++k)
-			{
-				h_b_ht_plus_r[i][j]
-				= h_b_ht_plus_r[i][j]
-				+ obs_op_reduced_matrix[i][k]
-				*bg_error_cov[relevant_model_dofs_matrix[i][k]]
-				*obs_op_reduced_matrix[j][k];
-			}
-			if (i == j)
-			{
-				h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_error_cov[i];
-			}
-		}
-	}
-	
-	// h_b_ht_plus_r needs to be inversed in order to calculate the gain matrix
-	// this is actually the main task of OI
-	double (*h_b_ht_plus_r_inv)[NO_OF_OBSERVATIONS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_OBSERVATIONS]));
-	// firstly, the inverse is initialized with the unity matrix
-	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
-	{
-		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
-		{
-			h_b_ht_plus_r_inv[i][j] = 0;
-			if (i == j)
-			{
-				h_b_ht_plus_r_inv[i][j] = 1;
-			}
-		}
-	}
-	// we will start to modify h_b_ht_plus_r now (misuse of name)
-	// Gaussian downwards
-	double factor = 0;
-	// starting with the first line, down to the second but last line
-	for (int i = 0; i < NO_OF_OBSERVATIONS - 1; ++i)
-	{
-		// dividing the line by h_b_ht_plus_r[i][i]
-		factor = 1/h_b_ht_plus_r[i][i];
-		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
-		{
-			h_b_ht_plus_r[i][j] = factor*h_b_ht_plus_r[i][j];
-			h_b_ht_plus_r_inv[i][j] = factor*h_b_ht_plus_r_inv[i][j];
-		}
-		for (int j = i + 1; j < NO_OF_OBSERVATIONS; ++j)
-		{
-			factor = -h_b_ht_plus_r[j][i];
-			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
-			{
-				h_b_ht_plus_r[j][k] = h_b_ht_plus_r[j][k] + factor*h_b_ht_plus_r[i][k];
-				h_b_ht_plus_r_inv[j][k] = h_b_ht_plus_r_inv[j][k] + factor*h_b_ht_plus_r_inv[i][k];
-			}
-		}
-	}
-	factor = 1/h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][NO_OF_OBSERVATIONS - 1];
-	for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
-	{
-		h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][j] = factor*h_b_ht_plus_r[NO_OF_OBSERVATIONS - 1][j];
-		h_b_ht_plus_r_inv[NO_OF_OBSERVATIONS - 1][j] = factor*h_b_ht_plus_r_inv[NO_OF_OBSERVATIONS - 1][j];
-	}
-	// Gaussian upwards
-	// starting with the last line, then going up to the last but first
-	for (int i = NO_OF_OBSERVATIONS - 1; i >= 1; --i)
-	{
-		for (int j = i - 1; j >= 0; --j)
-		{
-			factor = -h_b_ht_plus_r[j][i];
-			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
-			{
-				h_b_ht_plus_r[j][k] = h_b_ht_plus_r[j][k] + factor*h_b_ht_plus_r[i][k];
-				h_b_ht_plus_r_inv[j][k] = h_b_ht_plus_r_inv[j][k] + factor*h_b_ht_plus_r_inv[i][k];
-			}
-		}
-	}
-	
-	// now, the main job is already done
-	
-	free(h_b_ht_plus_r);
-	free(obs_error_cov);
-	
-	// this vector will contain the product of the model forecast error and the gain matrix
-	double *prod_with_gain_matrix = calloc(NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H, sizeof(double));
-	// multiplying (obs - (interpolated model)) by the gain matrix
-	for (int i = 0; i < NO_OF_REL_MODEL_DOFS; ++i)
-	{	
-		for (int j = 0; j < NO_OF_OBSERVATIONS; ++j)
-		{
-			for (int k = 0; k < NO_OF_OBSERVATIONS; ++k)
-			{
-				prod_with_gain_matrix[relevant_model_dofs_matrix[k][i]]
-				+= (bg_error_cov[relevant_model_dofs_matrix[k][i]]
-				*obs_op_reduced_matrix[k][i]
-				*h_b_ht_plus_r_inv[k][j])
-				*(observations_vector[j] - interpolated_model[j]);
-			}
-		}
-	}
-	free(obs_op_reduced_matrix);
-	free(relevant_model_dofs_matrix);
-	free(h_b_ht_plus_r_inv);
-	free(bg_error_cov);
-	free(interpolated_model);
-	
 	double *model_vector = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
 	
-	for (int i = 0; i < NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H; ++i)
-	{
-		model_vector[i] = background[i] + prod_with_gain_matrix[i];
-	}
+	oi(obs_error_cov, obs_op_reduced_matrix, relevant_model_dofs_matrix, bg_error_cov, interpolated_model, background, observations_vector, model_vector);
+	
+	free(obs_error_cov);
+	free(obs_op_reduced_matrix);
+	free(relevant_model_dofs_matrix);
+	free(bg_error_cov);
+	free(interpolated_model);
 	free(background);
-	free(prod_with_gain_matrix);
 	
 	// if surface pressure is neglected, this is used as a substitute
 	if (NO_OF_SURFACE_FIELDS_OBS == 0)
