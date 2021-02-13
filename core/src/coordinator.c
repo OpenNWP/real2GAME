@@ -301,30 +301,26 @@ int main(int argc, char *argv[])
     		bg_error_cov[i] = pow(pow(pressure_error_model/(R_D*280), 2) + pow(P_0/(R_D*280*280)*temperature_error_model, 2), 0.5);
     	}
     }
-	
-	// this vector will contain the values expected for the observations, assuming the background state
-	double *interpolated_model = malloc(NO_OF_OBSERVATIONS*sizeof(double));
-	
-	// now, all the constituents of the gain matrix are known
-	
-	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
+    
 	// setting up the observations operator
+	double *interpolated_model = malloc(NO_OF_OBSERVATIONS*sizeof(double));
 	double (*obs_op_reduced_matrix)[NO_OF_REL_MODEL_DOFS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_REL_MODEL_DOFS]));
 	int (*relevant_model_dofs_matrix)[NO_OF_REL_MODEL_DOFS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_REL_MODEL_DOFS]));
-	
-	// setting up the observations operator
 	obs_op_setup(interpolated_model, obs_op_reduced_matrix, relevant_model_dofs_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
 	
+	// now, all the constituents of the gain matrix are known
 	double *model_vector = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
-	
 	oi(obs_error_cov, obs_op_reduced_matrix, relevant_model_dofs_matrix, bg_error_cov, interpolated_model, background, observations_vector, model_vector);
 	
+	// data assimilation is finished at this point
+	// freeing the memory
 	free(obs_error_cov);
 	free(obs_op_reduced_matrix);
 	free(relevant_model_dofs_matrix);
 	free(bg_error_cov);
 	free(interpolated_model);
 	free(background);
+	free(observations_vector);
 	
 	// if surface pressure is neglected, this is used as a substitute
 	if (NO_OF_SURFACE_FIELDS_OBS == 0)
@@ -334,9 +330,6 @@ int main(int argc, char *argv[])
 			model_vector[NO_OF_SCALARS + i] = P_0*exp(-z_scalar[NO_OF_SCALARS - NO_OF_SCALARS_H + i]/SCALE_HEIGHT)/(R_D*model_vector[NO_OF_SCALARS - NO_OF_SCALARS_H + i]);
 		}
 	}
-	
-	free(observations_vector);
-	// End of the actual assimilation
     
     // These are the arrays for the result of the assimilation process.
     double *temperature = malloc(NO_OF_SCALARS*sizeof(double));
