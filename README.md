@@ -29,7 +29,6 @@ The documentation of the code can be found in the subdirectory doc.
 ## Download
 
 	git clone https://github.com/AUN4GFD/ndvar.git
-	cd ndvar
 
 ## Compilation
 
