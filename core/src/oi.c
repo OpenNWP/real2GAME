@@ -9,23 +9,40 @@ Optimum interpolation.
 #include "ndvar.h"
 #include "enum.h"
 #include <stdlib.h>
+#include "geos95.h"
 
 int oi(double obs_error_cov[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double bg_error_cov[], double interpolated_model[], double background[], double observations_vector[], double model_vector[])
 {
 	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
 	double (*h_b_ht_plus_r)[NO_OF_CHOSEN_OBSERVATIONS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_CHOSEN_OBSERVATIONS]));
+	int index_found;
+	int check_vector[NO_OF_REL_MODEL_DOFS_PER_OBS];
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
 	{
+		for (int l = 0; l < NO_OF_REL_MODEL_DOFS_PER_OBS; ++l)
+		{
+			check_vector[l] = relevant_model_dofs_matrix[i][l];
+		}
 		for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
 		{
 			h_b_ht_plus_r[i][j] = 0;
 			for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 			{
-				h_b_ht_plus_r[i][j]
-				= h_b_ht_plus_r[i][j]
-				+ obs_op_reduced_matrix[i][k]
-				*bg_error_cov[relevant_model_dofs_matrix[i][k]]
-				*obs_op_reduced_matrix[j][k];
+				if (in_bool_calculator(relevant_model_dofs_matrix[j][k], check_vector, NO_OF_REL_MODEL_DOFS_PER_OBS) == 1)
+				{
+					index_found = 0;
+					for (int l = 0; l < NO_OF_REL_MODEL_DOFS_PER_OBS; ++l)
+					{
+						if (relevant_model_dofs_matrix[j][l] == relevant_model_dofs_matrix[i][k])
+						{
+							index_found = l;
+						}
+					}
+					h_b_ht_plus_r[i][j]
+					+= bg_error_cov[relevant_model_dofs_matrix[i][k]]
+					*obs_op_reduced_matrix[i][k]
+					*obs_op_reduced_matrix[j][index_found];
+				}
 			}
 			if (i == j)
 			{

@@ -27,6 +27,31 @@
 
 \maketitle
 
+\chapter{Optimum interpolation}
+\label{chap:optimum_interpolation}
+
+\begin{align}
+\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, j} &= \sum_{k = 1}^{M}\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{k, j}.
+\end{align}
+%
+In the special case, where $\overleftrightarrow{B}$ has diagonal form, this reduces to
+%
+\begin{align}
+\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, j} &= \sum_{k = 1}^{M}\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{k, j}\delta_{k, j} = \sum_{k = 1}^{M}\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{j, j}\delta_{k, j} = \overleftrightarrow{H}_{i, j}\overleftrightarrow{B}_{j, j}.
+\end{align}
+%
+For $\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T$, one obtains
+%
+\begin{align}
+\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T\right)_{i, j} &= \left[\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)\overleftrightarrow{H}^T\right]_{i, j} = \sum_{k = 1}^{M}\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, k}\overleftrightarrow{H}^T_{k, j} = \sum_{k = 1}^{M}\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, k}\overleftrightarrow{H}_{j, k} = \sum_{k = 1}^{M}\left(\sum_{l = 1}^{M}\overleftrightarrow{H}_{i, l}\overleftrightarrow{B}_{l, k}\right)\overleftrightarrow{H}_{j, k} = \sum_{k, l = 1}^M\overleftrightarrow{H}_{i, l}\overleftrightarrow{B}_{l, k}\overleftrightarrow{H}_{j, k}.
+\end{align}
+%
+In the special case, where $\overleftrightarrow{B}$ has diagonal form, this reduces to
+%
+\begin{align}
+\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T\right)_{i, j} &= \sum_{k = 1}^M\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{k, k}\overleftrightarrow{H}_{j, k} = \sum_{k = 1}^M\overleftrightarrow{B}_{k, k}\left(\overleftrightarrow{H}_{i, k}\overleftrightarrow{H}_{j, k}\right).
+\end{align}
+
 \chapter{3D-Var}
 \label{chap:3d-var}
 
