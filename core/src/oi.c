@@ -101,7 +101,7 @@ int oi(double obs_error_cov[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DO
 	double *prod_with_gain_matrix = calloc(NO_OF_MODEL_DOFS, sizeof(double));
 	// multiplying (obs - (interpolated model)) by the gain matrix
 	for (int i = 0; i < NO_OF_REL_MODEL_DOFS_PER_OBS; ++i)
-	{	
+	{
 		for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
 		{
 			for (int k = 0; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)

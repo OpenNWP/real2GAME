@@ -587,12 +587,12 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 		{
 			sum_of_interpol_weights = 0;
 			interpolated_model[obs_index] = 0;
-			// loop over all relevant horizontal model gridpoints
+			// loop over all relevant model degrees of freedom
 			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
 			{
 				// radius does not matter here
 				distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
-				// we pick the lowest layer here
+				// we pick the lowest layer here (independant in wether we look at the temperature or the density)
 				min_vert_index = NO_OF_LAYERS - 1;
 				// How is the suface pressure affected by the temperature in the lowest layer?
 				if (j < NO_OF_REL_MODEL_DOFS_PER_OBS/2)
