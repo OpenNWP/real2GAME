@@ -26,15 +26,21 @@ This file coordinates the data assimilation process.
 #define SCALE_HEIGHT 8000.0
 
 // declaring some functions (definitions see end of this file)
-int obs_op_setup(double [], double [][NO_OF_REL_MODEL_DOFS], int [][NO_OF_REL_MODEL_DOFS], double [], double [], double [], double [], double [], double [], double []);
+int obs_op_setup(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [], double [], double [], double []);
 
 int main(int argc, char *argv[])
 {
-	if (fmod(NO_OF_REL_MODEL_DOFS, 2) == 1)
+	if (fmod(NO_OF_REL_MODEL_DOFS_PER_OBS, 2) == 1)
 	{
-		printf("NO_OF_REL_MODEL_DOFS must be even.\n");
+		printf("NO_OF_REL_MODEL_DOFS_PER_OBS must be even.\n");
 		printf("Aborting.\n");
 		exit(1);
+	}
+	if (NO_OF_SURFACE_FIELDS_OBS < 1)
+	{
+		printf("NO_OF_SURFACE_FIELDS_OBS must be larger than zero.\n");
+		printf("Aborting.\n");
+		exit(2);
 	}
 	double R_D = specific_gas_constants_lookup(0);
 	double C_D_P = spec_heat_capacities_p_gas_lookup(0);
@@ -222,11 +228,11 @@ int main(int argc, char *argv[])
 	double stretching_parameter = stretching_parameter_grid;	
 	
 	// Allocating the memory for the observations.
-	double *latitude_vector_obs = malloc(NO_OF_OBSERVATIONS*sizeof(double));
-	double *longitude_vector_obs = malloc(NO_OF_OBSERVATIONS*sizeof(double));
-	double *vert_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
-	double *observations_vector = malloc(NO_OF_OBSERVATIONS*sizeof(double));
-	int *type_vector = malloc(NO_OF_OBSERVATIONS*sizeof(int));
+	double *latitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *longitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *vert_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	int *type_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(int));
     
     int OBSERVATIONS_FILE_LENGTH = 100;
     char *OBSERVATIONS_FILE_PRE = malloc((OBSERVATIONS_FILE_LENGTH + 1)*sizeof(char));
@@ -270,12 +276,12 @@ int main(int argc, char *argv[])
 	// Begin of the actual assimilation.
     
     // setting up the measurement error covariance matrix
-    double *obs_error_cov = malloc(sizeof(double[NO_OF_OBSERVATIONS]));
+    double *obs_error_cov = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS]));
     double temperature_error_obs = 0.2;
     double pressure_error_obs = 1;
-    for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
+    for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
     {
-    	if (i < NO_OF_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_POINTS_PER_LAYER_OBS)
+    	if (i < NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
     	{
 			obs_error_cov[i] = pow(temperature_error_obs, 2);
 		}
@@ -303,9 +309,9 @@ int main(int argc, char *argv[])
     }
     
 	// setting up the observations operator
-	double *interpolated_model = malloc(NO_OF_OBSERVATIONS*sizeof(double));
-	double (*obs_op_reduced_matrix)[NO_OF_REL_MODEL_DOFS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_REL_MODEL_DOFS]));
-	int (*relevant_model_dofs_matrix)[NO_OF_REL_MODEL_DOFS] = malloc(sizeof(int[NO_OF_OBSERVATIONS][NO_OF_REL_MODEL_DOFS]));
+	double *interpolated_model = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double (*obs_op_reduced_matrix)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	int (*relevant_model_dofs_matrix)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	obs_op_setup(interpolated_model, obs_op_reduced_matrix, relevant_model_dofs_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
 	
 	// now, all the constituents of the gain matrix are known
@@ -321,15 +327,6 @@ int main(int argc, char *argv[])
 	free(interpolated_model);
 	free(background);
 	free(observations_vector);
-	
-	// if surface pressure is neglected, this is used as a substitute
-	if (NO_OF_SURFACE_FIELDS_OBS == 0)
-	{
-		for (int i = 0; i < NO_OF_SCALARS_H; ++i)
-		{
-			model_vector[NO_OF_SCALARS + i] = P_0*exp(-z_scalar[NO_OF_SCALARS - NO_OF_SCALARS_H + i]/SCALE_HEIGHT)/(R_D*model_vector[NO_OF_SCALARS - NO_OF_SCALARS_H + i]);
-		}
-	}
     
     // These are the arrays for the result of the assimilation process.
     double *temperature = malloc(NO_OF_SCALARS*sizeof(double));
@@ -500,7 +497,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DOFS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
+int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
 {
 	/*
 	this functions calculates the observations operator
@@ -508,21 +505,21 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 	How do the observations change, if the model state is changed?
 	*/
 	double R_D = specific_gas_constants_lookup(0);
-	// finding the NO_OF_REL_MODEL_DOFS closest grid points (horizontally) for each observation
-	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS] = malloc(sizeof(int[NO_OF_OBSERVATIONS][NO_OF_REL_MODEL_DOFS])); // the vector containing the relevant horizontal model indices for each observation
+	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
+	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS])); // the vector containing the relevant horizontal model indices for each observation
 	double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double)); // the vector containing the horizontal distances between the observation at hand and each horizontal model gridpoint
-	for (int i = 0; i < NO_OF_OBSERVATIONS; ++i)
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
 	{
 		// filling up the dist_vector
 		for (int j = 0; j < NO_OF_SCALARS_H; ++j)
 		{
 			dist_vector[j] = calculate_distance_h(lat_used_obs[i], lon_used_obs[i], lat_model[j], lon_model[j], 1);
 		}
-		// finding the NO_OF_REL_MODEL_DOFS closest point
+		// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest point
 		// free atmosphere
-		if (i < NO_OF_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_POINTS_PER_LAYER_OBS)
+		if (i < NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
 		{
-			for (int j = 0; j < NO_OF_REL_MODEL_DOFS; ++j)
+			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
 			{
 				rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
 				dist_vector[rel_h_index_vector[i][j]] = 2*M_PI;
@@ -531,10 +528,10 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 		// surface pressure
 		else
 		{
-			for (int j = 0; j < NO_OF_REL_MODEL_DOFS/2; ++j)
+			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++j)
 			{
 				rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
-				rel_h_index_vector[i][j + NO_OF_REL_MODEL_DOFS/2] = rel_h_index_vector[i][j];
+				rel_h_index_vector[i][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = rel_h_index_vector[i][j];
 				dist_vector[rel_h_index_vector[i][j]] = 2*M_PI;
 			}
 		}
@@ -545,20 +542,20 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 	// the vector containing the vertical distance between the observation at hand and the model gridpoints
 	double vert_distance_vector[NO_OF_LAYERS];
 	// the vector containing preliminary interpolation weights
-	double weights_vector[NO_OF_REL_MODEL_DOFS];
+	double weights_vector[NO_OF_REL_MODEL_DOFS_PER_OBS];
 	// the closest vertical index
 	int min_vert_index;
 	double sum_of_interpol_weights, distance;
 	// finally setting up the reduced observations operator
-	for (int obs_index = 0; obs_index < NO_OF_OBSERVATIONS; ++obs_index)
+	for (int obs_index = 0; obs_index < NO_OF_CHOSEN_OBSERVATIONS; ++obs_index)
 	{
 		// free atmosphere quantities (temperature, specific humidity)
-		if (obs_index < NO_OF_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_POINTS_PER_LAYER_OBS)
+		if (obs_index < NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
 		{
 			sum_of_interpol_weights = 0;
 			interpolated_model[obs_index] = 0;
 			// loop over all relevant horizontal model gridpoints
-			for (int j = 0; j < NO_OF_REL_MODEL_DOFS; ++j)
+			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
 			{
 				// finding out which layer is the closest to the observation
 				for (int k = 0; k < NO_OF_LAYERS; ++k)
@@ -574,9 +571,9 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 				weights_vector[j] = 1/(distance + EPSILON);
 				interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
 				sum_of_interpol_weights += 1/(distance + EPSILON);
-				if (j == NO_OF_REL_MODEL_DOFS - 1)
+				if (j == NO_OF_REL_MODEL_DOFS_PER_OBS - 1)
 				{
-					for (int k = 0; k < NO_OF_REL_MODEL_DOFS; ++k)
+					for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 					{
 						// we have to divide by the sum of weights here
 						obs_op_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
@@ -591,14 +588,14 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 			sum_of_interpol_weights = 0;
 			interpolated_model[obs_index] = 0;
 			// loop over all relevant horizontal model gridpoints
-			for (int j = 0; j < NO_OF_REL_MODEL_DOFS; ++j)
+			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
 			{
 				// radius does not matter here
 				distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
 				// we pick the lowest layer here
 				min_vert_index = NO_OF_LAYERS - 1;
 				// How is the suface pressure affected by the temperature in the lowest layer?
-				if (j < NO_OF_REL_MODEL_DOFS/2)
+				if (j < NO_OF_REL_MODEL_DOFS_PER_OBS/2)
 				{
 					// now we know which gridpoint is relevant to this observation
 					relevant_model_dofs_matrix[obs_index][j] = min_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j];
@@ -608,10 +605,10 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 					*exp(-(z_used_obs[obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]])/SCALE_HEIGHT);
 					sum_of_interpol_weights += 1/(distance + EPSILON);
 					// the result
-					if (j == NO_OF_REL_MODEL_DOFS/2 - 1)
+					if (j == NO_OF_REL_MODEL_DOFS_PER_OBS/2 - 1)
 					{
 						// loop over all relevant gridpoints
-						for (int k = 0; k < NO_OF_REL_MODEL_DOFS/2; ++k)
+						for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++k)
 						{
 							// we have to divide by the sum of weights here
 							obs_op_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
@@ -622,7 +619,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 				else
 				{
 					// as a new interpolation will be conducted now, the sum_of_interpol_weights variable has to be reset to zero
-					if (j == NO_OF_REL_MODEL_DOFS/2)
+					if (j == NO_OF_REL_MODEL_DOFS_PER_OBS/2)
 					{
 						sum_of_interpol_weights = 0;
 					}
@@ -636,12 +633,12 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 					interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
 					sum_of_interpol_weights += 1/(distance + EPSILON);
 					// the result
-					if (j == NO_OF_REL_MODEL_DOFS - 1)
+					if (j == NO_OF_REL_MODEL_DOFS_PER_OBS - 1)
 					{
 						// the interpolation to the surface pressure
 						interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
 						// loop over all relevant gridpoints
-						for (int k = NO_OF_REL_MODEL_DOFS/2; k < NO_OF_REL_MODEL_DOFS; ++k)
+						for (int k = NO_OF_REL_MODEL_DOFS_PER_OBS/2; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 						{
 							// we have to divide by the sum of weights here
 							obs_op_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;

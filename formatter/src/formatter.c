@@ -14,35 +14,28 @@ Github repository: https://github.com/AUN4GFD/ndvar
 #include <string.h>
 #include <stdlib.h>
 #include "eccodes.h"
+#include "../../core/src/ndvar.h"
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
 #define ERRCODE 3
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(ERRCODE);}
 
-// number of levels in the free atmosphere from which we want to use data
-const int NO_OF_OBS_LEVELS_OBS = 6;
-// number of fields per layer which we want to use
-const int NO_OF_FIELDS_PER_LAYER_OBS = 1;
-// no of fields at the surface we want to use (order: surface pressure, precipitation rate)
-const int NO_OF_SURFACE_FIELDS_OBS = 0;
-// the number of points per layer of the input model
-const int NO_OF_POINTS_PER_LAYER_OBS = 2949120;
-// the number of points per layer that are actually picked for the assimilation process
-const int NO_OF_CHOSEN_POINTS_PER_LAYER = 1020;
-// the total number of available observations
-const int NO_OF_OBSERVATIONS = (NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_POINTS_PER_LAYER_OBS;
-// the number of observations we want to actually use
-const int NO_OF_CHOSEN_OBSERVATIONS = (NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_CHOSEN_POINTS_PER_LAYER;
-
 int main(int argc, char *argv[])
 {
 	// defining the levels of the model we want to use
-	int levels_vector[NO_OF_OBS_LEVELS_OBS];
+	int levels_vector[NO_OF_LEVELS_OBS];
 	levels_vector[0] = 24;
 	levels_vector[1] = 37;
 	levels_vector[2] = 50;
 	levels_vector[3] = 63;
 	levels_vector[4] = 77;
 	levels_vector[5] = 90;
+	
+	if (NO_OF_SURFACE_FIELDS_OBS < 1)
+	{
+		printf("NO_OF_SURFACE_FIELDS_OBS must be larger than zero.\n");
+		printf("Aborting.\n");
+		exit(1);
+	}
 	
 	// shell arguments
     size_t len = strlen(argv[1]);
@@ -131,17 +124,17 @@ int main(int argc, char *argv[])
 	double *spec_hum_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	
 	// the indices of the chosen points
-	int *chosen_indices = malloc(NO_OF_CHOSEN_POINTS_PER_LAYER*sizeof(int));
+	int *chosen_indices = malloc(NO_OF_CHOSEN_POINTS_PER_LAYER_OBS*sizeof(int));
 	
-	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
+	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 	{
-		chosen_indices[i] = NO_OF_POINTS_PER_LAYER_OBS/NO_OF_CHOSEN_POINTS_PER_LAYER*i;
+		chosen_indices[i] = NO_OF_POINTS_PER_LAYER_OBS/NO_OF_CHOSEN_POINTS_PER_LAYER_OBS*i;
 	}
 	
 	// reading the data from the free atmosphere
 	double *vert_vector_free_atmosphere = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	// loop over all relevant level in the free atmosphere
-	for (int level_index = 0; level_index < NO_OF_OBS_LEVELS_OBS; ++level_index)
+	for (int level_index = 0; level_index < NO_OF_LEVELS_OBS; ++level_index)
 	{
 		
 		// vertical position of the current layer
@@ -205,30 +198,30 @@ int main(int argc, char *argv[])
 		fclose(ECC_FILE);
 		
 		// formatting the observations
-		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
+		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 		{
 			for (int j = 0; j < NO_OF_FIELDS_PER_LAYER_OBS; ++j)
 			{
-				latitude_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
-				longitude_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
-				vert_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = vert_vector_free_atmosphere[chosen_indices[i]];
+				latitude_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[chosen_indices[i]];
+				longitude_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[chosen_indices[i]];
+				vert_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = vert_vector_free_atmosphere[chosen_indices[i]];
 				
 				if (j == 0)
 				{
-					observations_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = temperature_one_layer[chosen_indices[i]];
+					observations_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = temperature_one_layer[chosen_indices[i]];
 				}
 				if (j == 1)
 				{
-					observations_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = spec_hum_one_layer[chosen_indices[i]];
+					observations_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[chosen_indices[i]];
 				}
 				
 				if (j == 0)
 				{
-					type_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 0;
+					type_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 0;
 				}
 				if (j == 1)
 				{
-					type_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 2;
+					type_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 2;
 				}
 			}
 		}
@@ -285,17 +278,17 @@ int main(int argc, char *argv[])
 		fclose(ECC_FILE);
 		
 		// writing the surface pressure to the observations
-		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
+		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 		{
-			latitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
+			latitude_vector[NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[chosen_indices[i]];
 			
-			longitude_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
+			longitude_vector[NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[chosen_indices[i]];
 			
-			vert_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = surface_height[chosen_indices[i]];
+			vert_vector[NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
 			
-			observations_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = pressure_one_layer[chosen_indices[i]];
+			observations_vector[NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = pressure_one_layer[chosen_indices[i]];
 			
-			type_vector[NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 1;
+			type_vector[NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 1;
 		}
 		
 		free(pressure_one_layer);
@@ -327,17 +320,17 @@ int main(int argc, char *argv[])
 		fclose(ECC_FILE);
 		
 		// writing the total precipitation rate to the observations
-		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER; ++i)
+		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 		{
-			latitude_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = latitude_vector_one_layer[chosen_indices[i]];
+			latitude_vector[(NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[chosen_indices[i]];
 			
-			longitude_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = longitude_vector_one_layer[chosen_indices[i]];
+			longitude_vector[(NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[chosen_indices[i]];
 			
-			vert_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = surface_height[chosen_indices[i]];
+			vert_vector[(NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
 			
-			observations_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = tot_prec[chosen_indices[i]];
+			observations_vector[(NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = tot_prec[chosen_indices[i]];
 			
-			type_vector[(NO_OF_OBS_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER + i] = 1;
+			type_vector[(NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 1;
 		}
     
     	free(tot_prec);

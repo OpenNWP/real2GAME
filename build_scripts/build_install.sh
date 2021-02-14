@@ -2,19 +2,19 @@
 # Github repository: https://github.com/AUN4GFD/ndvar
 
 aim_dir=~/compiled/ndvar
-if [ -d $aim_dir ]
-then
-rm -r $aim_dir
-fi
+# if [ -d $aim_dir ]
+# then
+# rm -r $aim_dir
+# fi
 mkdir $aim_dir
 if [ -d $aim_dir/bin ]
 then
 rm -r $aim_dir/bin
 fi
-if [ -d $aim_dir/input ]
-then
-rm -r $aim_dir/input
-fi
+# if [ -d $aim_dir/input ]
+# then
+# rm -r $aim_dir/input
+# fi
 if [ -d ../build ]
 then
 rm -r ../build
