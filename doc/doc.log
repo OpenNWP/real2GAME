@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2021.2.9)  14 FEB 2021 17:16
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2021.2.9)  14 FEB 2021 18:12
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -939,21 +939,21 @@ LaTeX Font Info:    Font shape `U/futm/m/n' will be
 LaTeX Font Info:    Font shape `U/futm/m/n' will be
 (Font)              scaled to size 5.51999pt on input line 33.
 LaTeX Font Info:    Font shape `T1/fnc/m/sc' will be
-(Font)              scaled to size 9.29993pt on input line 55.
+(Font)              scaled to size 9.29993pt on input line 69.
 [1
 
 ]
 Chapter 2.
 LaTeX Font Info:    Font shape `T1/fnc/m/n' will be
-(Font)              scaled to size 13.39188pt on input line 58.
+(Font)              scaled to size 13.39188pt on input line 72.
 LaTeX Font Info:    Font shape `T1/fnc/b/n' will be
-(Font)              scaled to size 13.39188pt on input line 58.
+(Font)              scaled to size 13.39188pt on input line 72.
 [2
 
 ]
 Chapter 3.
 
-LaTeX Warning: Empty bibliography on input line 74.
+LaTeX Warning: Empty bibliography on input line 88.
 
 [3
 
@@ -965,7 +965,7 @@ Package logreq Info: Writing requests to 'doc.run.xml'.
 Here is how much of TeX's memory you used:
  14724 strings out of 482457
  246020 string characters out of 5945143
- 895113 words of memory out of 5000000
+ 909113 words of memory out of 5000000
  29606 multiletter control sequences out of 15000+600000
  580647 words of font info for 95 fonts, out of 8000000 for 9000
  395 hyphenation exceptions out of 8191
@@ -982,7 +982,7 @@ type1/public/fourier/fourier-ms.pfb></usr/share/texlive/texmf-dist/fonts/type1/
 urw/ncntrsbk/uncb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/ncntrsbk
 /uncr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/ncntrsbk/uncri8a.pfb
 >
-Output written on doc.pdf (4 pages, 51634 bytes).
+Output written on doc.pdf (4 pages, 54263 bytes).
 PDF statistics:
  82 PDF objects out of 1000 (max. 8388607)
  48 compressed objects within 1 object stream

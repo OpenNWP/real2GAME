@@ -104,7 +104,6 @@ int oi(double obs_error_cov[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DO
 			factor = -h_b_ht_plus_r[j][i];
 			for (int k = 0; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
 			{
-				h_b_ht_plus_r[j][k] = h_b_ht_plus_r[j][k] + factor*h_b_ht_plus_r[i][k];
 				h_b_ht_plus_r_inv[j][k] = h_b_ht_plus_r_inv[j][k] + factor*h_b_ht_plus_r_inv[i][k];
 			}
 		}
@@ -124,13 +123,13 @@ int oi(double obs_error_cov[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DO
 			for (int k = 0; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
 			{
 				prod_with_gain_matrix[relevant_model_dofs_matrix[k][i]]
-				+= (bg_error_cov[relevant_model_dofs_matrix[k][i]]
-				*obs_op_reduced_matrix[k][i]
-				*h_b_ht_plus_r_inv[k][j])
+				+= (h_b_ht_plus_r_inv[k][j]
+				*bg_error_cov[relevant_model_dofs_matrix[k][i]]
+				*obs_op_reduced_matrix[k][i])
 				*(observations_vector[j] - interpolated_model[j]);
 			}
 		}
-	}	
+	}
 	
 	free(h_b_ht_plus_r_inv);
 	
