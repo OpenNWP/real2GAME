@@ -343,6 +343,7 @@ int main(int argc, char *argv[])
     	free(tot_prec);
     
     }
+    free(chosen_indices);
     
     // Writing the observations to a netcdf file.
     int OUTPUT_FILE_LENGTH = 100;
@@ -390,7 +391,6 @@ int main(int argc, char *argv[])
     	NCERR(retval);
     
     // Freeing the memory.
-    free(chosen_indices);
 	free(temperature_one_layer);
 	free(spec_hum_one_layer);
     free(ndvar_root_dir);

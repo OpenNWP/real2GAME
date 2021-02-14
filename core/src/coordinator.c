@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
 	// setting up the observations operator
 	double *interpolated_model = malloc(NO_OF_OBSERVATIONS*sizeof(double));
 	double (*obs_op_reduced_matrix)[NO_OF_REL_MODEL_DOFS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_REL_MODEL_DOFS]));
-	int (*relevant_model_dofs_matrix)[NO_OF_REL_MODEL_DOFS] = malloc(sizeof(double[NO_OF_OBSERVATIONS][NO_OF_REL_MODEL_DOFS]));
+	int (*relevant_model_dofs_matrix)[NO_OF_REL_MODEL_DOFS] = malloc(sizeof(int[NO_OF_OBSERVATIONS][NO_OF_REL_MODEL_DOFS]));
 	obs_op_setup(interpolated_model, obs_op_reduced_matrix, relevant_model_dofs_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
 	
 	// now, all the constituents of the gain matrix are known
@@ -315,9 +315,9 @@ int main(int argc, char *argv[])
 	// data assimilation is finished at this point
 	// freeing the memory
 	free(obs_error_cov);
+	free(bg_error_cov);
 	free(obs_op_reduced_matrix);
 	free(relevant_model_dofs_matrix);
-	free(bg_error_cov);
 	free(interpolated_model);
 	free(background);
 	free(observations_vector);
@@ -341,6 +341,7 @@ int main(int argc, char *argv[])
     double *liquid_water_temp = malloc(NO_OF_SCALARS*sizeof(double));
     double *solid_water_temp = malloc(NO_OF_SCALARS*sizeof(double));
     
+    // the temperature comes first in the model_vector
     for (int i = 0; i < NO_OF_SCALARS; ++i)
     {
     	temperature[i] = model_vector[i];
@@ -353,7 +354,7 @@ int main(int argc, char *argv[])
     {
     	layer_index = i/NO_OF_SCALARS_H;
     	h_index = i - layer_index*NO_OF_SCALARS_H;
-    	// at the lowest layer the density is set using the equation of state, can be considered a boundary condition
+    	// at the lowest layer the density is part of the model_vector
     	if (layer_index == NO_OF_LAYERS - 1)
     	{
         	density_dry[i] = model_vector[NO_OF_SCALARS + h_index];
@@ -373,7 +374,7 @@ int main(int argc, char *argv[])
     
     free(model_vector);
     
-    // these arrays are not assimilated yet, they are set equal to the background state
+    // humidity is not yet assimilated, it set equal to the background state
     for (int i = 0; i < NO_OF_SCALARS; ++i)
     {
 		water_vapour_density[i] = water_vapour_density_background[i];
@@ -626,7 +627,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 						sum_of_interpol_weights = 0;
 					}
 					// now we know which gridpoint is relevant to this observation
-					relevant_model_dofs_matrix[obs_index][j] = (min_vert_index + 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j - NO_OF_REL_MODEL_DOFS/2];
+					relevant_model_dofs_matrix[obs_index][j] = (min_vert_index + 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j];
 					// 1/r-interpolation
 					weights_vector[j] = 1/(distance + EPSILON)
 					*R_D*background[relevant_model_dofs_matrix[obs_index][j] - NO_OF_SCALARS_H]
@@ -640,10 +641,10 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 						// the interpolation to the surface pressure
 						interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
 						// loop over all relevant gridpoints
-						for (int k = 0; k < NO_OF_REL_MODEL_DOFS/2; ++k)
+						for (int k = NO_OF_REL_MODEL_DOFS/2; k < NO_OF_REL_MODEL_DOFS; ++k)
 						{
 							// we have to divide by the sum of weights here
-							obs_op_reduced_matrix[obs_index][k + NO_OF_REL_MODEL_DOFS/2] = weights_vector[k + NO_OF_REL_MODEL_DOFS/2]/sum_of_interpol_weights;
+							obs_op_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
 						}
 					}
 				}
