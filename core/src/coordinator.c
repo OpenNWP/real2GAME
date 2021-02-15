@@ -271,8 +271,8 @@ int main(int argc, char *argv[])
     
     // setting up the measurement error covariance matrix
     double *obs_error_cov = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS]));
-    double temperature_error_obs = 0.2;
-    double pressure_error_obs = 10;
+    double temperature_error_obs = 2;
+    double pressure_error_obs = 100;
     for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
     {
     	if (i < NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
@@ -287,8 +287,8 @@ int main(int argc, char *argv[])
     
     // setting up the background error covariance matrix (only the diagonal)
     double *bg_error_cov = malloc(NO_OF_MODEL_DOFS*sizeof(double));
-    double temperature_error_model = 2;
-    double pressure_error_model = 100;
+    double temperature_error_model = 1;
+    double pressure_error_model = 50;
     for (int i = 0; i < NO_OF_MODEL_DOFS; ++i)
     {
     	if (i < NO_OF_SCALARS)
@@ -500,7 +500,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 	*/
 	double R_D = specific_gas_constants_lookup(0);
 	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
-	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS])); // the vector containing the relevant horizontal model indices for each observation
+	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS/2])); // the vector containing the relevant horizontal model indices for each observation
 	double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double)); // the vector containing the horizontal distances between the observation at hand and each horizontal model gridpoint
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
 	{
@@ -509,25 +509,11 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 		{
 			dist_vector[j] = calculate_distance_h(lat_used_obs[i], lon_used_obs[i], lat_model[j], lon_model[j], 1);
 		}
-		// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest point
-		// free atmosphere
-		if (i < NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
+		// finding the NO_OF_REL_MODEL_DOFS_PER_OBS/2 closest points
+		for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++j)
 		{
-			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
-			{
-				rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
-				dist_vector[rel_h_index_vector[i][j]] = M_PI + EPSILON;
-			}
-		}
-		// surface pressure
-		else
-		{
-			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++j)
-			{
-				rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
-				rel_h_index_vector[i][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = rel_h_index_vector[i][j];
-				dist_vector[rel_h_index_vector[i][j]] = M_PI + EPSILON;
-			}
+			rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
+			dist_vector[rel_h_index_vector[i][j]] = M_PI + EPSILON;
 		}
 	}
 	// dist_vector is no longer needed
@@ -538,8 +524,8 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 	// the vector containing preliminary interpolation weights
 	double weights_vector[NO_OF_REL_MODEL_DOFS_PER_OBS];
 	// the closest vertical index
-	int min_vert_index;
-	double sum_of_interpol_weights, distance;
+	int closest_vert_index, other_vert_index;
+	double sum_of_interpol_weights, distance, closest_vert_weight, other_vert_weight;
 	// finally setting up the reduced observations operator
 	for (int obs_index = 0; obs_index < NO_OF_CHOSEN_OBSERVATIONS; ++obs_index)
 	{
@@ -549,23 +535,59 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 			sum_of_interpol_weights = 0;
 			interpolated_model[obs_index] = 0;
 			// loop over all relevant horizontal model gridpoints
-			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
+			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++j)
 			{
 				// finding out which layer is the closest to the observation
 				for (int k = 0; k < NO_OF_LAYERS; ++k)
 				{
 					vert_distance_vector[k] = fabs(z_model[k*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]] - z_used_obs[obs_index]);
 				}
-				min_vert_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
+				closest_vert_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
+				// vertical interpolation
+				// first setting for the rother vertical index
+				other_vert_index = closest_vert_index + 1;
+				// if the the closest model point is below the observation, the next higher point is taken into account for the interpolation
+				if (z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]] < z_used_obs[obs_index])
+				{
+					other_vert_index = closest_vert_index - 1;
+				}
+				// if the observation is below the lowest layer
+				if (other_vert_index == NO_OF_LAYERS)
+				{
+					other_vert_index = NO_OF_LAYERS - 1;
+					closest_vert_weight = 1;
+					other_vert_weight = 0;
+				}
+				else
+				{
+					closest_vert_weight = fabs(z_model[other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]] - z_used_obs[obs_index])/fabs(z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]] - z_model[other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]]);
+					other_vert_weight = 1 - closest_vert_weight;
+				}
 				// now we know which gridpoint is relevant to this observation
-				relevant_model_dofs_matrix[obs_index][j] = min_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j];
+				// the closest vertical point
+				relevant_model_dofs_matrix[obs_index][j] = closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j];
+				// the second closest vertical point
+				relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j];
 				// radius does not matter here
 				distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
 				// 1/r-interpolation
-				weights_vector[j] = 1/(distance + EPSILON);
-				interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
-				sum_of_interpol_weights += 1/(distance + EPSILON);
-				if (j == NO_OF_REL_MODEL_DOFS_PER_OBS - 1)
+				weights_vector[j] = closest_vert_weight/(distance + EPSILON);
+				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/(distance + EPSILON);
+				// lowest layer
+				if (closest_vert_index == other_vert_index && closest_vert_index == NO_OF_LAYERS - 1)
+				{
+					interpolated_model[obs_index] += weights_vector[j]*
+					(background[relevant_model_dofs_matrix[obs_index][j]]
+					// vertical temperature extrapolation (from the model to the observation) according to the standard atmosphere
+					+ STANDARD_LAPSE_RATE*(z_used_obs[obs_index] - z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]]));
+				}
+				else
+				{
+					interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
+					interpolated_model[obs_index] += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
+				}
+				sum_of_interpol_weights += weights_vector[j] + weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2];
+				if (j == NO_OF_REL_MODEL_DOFS_PER_OBS/2 - 1)
 				{
 					for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 					{
@@ -584,15 +606,15 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 			// loop over all relevant model degrees of freedom
 			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
 			{
-				// radius does not matter here
-				distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
 				// we pick the lowest layer here (independant in wether we look at the temperature or the density)
-				min_vert_index = NO_OF_LAYERS - 1;
+				closest_vert_index = NO_OF_LAYERS - 1;
 				// How is the suface pressure affected by the temperature in the lowest layer?
 				if (j < NO_OF_REL_MODEL_DOFS_PER_OBS/2)
 				{
+					// radius does not matter here
+					distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
 					// now we know which gridpoint is relevant to this observation
-					relevant_model_dofs_matrix[obs_index][j] = min_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j];
+					relevant_model_dofs_matrix[obs_index][j] = closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j];
 					// 1/r-interpolation
 					weights_vector[j] = 1/(distance + EPSILON)
 					*R_D*background[relevant_model_dofs_matrix[obs_index][j] + NO_OF_SCALARS_H]
@@ -617,12 +639,14 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 					{
 						sum_of_interpol_weights = 0;
 					}
+					// radius does not matter here
+					distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]], lon_model[rel_h_index_vector[obs_index][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]], 1);
 					// now we know which gridpoint is relevant to this observation
-					relevant_model_dofs_matrix[obs_index][j] = (min_vert_index + 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j];
+					relevant_model_dofs_matrix[obs_index][j] = (closest_vert_index + 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2];
 					// 1/r-interpolation
 					weights_vector[j] = 1/(distance + EPSILON)
 					*R_D*background[relevant_model_dofs_matrix[obs_index][j] - NO_OF_SCALARS_H]
-					*exp(-(z_used_obs[obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]])/SCALE_HEIGHT);
+					*exp(-(z_used_obs[obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]])/SCALE_HEIGHT);
 					// interpolation to the surface pressure
 					interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
 					sum_of_interpol_weights += 1/(distance + EPSILON);
