@@ -365,20 +365,26 @@ int main(int argc, char *argv[])
     
     free(model_vector);
     
-    // humidity is not yet assimilated, it set equal to the background state
+    // Wind is set equal to the background wind for now. Later it will be derived from the balance equation.
+    for (int i = 0; i < NO_OF_VECTORS; ++i)
+    {
+    	wind[i] = wind_background[i];
+    }
+    
+    // end of the assimilation of the dry state
+    // separate moisture assimilation
     for (int i = 0; i < NO_OF_SCALARS; ++i)
     {
 		water_vapour_density[i] = water_vapour_density_background[i];
 		liquid_water_density[i] = liquid_water_density_background[i];
 		solid_water_density[i] = solid_water_density_background[i];
-		liquid_water_temp[i] = liquid_water_temperature_background[i];
-		solid_water_temp[i] = solid_water_temperature_background[i];
-    }
-    
-    // wind is set equal to the background wind for now
-    for (int i = 0; i < NO_OF_VECTORS; ++i)
-    {
-    	wind[i] = wind_background[i];
+	}
+	
+	// individual condensate temperatures are for higher resolutions, not yet implemented
+	for (int i = 0; i < NO_OF_SCALARS; ++i)
+	{
+		liquid_water_temp[i] = temperature[i];
+		solid_water_temp[i] = temperature[i];
     }
     
     // Writing the result to a netcdf file.
