@@ -522,7 +522,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
 			{
 				rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
-				dist_vector[rel_h_index_vector[i][j]] = 2*M_PI;
+				dist_vector[rel_h_index_vector[i][j]] = M_PI + EPSILON;
 			}
 		}
 		// surface pressure
@@ -532,7 +532,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 			{
 				rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
 				rel_h_index_vector[i][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = rel_h_index_vector[i][j];
-				dist_vector[rel_h_index_vector[i][j]] = 2*M_PI;
+				dist_vector[rel_h_index_vector[i][j]] = M_PI + EPSILON;
 			}
 		}
 	}
