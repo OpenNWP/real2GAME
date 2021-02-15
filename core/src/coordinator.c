@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
     // setting up the measurement error covariance matrix
     double *obs_error_cov = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS]));
     double temperature_error_obs = 0.2;
-    double pressure_error_obs = 1;
+    double pressure_error_obs = 10;
     for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
     {
     	if (i < NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
@@ -293,8 +293,8 @@ int main(int argc, char *argv[])
     
     // setting up the background error covariance matrix (only the diagonal)
     double *bg_error_cov = malloc(NO_OF_MODEL_DOFS*sizeof(double));
-    double temperature_error_model = 0.2;
-    double pressure_error_model = 2;
+    double temperature_error_model = 2;
+    double pressure_error_model = 100;
     for (int i = 0; i < NO_OF_MODEL_DOFS; ++i)
     {
     	if (i < NO_OF_SCALARS)
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
     	else
     	{
     		// density = p/(R_D*T) (Gauss'ian error propagation)
-    		bg_error_cov[i] = pow(pow(pressure_error_model/(R_D*280), 2) + pow(P_0/(R_D*280*280)*temperature_error_model, 2), 0.5);
+    		bg_error_cov[i] = pow(pressure_error_model/(R_D*background[i - NO_OF_SCALARS_H]), 2) + pow(background[i]/background[i - NO_OF_SCALARS_H]*temperature_error_model, 2);
     	}
     }
     
@@ -629,7 +629,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 					weights_vector[j] = 1/(distance + EPSILON)
 					*R_D*background[relevant_model_dofs_matrix[obs_index][j] - NO_OF_SCALARS_H]
 					*exp(-(z_used_obs[obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]])/SCALE_HEIGHT);
-					// interpoation to the surface pressure
+					// interpolation to the surface pressure
 					interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
 					sum_of_interpol_weights += 1/(distance + EPSILON);
 					// the result
