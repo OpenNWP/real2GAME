@@ -16,12 +16,6 @@ This file coordinates the data assimilation process.
 #include "geos95.h"
 #include "atmostracers.h"
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
-#define N_A (6.0221409e23)
-#define K_B (1.380649e-23)
-#define M_D 0.028964420
-#define R (N_A*K_B)
-#define P_0 100000.0
-#define OMEGA (7.292115e-5)
 #define EPSILON 1e-4
 #define SCALE_HEIGHT 8000.0
 
