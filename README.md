@@ -4,7 +4,7 @@ Optimum interpolation (OI), 3D and 4D variational data assimilation for [GAME](h
 
 ## Scientific derivation
 
-The scientific derivations of the assimilation techniques can be found in my textbook on theoretical meteotology (in German): [Kompendium Theoretische Meteorologie](https://raw.githubusercontent.com/MHBalsmeier/kompendium/master/kompendium.pdf).
+The scientific derivations of the assimilation techniques can be found in my textbook on theoretical meteorology (in German): [Kompendium Theoretische Meteorologie](https://raw.githubusercontent.com/MHBalsmeier/kompendium/master/kompendium.pdf).
 
 ## Documentation
 
