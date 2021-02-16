@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
     
     // setting up the measurement error covariance matrix
     double *obs_error_cov = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS]));
-    double temperature_error_obs = 2;
+    double temperature_error_obs = 1;
     double pressure_error_obs = 100;
     for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
     {
