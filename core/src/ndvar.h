@@ -13,7 +13,7 @@
 // the total number of model degree of freedoms
 #define NO_OF_MODEL_DOFS (NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H)
 // the number of model degrees of freedom that are used to interpolate to an observation
-#define NO_OF_REL_MODEL_DOFS_PER_OBS 140
+#define NO_OF_REL_MODEL_DOFS_PER_OBS 150
 // lapse rate of the standard atmosphere
 #define STANDARD_LAPSE_RATE (-0.0065)
 
