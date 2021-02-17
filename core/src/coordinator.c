@@ -577,8 +577,8 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 				// radius does not matter here
 				distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index][j]], lon_model[rel_h_index_vector[obs_index][j]], 1);
 				// 1/r-interpolation
-				weights_vector[j] = closest_vert_weight/(distance + EPSILON);
-				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/(distance + EPSILON);
+				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, T_INTERPOL_EXP);
+				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, T_INTERPOL_EXP);
 				// lowest layer
 				if (closest_vert_index == other_vert_index && closest_vert_index == NO_OF_LAYERS - 1)
 				{
@@ -622,10 +622,10 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 					// now we know which gridpoint is relevant to this observation
 					relevant_model_dofs_matrix[obs_index][j] = closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j];
 					// 1/r-interpolation
-					weights_vector[j] = 1/(distance + EPSILON)
+					weights_vector[j] = 1/pow(distance + EPSILON, SP_INTERPOL_EXP)
 					*R_D*background[relevant_model_dofs_matrix[obs_index][j] + NO_OF_SCALARS_H]
 					*exp(-(z_used_obs[obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]])/SCALE_HEIGHT);
-					sum_of_interpol_weights += 1/(distance + EPSILON);
+					sum_of_interpol_weights += 1/pow(distance + EPSILON, SP_INTERPOL_EXP);
 					// the result
 					if (j == NO_OF_REL_MODEL_DOFS_PER_OBS/2 - 1)
 					{
@@ -650,12 +650,12 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 					// now we know which gridpoint is relevant to this observation
 					relevant_model_dofs_matrix[obs_index][j] = (closest_vert_index + 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2];
 					// 1/r-interpolation
-					weights_vector[j] = 1/(distance + EPSILON)
+					weights_vector[j] = 1/pow(distance + EPSILON, SP_INTERPOL_EXP)
 					*R_D*background[relevant_model_dofs_matrix[obs_index][j] - NO_OF_SCALARS_H]
 					*exp(-(z_used_obs[obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]])/SCALE_HEIGHT);
 					// interpolation to the surface pressure
 					interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
-					sum_of_interpol_weights += 1/(distance + EPSILON);
+					sum_of_interpol_weights += 1/pow(distance + EPSILON, SP_INTERPOL_EXP);
 					// the result
 					if (j == NO_OF_REL_MODEL_DOFS_PER_OBS - 1)
 					{

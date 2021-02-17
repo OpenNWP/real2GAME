@@ -16,5 +16,9 @@
 #define NO_OF_REL_MODEL_DOFS_PER_OBS 400
 // lapse rate of the standard atmosphere
 #define STANDARD_LAPSE_RATE (-0.0065)
+// smoothes the MSLP
+#define SP_INTERPOL_EXP 1.0
+// smoothes the temperature field
+#define T_INTERPOL_EXP 1.0
 
 int oi(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [], double []);
