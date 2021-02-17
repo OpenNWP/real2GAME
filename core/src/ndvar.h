@@ -19,6 +19,6 @@
 // values smaller than one smooth the MSLP
 #define SP_INTERPOL_EXP 0.5
 // values smaller than one smooth the temperature field
-#define T_INTERPOL_EXP 1.0
+#define T_INTERPOL_EXP 0.75
 
 int oi(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [], double []);
