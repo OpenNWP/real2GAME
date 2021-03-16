@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
     
     // density is determined out of the hydrostatic equation
     int layer_index, h_index;
-    double entropy_value, temperature_mean, delta_temperature, delta_gravity_potential, lower_entropy_value, upper_weight, lower_weight;
+    double entropy_value, temperature_mean, delta_temperature, delta_gravity_potential, lower_entropy_value;
     for (int i = NO_OF_SCALARS - 1; i >= 0; --i)
     {
     	layer_index = i/NO_OF_SCALARS_H;
@@ -353,9 +353,7 @@ int main(int argc, char *argv[])
         else
         {
         	lower_entropy_value = spec_entropy_from_temp(density_dry[i + NO_OF_SCALARS_H], temperature[i + NO_OF_SCALARS_H]);
-            upper_weight = 0.5;
-            lower_weight = 0.5;
-        	temperature_mean = upper_weight*temperature[i] + lower_weight*temperature[i + NO_OF_SCALARS_H];
+        	temperature_mean = 0.5*(temperature[i] + temperature[i + NO_OF_SCALARS_H]);
         	delta_temperature = temperature[i] - temperature[i + NO_OF_SCALARS_H];
         	delta_gravity_potential = gravity_potential[i] - gravity_potential[i + NO_OF_SCALARS_H];
         	entropy_value = lower_entropy_value + (delta_gravity_potential + C_D_P*delta_temperature)/temperature_mean;
