@@ -409,7 +409,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_def_var(ncid, "wind", NC_DOUBLE, 1, &vector_dimid, &wind_id)))
         NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, wind_background_id, "units", strlen("m/s"), "m/s")))
+    if ((retval = nc_put_att_text(ncid, wind_id, "units", strlen("m/s"), "m/s")))
         NCERR(retval);
     if ((retval = nc_def_var(ncid, "density_vapour", NC_DOUBLE, 1, &scalar_dimid, &density_vapour_id)))
         NCERR(retval);
