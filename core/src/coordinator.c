@@ -583,7 +583,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 					interpolated_model[obs_index] += weights_vector[j]*
 					(background[relevant_model_dofs_matrix[obs_index][j]]
 					// vertical temperature extrapolation (from the model to the observation) according to the standard atmosphere
-					+ STANDARD_LAPSE_RATE*(z_used_obs[obs_index] - z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]]));
+					- STANDARD_LAPSE_RATE*(z_used_obs[obs_index] - z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]]));
 				}
 				else
 				{
@@ -610,7 +610,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 			// loop over all relevant model degrees of freedom
 			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
 			{
-				// we pick the lowest layer here (independant in wether we look at the temperature or the density)
+				// we pick the lowest layer here (independant on wether we look at the temperature or the density)
 				closest_vert_index = NO_OF_LAYERS - 1;
 				// How is the suface pressure affected by the temperature in the lowest layer?
 				if (j < NO_OF_REL_MODEL_DOFS_PER_OBS/2)
