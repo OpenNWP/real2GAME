@@ -19,7 +19,6 @@ This file coordinates the data assimilation process.
 #define EPSILON 1e-4
 #define SCALE_HEIGHT 8000.0
 
-// declaring some functions (definitions see end of this file)
 int obs_op_setup(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [], double [], double [], double []);
 
 int main(int argc, char *argv[])
@@ -548,7 +547,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 				}
 				closest_vert_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
 				// vertical interpolation
-				// first setting for the rother vertical index
+				// first setting for the other vertical index
 				other_vert_index = closest_vert_index + 1;
 				// if the the closest model point is below the observation, the next higher point is taken into account for the interpolation
 				if (z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]] < z_used_obs[obs_index])
@@ -558,9 +557,11 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 				// if the observation is below the lowest layer
 				if (other_vert_index == NO_OF_LAYERS)
 				{
-					other_vert_index = NO_OF_LAYERS - 1;
-					closest_vert_weight = 1;
-					other_vert_weight = 0;
+					other_vert_index = NO_OF_LAYERS - 2;
+					closest_vert_weight = 1 - (z_used_obs[obs_index] - z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]])
+					/(z_model[other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]] - z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]]);
+					other_vert_weight = (z_used_obs[obs_index] - z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]])
+					/(z_model[other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]] - z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]]);
 				}
 				else
 				{
