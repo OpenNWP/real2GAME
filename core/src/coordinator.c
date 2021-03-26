@@ -554,7 +554,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 				{
 					other_vert_index = closest_vert_index - 1;
 				}
-				// if the observation is below the lowest layer
+				// if the observation is below the lowest layer of the model
 				if (other_vert_index == NO_OF_LAYERS)
 				{
 					other_vert_index = NO_OF_LAYERS - 2;
@@ -578,20 +578,10 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 				// 1/r-interpolation
 				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, T_INTERPOL_EXP);
 				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, T_INTERPOL_EXP);
-				// lowest layer
-				if (closest_vert_index == other_vert_index && closest_vert_index == NO_OF_LAYERS - 1)
-				{
-					interpolated_model[obs_index] += weights_vector[j]*
-					(background[relevant_model_dofs_matrix[obs_index][j]]
-					// vertical temperature extrapolation (from the model to the observation) according to the standard atmosphere
-					- STANDARD_LAPSE_RATE*(z_used_obs[obs_index] - z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j]]));
-				}
-				else
-				{
-					interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
-					interpolated_model[obs_index] += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
-				}
-				sum_of_interpol_weights += weights_vector[j] + weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2];
+				interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
+				interpolated_model[obs_index] += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
+				sum_of_interpol_weights += weights_vector[j];
+				sum_of_interpol_weights += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2];
 				if (j == NO_OF_REL_MODEL_DOFS_PER_OBS/2 - 1)
 				{
 					for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
