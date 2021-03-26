@@ -11,7 +11,7 @@ Optimum interpolation.
 #include <stdlib.h>
 #include "geos95.h"
 
-int oi(double obs_error_cov[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double bg_error_cov[], double interpolated_model[], double background[], double observations_vector[], double model_vector[])
+int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double bg_error_cov[], double interpolated_model[], double background[], double observations_vector[], double model_vector[])
 {
 	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
 	double (*h_b_ht_plus_r)[NO_OF_CHOSEN_OBSERVATIONS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_CHOSEN_OBSERVATIONS]));
@@ -40,8 +40,8 @@ int oi(double obs_error_cov[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DO
 					}
 					h_b_ht_plus_r[i][j]
 					+= bg_error_cov[relevant_model_dofs_matrix[i][k]]
-					*obs_op_reduced_matrix[i][k]
-					*obs_op_reduced_matrix[j][index_found];
+					*obs_op_jacobian_reduced_matrix[i][k]
+					*obs_op_jacobian_reduced_matrix[j][index_found];
 				}
 			}
 			if (i == j)
@@ -125,7 +125,7 @@ int oi(double obs_error_cov[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DO
 				prod_with_gain_matrix[relevant_model_dofs_matrix[k][i]]
 				+= (h_b_ht_plus_r_inv[k][j]
 				*bg_error_cov[relevant_model_dofs_matrix[k][i]]
-				*obs_op_reduced_matrix[k][i])
+				*obs_op_jacobian_reduced_matrix[k][i])
 				*(observations_vector[j] - interpolated_model[j]);
 			}
 		}

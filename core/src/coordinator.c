@@ -303,19 +303,19 @@ int main(int argc, char *argv[])
     
 	// setting up the observations operator
 	double *interpolated_model = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	double (*obs_op_reduced_matrix)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	double (*obs_op_jacobian_reduced_matrix)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	int (*relevant_model_dofs_matrix)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-	obs_op_setup(interpolated_model, obs_op_reduced_matrix, relevant_model_dofs_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
+	obs_op_setup(interpolated_model, obs_op_jacobian_reduced_matrix, relevant_model_dofs_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
 	
 	// now, all the constituents of the gain matrix are known
 	double *model_vector = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
-	oi(obs_error_cov, obs_op_reduced_matrix, relevant_model_dofs_matrix, bg_error_cov, interpolated_model, background, observations_vector, model_vector);
+	oi(obs_error_cov, obs_op_jacobian_reduced_matrix, relevant_model_dofs_matrix, bg_error_cov, interpolated_model, background, observations_vector, model_vector);
 	
 	// data assimilation is finished at this point
 	// freeing the memory
 	free(obs_error_cov);
 	free(bg_error_cov);
-	free(obs_op_reduced_matrix);
+	free(obs_op_jacobian_reduced_matrix);
 	free(relevant_model_dofs_matrix);
 	free(interpolated_model);
 	free(background);
@@ -494,12 +494,13 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
+int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
 {
 	/*
-	this functions calculates the observations operator
-	this is only done once for efficiency
-	How do the observations change, if the model state is changed?
+	This functions calculates the observations operator.
+	It is the background state, interpolated to the observations
+	+ the derivative of this function, which will be used to calculate
+	the perturbation induced by the observations.
 	*/
 	double R_D = specific_gas_constants_lookup(0);
 	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
@@ -587,7 +588,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 					for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 					{
 						// we have to divide by the sum of weights here
-						obs_op_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
+						obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
 					}
 					interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
 				}
@@ -622,7 +623,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 						for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++k)
 						{
 							// we have to divide by the sum of weights here
-							obs_op_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
+							obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
 						}
 					}
 				}
@@ -654,7 +655,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_reduced_matrix[][NO_
 						for (int k = NO_OF_REL_MODEL_DOFS_PER_OBS/2; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 						{
 							// we have to divide by the sum of weights here
-							obs_op_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
+							obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
 						}
 					}
 				}
