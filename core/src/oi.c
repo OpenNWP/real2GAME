@@ -12,7 +12,7 @@ Optimum interpolation.
 #include <stdlib.h>
 #include "geos95.h"
 
-int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double bg_error_cov[], double interpolated_model[], double background[], double observations_vector[], double model_vector[])
+int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double bg_error_cov[], double interpolated_model[], double background[], double observations_vector[], double model_vector[], int OI_SOLUTION_METHOD)
 {
 	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
 	double (*h_b_ht_plus_r)[NO_OF_CHOSEN_OBSERVATIONS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_CHOSEN_OBSERVATIONS]));
@@ -55,7 +55,15 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 	// h_b_ht_plus_r needs to be inversed in order to calculate the gain matrix
 	// this is actually the main task of OI
 	double (*h_b_ht_plus_r_inv)[NO_OF_CHOSEN_OBSERVATIONS] = calloc(1, sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_CHOSEN_OBSERVATIONS]));
-	inv_gauss(h_b_ht_plus_r, h_b_ht_plus_r_inv);
+	if (OI_SOLUTION_METHOD == 0)
+	{
+		inv_gauss(h_b_ht_plus_r, h_b_ht_plus_r_inv);
+	}
+	if (OI_SOLUTION_METHOD == 1)
+	{
+		inv_lu(h_b_ht_plus_r, h_b_ht_plus_r_inv);
+	}
+	
 	// now, the main job is already done
 	free(h_b_ht_plus_r);
 	

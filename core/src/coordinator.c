@@ -62,8 +62,8 @@ int main(int argc, char *argv[])
     strcpy(ndvar_root_dir, argv[8]);
 	int NO_OF_ORO_LAYERS;
     NO_OF_ORO_LAYERS = strtod(argv[9], NULL);
-	int TOA;
-	TOA = strtod(argv[10], NULL);
+	int TOA = strtod(argv[10], NULL);
+	int OI_SOLUTION_METHOD = strtod(argv[11], NULL);
 	printf("background state file: %s\n", BACKGROUND_STATE_FILE);
     
     // Allocating memory for the grid properties.
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
 	
 	// now, all the constituents of the gain matrix are known
 	double *model_vector = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
-	oi(obs_error_cov, obs_op_jacobian_reduced_matrix, relevant_model_dofs_matrix, bg_error_cov, interpolated_model, background, observations_vector, model_vector);
+	oi(obs_error_cov, obs_op_jacobian_reduced_matrix, relevant_model_dofs_matrix, bg_error_cov, interpolated_model, background, observations_vector, model_vector, OI_SOLUTION_METHOD);
 	
 	// data assimilation is finished at this point
 	// freeing the memory
