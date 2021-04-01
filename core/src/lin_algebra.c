@@ -31,16 +31,23 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS - 1; ++i)
 	{
 		// dividing the line by to_be_inverted[i][i]
-		inv[i][i] = 1/to_be_inverted[i][i];
-		for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
+		for (int j = i; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
 		{
-			to_be_inverted[i][j] = inv[i][i]*to_be_inverted[i][j];
+			to_be_inverted[i][j] = to_be_inverted[i][j]/to_be_inverted[i][i];
 		}
+		for (int j = 0; j <= i; ++j)
+		{
+			inv[i][j] = inv[i][j]/to_be_inverted[i][i];
+		}
+		// loop over all the lines that are below the current line
 		for (int j = i + 1; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
 		{
-			for (int k = 0; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
+			for (int k = i; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
 			{
 				to_be_inverted[j][k] = to_be_inverted[j][k] - to_be_inverted[j][i]*to_be_inverted[i][k];
+			}
+			for (int k = 0; k <= i; ++k)
+			{
 				inv[j][k] = inv[j][k] - to_be_inverted[j][i]*inv[i][k];
 			}
 		}
@@ -48,9 +55,9 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 	
 	for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
 	{
-		to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS - 1][j] = to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS - 1][j]/to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS - 1][NO_OF_CHOSEN_OBSERVATIONS - 1];
 		inv[NO_OF_CHOSEN_OBSERVATIONS - 1][j] = inv[NO_OF_CHOSEN_OBSERVATIONS - 1][j]/to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS - 1][NO_OF_CHOSEN_OBSERVATIONS - 1];
 	}
+	to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS - 1][NO_OF_CHOSEN_OBSERVATIONS - 1] = 1;
 	
 	/*
 	Gaussian upwards
@@ -75,7 +82,7 @@ int inv_lu(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][NO_O
 	This function computes the inverse inv of the matrix to_be_inverted, using the LU decomposition.
 	CAUTION: in the process, to_be_inverted will be modified.
 	*/
-	double (*l_matrix)[NO_OF_CHOSEN_OBSERVATIONS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_CHOSEN_OBSERVATIONS]));
+	double (*l_matrix)[NO_OF_CHOSEN_OBSERVATIONS] = calloc(1, sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_CHOSEN_OBSERVATIONS]));
 	/*
 	downward sweep
 	--------------
@@ -87,7 +94,7 @@ int inv_lu(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][NO_O
 		for (int j = i + 1; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
 		{
 			l_matrix[j][i] = to_be_inverted[j][i]/to_be_inverted[i][i];
-			for (int k = j - 1; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
+			for (int k = i; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
 			{
 				to_be_inverted[j][k] = to_be_inverted[j][k] - l_matrix[j][i]*to_be_inverted[i][k];
 			}
@@ -124,9 +131,9 @@ int inv_lu(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][NO_O
 		inv[NO_OF_CHOSEN_OBSERVATIONS - 1][i] = b_matrix[NO_OF_CHOSEN_OBSERVATIONS - 1][i]/to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS - 1][NO_OF_CHOSEN_OBSERVATIONS - 1];
 		for (int j = NO_OF_CHOSEN_OBSERVATIONS - 2; j >= 0; --j)
 		{
-			for (int k = j + 1; k < NO_OF_CHOSEN_OBSERVATIONS - 1; ++j)
+			for (int k = j + 1; k < NO_OF_CHOSEN_OBSERVATIONS ; ++j)
 			{
-				inv[j][i] = b_matrix[j][i] - to_be_inverted[j][k]*inv[k][i]/to_be_inverted[j][i];
+				inv[j][i] = b_matrix[j][i] - to_be_inverted[j][k]*inv[k][i]/to_be_inverted[j][j];
 			}
 		}
 	}
