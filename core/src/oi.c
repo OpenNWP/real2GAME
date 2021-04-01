@@ -2,6 +2,7 @@
 This source file is part of ndvar, which is released under the MIT license.
 Github repository: https://github.com/AUN4GFD/ndvar
 */
+
 /*
 Optimum interpolation.
 */
@@ -54,63 +55,9 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 	// h_b_ht_plus_r needs to be inversed in order to calculate the gain matrix
 	// this is actually the main task of OI
 	double (*h_b_ht_plus_r_inv)[NO_OF_CHOSEN_OBSERVATIONS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_CHOSEN_OBSERVATIONS]));
-	// firstly, the inverse is initialized with the unity matrix
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
-	{
-		for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
-		{
-			h_b_ht_plus_r_inv[i][j] = 0;
-			if (i == j)
-			{
-				h_b_ht_plus_r_inv[i][j] = 1;
-			}
-		}
-	}
-	// we will start to modify h_b_ht_plus_r now (misuse of name)
-	// Gaussian downwards
-	double factor = 0;
-	// starting with the first line, down to the second but last line
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS - 1; ++i)
-	{
-		// dividing the line by h_b_ht_plus_r[i][i]
-		factor = 1/h_b_ht_plus_r[i][i];
-		for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
-		{
-			h_b_ht_plus_r[i][j] = factor*h_b_ht_plus_r[i][j];
-			h_b_ht_plus_r_inv[i][j] = factor*h_b_ht_plus_r_inv[i][j];
-		}
-		for (int j = i + 1; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
-		{
-			factor = -h_b_ht_plus_r[j][i];
-			for (int k = 0; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
-			{
-				h_b_ht_plus_r[j][k] = h_b_ht_plus_r[j][k] + factor*h_b_ht_plus_r[i][k];
-				h_b_ht_plus_r_inv[j][k] = h_b_ht_plus_r_inv[j][k] + factor*h_b_ht_plus_r_inv[i][k];
-			}
-		}
-	}
-	factor = 1/h_b_ht_plus_r[NO_OF_CHOSEN_OBSERVATIONS - 1][NO_OF_CHOSEN_OBSERVATIONS - 1];
-	for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
-	{
-		h_b_ht_plus_r[NO_OF_CHOSEN_OBSERVATIONS - 1][j] = factor*h_b_ht_plus_r[NO_OF_CHOSEN_OBSERVATIONS - 1][j];
-		h_b_ht_plus_r_inv[NO_OF_CHOSEN_OBSERVATIONS - 1][j] = factor*h_b_ht_plus_r_inv[NO_OF_CHOSEN_OBSERVATIONS - 1][j];
-	}
-	// Gaussian upwards
-	// starting with the last line, then going up to the last but first
-	for (int i = NO_OF_CHOSEN_OBSERVATIONS - 1; i >= 1; --i)
-	{
-		for (int j = i - 1; j >= 0; --j)
-		{
-			factor = -h_b_ht_plus_r[j][i];
-			for (int k = 0; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
-			{
-				h_b_ht_plus_r_inv[j][k] = h_b_ht_plus_r_inv[j][k] + factor*h_b_ht_plus_r_inv[i][k];
-			}
-		}
-	}
-	
+	// inv_gauss(h_b_ht_plus_r, h_b_ht_plus_r_inv);
+	inv_lu(h_b_ht_plus_r, h_b_ht_plus_r_inv);
 	// now, the main job is already done
-	
 	free(h_b_ht_plus_r);
 	
 	// this vector will contain the product of the model forecast error and the gain matrix

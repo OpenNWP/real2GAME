@@ -20,3 +20,5 @@
 #define T_INTERPOL_EXP 0.75
 
 int oi(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [], double []);
+int inv_gauss(double [][NO_OF_CHOSEN_OBSERVATIONS], double [][NO_OF_CHOSEN_OBSERVATIONS]);
+int inv_lu(double [][NO_OF_CHOSEN_OBSERVATIONS], double [][NO_OF_CHOSEN_OBSERVATIONS]);

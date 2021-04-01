@@ -3,7 +3,8 @@ project(ndvar VERSION 0.0)
 set(CMAKE_C_COMPILER mpicc)
 add_executable(
 ndvar src/coordinator.c
-src/oi.c)
+src/oi.c
+src/lin_algebra.c)
 add_definitions(-Wall)
 find_package(OpenMP)
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
