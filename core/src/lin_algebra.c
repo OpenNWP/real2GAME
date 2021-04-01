@@ -28,27 +28,30 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 	------------------
 	we will start to modify to_be_inverted now (misuse of name)
 	*/
+	double factor;
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS - 1; ++i)
 	{
 		// dividing the line by to_be_inverted[i][i]
+		factor = 1/to_be_inverted[i][i];
 		for (int j = i; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
 		{
-			to_be_inverted[i][j] = to_be_inverted[i][j]/to_be_inverted[i][i];
+			to_be_inverted[i][j] = factor*to_be_inverted[i][j];
 		}
 		for (int j = 0; j <= i; ++j)
 		{
-			inv[i][j] = inv[i][j]/to_be_inverted[i][i];
+			inv[i][j] = factor*inv[i][j];
 		}
 		// loop over all the lines that are below the current line
 		for (int j = i + 1; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
 		{
+			factor = -to_be_inverted[j][i];
 			for (int k = i; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
 			{
-				to_be_inverted[j][k] = to_be_inverted[j][k] - to_be_inverted[j][i]*to_be_inverted[i][k];
+				to_be_inverted[j][k] = to_be_inverted[j][k] + factor*to_be_inverted[i][k];
 			}
 			for (int k = 0; k <= i; ++k)
 			{
-				inv[j][k] = inv[j][k] - to_be_inverted[j][i]*inv[i][k];
+				inv[j][k] = inv[j][k] + factor*inv[i][k];
 			}
 		}
 	}
