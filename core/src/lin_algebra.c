@@ -8,7 +8,10 @@ Linear algebra functions.
 */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "ndvar.h"
+
+int permute_lines(double [][NO_OF_CHOSEN_OBSERVATIONS], int, int);
 
 int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][NO_OF_CHOSEN_OBSERVATIONS])
 {
@@ -28,9 +31,39 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 	------------------
 	we will start to modify to_be_inverted now (misuse of name)
 	*/
+	int permute_index_found, permute_index_counter;
 	double factor;
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS - 1; ++i)
 	{
+		/*
+		checking if a permutation is necessary
+		*/
+		// Firstly, the permutaiton index has to be found.
+		permute_index_found = 0;
+		permute_index_counter = i;
+		while (permute_index_found == 0 && permute_index_counter < NO_OF_CHOSEN_OBSERVATIONS)
+		{
+			if (to_be_inverted[permute_index_counter][i] != 0)
+			{
+				permute_index_found = 1;
+			}
+			else
+			{
+				permute_index_counter += 1;
+			}
+		}
+		// checking for an error
+		if (permute_index_counter == NO_OF_CHOSEN_OBSERVATIONS)
+		{
+			printf("Matrix inversion failed.\n");
+			exit(1);
+		}
+		// actually performing the permutation
+		if (permute_index_counter > i)
+		{
+			permute_lines(to_be_inverted, i, permute_index_counter);
+			permute_lines(inv, i, permute_index_counter);
+		}
 		// dividing the line by to_be_inverted[i][i]
 		factor = 1/to_be_inverted[i][i];
 		for (int j = i; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
@@ -147,7 +180,23 @@ int inv_lu(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][NO_O
 	return 0;
 }
 
-
+int permute_lines(double matrix[][NO_OF_CHOSEN_OBSERVATIONS], int line_a, int line_b)
+{
+	/*
+	Permutes line_a with line_b of matrix.
+	*/
+	double line_a_pre[NO_OF_CHOSEN_OBSERVATIONS];
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
+	{
+		line_a_pre[i] = matrix[line_a][i];
+	}
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
+	{
+		matrix[line_a][i] = matrix[line_b][i];
+		matrix[line_b][i] = line_a_pre[i];
+	}
+	return 0;
+}
 
 
 
