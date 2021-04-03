@@ -81,6 +81,7 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 
 int inv_lu(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][NO_OF_CHOSEN_OBSERVATIONS])
 {
+	// WARNING! untested and neglects permutations
 	/*
 	This function computes the inverse inv of the matrix to_be_inverted, using the LU decomposition.
 	CAUTION: in the process, to_be_inverted will be modified.
