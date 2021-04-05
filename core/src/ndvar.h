@@ -7,7 +7,7 @@
 // the number of points per layer of the input model
 #define NO_OF_POINTS_PER_LAYER_OBS 2949120
 // the number of points on each layer
-#define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 224
+#define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 218
 // the total number of observations we take into account
 #define NO_OF_CHOSEN_OBSERVATIONS ((NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
 // the total number of model degree of freedoms
