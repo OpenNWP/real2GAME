@@ -14,6 +14,10 @@ ndvar_root_dir=${BASH_ARGV[7]}
 orography_layers=${BASH_ARGV[8]}
 toa=${BASH_ARGV[9]}
 oi_solution_method=${BASH_ARGV[10]}
+omp_num_threads=${BASH_ARGV[11]}
+
+# parallelization
+export OMP_NUM_THREADS=$omp_num_threads # relevant only for OMP
 
 echo "This is ndvar."
 echo "Starting the assimilation process ..."

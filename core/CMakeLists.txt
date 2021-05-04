@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(ndvar VERSION 0.0)
+project(ndvar VERSION 0.0.1)
 set(CMAKE_C_COMPILER mpicc)
 add_executable(
 ndvar src/coordinator.c

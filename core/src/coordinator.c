@@ -198,6 +198,7 @@ int main(int argc, char *argv[])
 
 	// saving the relevant part of the background state in one array
 	double *background = malloc(NO_OF_MODEL_DOFS*sizeof(double));
+    #pragma omp parallel for
 	for (int i = 0; i < NO_OF_MODEL_DOFS; ++i)
 	{
 		if (i < NO_OF_SCALARS)
@@ -288,6 +289,7 @@ int main(int argc, char *argv[])
     double *bg_error_cov = malloc(NO_OF_MODEL_DOFS*sizeof(double));
     double temperature_error_model = 1;
     double pressure_error_model = 50;
+    #pragma omp parallel for
     for (int i = 0; i < NO_OF_MODEL_DOFS; ++i)
     {
     	if (i < NO_OF_SCALARS)
@@ -332,6 +334,7 @@ int main(int argc, char *argv[])
     double *solid_water_temp = malloc(NO_OF_SCALARS*sizeof(double));
     
     // the temperature comes first in the model_vector
+    #pragma omp parallel for
     for (int i = 0; i < NO_OF_SCALARS; ++i)
     {
     	temperature[i] = model_vector[i];
@@ -363,6 +366,7 @@ int main(int argc, char *argv[])
     free(model_vector);
     
     // Wind is set equal to the background wind for now. Later it will be derived from the balance equation.
+    #pragma omp parallel for
     for (int i = 0; i < NO_OF_VECTORS; ++i)
     {
     	wind[i] = wind_background[i];
@@ -370,6 +374,7 @@ int main(int argc, char *argv[])
     
     // end of the assimilation of the dry state
     // separate moisture assimilation
+    #pragma omp parallel for
     for (int i = 0; i < NO_OF_SCALARS; ++i)
     {
 		water_vapour_density[i] = water_vapour_density_background[i];
@@ -378,6 +383,7 @@ int main(int argc, char *argv[])
 	}
 	
 	// individual condensate temperatures are for higher resolutions, not yet implemented
+    #pragma omp parallel for
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
 		liquid_water_temp[i] = temperature[i];
@@ -506,6 +512,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
 	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS/2])); // the vector containing the relevant horizontal model indices for each observation
 	double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double)); // the vector containing the horizontal distances between the observation at hand and each horizontal model gridpoint
+	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
 	{
 		// filling up the dist_vector
@@ -531,6 +538,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 	int closest_vert_index, other_vert_index;
 	double sum_of_interpol_weights, distance, closest_vert_weight, other_vert_weight;
 	// finally setting up the reduced observations operator
+	#pragma omp parallel for private(vert_distance_vector, weights_vector, closest_vert_index, other_vert_index, sum_of_interpol_weights, distance, closest_vert_weight, other_vert_weight)
 	for (int obs_index = 0; obs_index < NO_OF_CHOSEN_OBSERVATIONS; ++obs_index)
 	{
 		// free atmosphere quantities (temperature, specific humidity)

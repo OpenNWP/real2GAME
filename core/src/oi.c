@@ -18,6 +18,7 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 	double (*h_b_ht_plus_r)[NO_OF_CHOSEN_OBSERVATIONS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_CHOSEN_OBSERVATIONS]));
 	int index_found;
 	int check_vector[NO_OF_REL_MODEL_DOFS_PER_OBS];
+    #pragma omp parallel for private(index_found, check_vector)
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
 	{
 		for (int l = 0; l < NO_OF_REL_MODEL_DOFS_PER_OBS; ++l)
@@ -70,6 +71,7 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 	// this vector will contain the product of the model forecast error and the gain matrix
 	double *prod_with_gain_matrix = calloc(NO_OF_MODEL_DOFS, sizeof(double));
 	// multiplying (obs - (interpolated model)) by the gain matrix
+    #pragma omp parallel for
 	for (int i = 0; i < NO_OF_REL_MODEL_DOFS_PER_OBS; ++i)
 	{
 		for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
@@ -87,6 +89,7 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 	
 	free(h_b_ht_plus_r_inv);
 	
+    #pragma omp parallel for
 	for (int i = 0; i < NO_OF_MODEL_DOFS; ++i)
 	{
 		model_vector[i] = background[i] + prod_with_gain_matrix[i];
