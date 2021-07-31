@@ -1,4 +1,4 @@
-Optimum interpolation (OI), 3D and 4D variational data assimilation for [GAME](https://github.com/AUN4GFD/game).
+Optimum interpolation (OI), 3D and 4D variational data assimilation for [GAME](https://github.com/OpenNWP/game).
 
 # Documents
 
@@ -14,10 +14,10 @@ The documentation of the code can be found in the subdirectory doc.
 
 ## Dependencies
 
-* [geos95](https://github.com/AUN4GFD/geos95)
+* [geos95](https://github.com/OpenNWP/geos95)
 * netcdf library (Ubuntu: sudo apt-get libnetcdf-dev)
 * CMake (Ubuntu: sudo apt-get install cmake)
-* [atmostracers](https://github.com/AUN4GFD/atmostracers)
+* [atmostracers](https://github.com/OpenNWP/atmostracers)
 * MPICH (Ubuntu: sudo apt-get install mpich)
 * bzip2 (Ubuntu: sudo apt-get install bzip2)
 * python3 (Ubuntu: sudo apt-get install python3)
@@ -28,7 +28,7 @@ The documentation of the code can be found in the subdirectory doc.
 
 ## Download
 
-	git clone https://github.com/AUN4GFD/ndvar.git
+	git clone https://github.com/OpenNWP/ndvar.git
 
 ## Compilation
 
