@@ -1,4 +1,4 @@
-Optimum interpolation (OI), 3D and 4D variational data assimilation for [GAME](https://github.com/OpenNWP/game).
+Optimum interpolation (OI), 3D and 4D variational data assimilation for [GAME](https://github.com/OpenNWP/game) and [RFPET](https://github.com/OpenNWP/rfpet).
 
 # Documents
 
