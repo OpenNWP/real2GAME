@@ -15,16 +15,16 @@ The documentation of the code can be found in the subdirectory doc.
 ## Dependencies
 
 * [geos95](https://github.com/OpenNWP/geos95)
-* netcdf library (Ubuntu: sudo apt-get libnetcdf-dev)
-* CMake (Ubuntu: sudo apt-get install cmake)
+* netcdf library (Ubuntu: `sudo apt-get libnetcdf-dev`)
+* CMake (Ubuntu: `sudo apt-get install cmake`)
 * [atmostracers](https://github.com/OpenNWP/atmostracers)
-* MPICH (Ubuntu: sudo apt-get install mpich)
-* bzip2 (Ubuntu: sudo apt-get install bzip2)
-* python3 (Ubuntu: sudo apt-get install python3)
+* MPICH (Ubuntu: `sudo apt-get install mpich`)
+* bzip2 (Ubuntu: `sudo apt-get install bzip2`)
+* python3 (Ubuntu: `sudo apt-get install python3`)
 
 ### For developing
 
-* Valgrind (Ubuntu: sudo apt-get install valgrind, for doing checks)
+* Valgrind (Ubuntu: `sudo apt-get install valgrind`, for doing checks)
 
 ## Download
 
