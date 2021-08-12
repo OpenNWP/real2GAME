@@ -1,3 +1,8 @@
+/*
+This source file is part of ndvar, which is released under the MIT license.
+Github repository: https://github.com/OpenNWP/ndvar
+*/
+
 // the number of levels from which we use observations
 #define NO_OF_LEVELS_OBS 6
 // the number of fields we use on each layer

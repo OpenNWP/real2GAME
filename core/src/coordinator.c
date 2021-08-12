@@ -1,6 +1,6 @@
 /*
 This source file is part of ndvar, which is released under the MIT license.
-Github repository: https://github.com/AUN4GFD/ndvar
+Github repository: https://github.com/OpenNWP/ndvar
 */
 /*
 This file coordinates the data assimilation process.

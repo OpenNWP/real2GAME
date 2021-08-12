@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This source file is part of ndvar, which is released under the MIT license.
-# Github repository: https://github.com/AUN4GFD/ndvar
+# Github repository: https://github.com/OpenNWP/ndvar
 
 analysis_year=${BASH_ARGV[3]}
 analysis_month=${BASH_ARGV[2]}
