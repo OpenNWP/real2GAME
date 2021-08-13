@@ -18,6 +18,7 @@ This file coordinates the data assimilation process.
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
 #define EPSILON 1e-4
 #define SCALE_HEIGHT 8000.0
+#define P_0 100000
 
 int obs_op_setup(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [], double [], double [], double []);
 
@@ -332,6 +333,7 @@ int main(int argc, char *argv[])
     double *solid_water_density = malloc(NO_OF_SCALARS*sizeof(double));
     double *liquid_water_temp = malloc(NO_OF_SCALARS*sizeof(double));
     double *solid_water_temp = malloc(NO_OF_SCALARS*sizeof(double));
+    double *exner = malloc(NO_OF_SCALARS*sizeof(double));
     
     // the temperature comes first in the model_vector
     #pragma omp parallel for
@@ -342,7 +344,7 @@ int main(int argc, char *argv[])
     
     // density is determined out of the hydrostatic equation
     int layer_index, h_index;
-    double entropy_value, temperature_mean, delta_temperature, delta_gravity_potential, lower_entropy_value;
+    double b, c;
     for (int i = NO_OF_SCALARS - 1; i >= 0; --i)
     {
     	layer_index = i/NO_OF_SCALARS_H;
@@ -354,15 +356,17 @@ int main(int argc, char *argv[])
         }
         else
         {
-        	lower_entropy_value = spec_entropy_from_temp(density_dry[i + NO_OF_SCALARS_H], temperature[i + NO_OF_SCALARS_H]);
-        	temperature_mean = 0.5*(temperature[i] + temperature[i + NO_OF_SCALARS_H]);
-        	delta_temperature = temperature[i] - temperature[i + NO_OF_SCALARS_H];
-        	delta_gravity_potential = gravity_potential[i] - gravity_potential[i + NO_OF_SCALARS_H];
-        	entropy_value = lower_entropy_value + (delta_gravity_potential + C_D_P*delta_temperature)/temperature_mean;
-        	density_dry[i] = solve_specific_entropy_for_density(entropy_value, temperature[i]);
+			// solving a quadratic equation for the Exner pressure
+			b = -0.5*exner[i + NO_OF_SCALARS_H]/temperature[i + NO_OF_SCALARS_H]
+			*(temperature[i] - temperature[i + NO_OF_SCALARS_H]
+			+ 2/C_D_P*(gravity_potential[i] - gravity_potential[i + NO_OF_SCALARS_H]));
+			c = pow(exner[i + NO_OF_SCALARS_H], 2)*temperature[i]/temperature[i + NO_OF_SCALARS_H];
+			exner[i] = b + pow((pow(b, 2) + c), 0.5);
+        	density_dry[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*temperature[i]);
         }
     }
     
+    free(exner);
     free(model_vector);
     
     // Wind is set equal to the background wind for now. Later it will be derived from the balance equation.
