@@ -353,6 +353,7 @@ int main(int argc, char *argv[])
     	if (layer_index == NO_OF_LAYERS - 1)
     	{
         	density_dry[i] = model_vector[NO_OF_SCALARS + h_index];
+        	exner[i] = pow((model_vector[NO_OF_SCALARS + h_index]*R_D*temperature[i])/P_0, R_D/C_D_P);
         }
         else
         {
