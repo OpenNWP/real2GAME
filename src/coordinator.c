@@ -306,23 +306,29 @@ int main(int argc, char *argv[])
     
 	// setting up the observations operator
 	double *interpolated_model = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	double (*obs_op_jacobian_reduced_matrix)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	double (*obs_op_jacobian_reduced_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	int (*relevant_model_dofs_matrix)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-	obs_op_setup(interpolated_model, obs_op_jacobian_reduced_matrix, relevant_model_dofs_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
+	obs_op_setup(interpolated_model, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
+	
+	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	// setting up the dry observations vector
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
+	{
+		observations_vector_dry[i] = observations_vector[i];
+	}
 	
 	// now, all the constituents of the gain matrix are known
 	double *model_vector = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
-	oi(obs_error_cov, obs_op_jacobian_reduced_matrix, relevant_model_dofs_matrix, bg_error_cov, interpolated_model, background, observations_vector, model_vector, OI_SOLUTION_METHOD);
+	oi(obs_error_cov, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix, bg_error_cov, interpolated_model, background, observations_vector_dry, model_vector, OI_SOLUTION_METHOD);
 	
 	// data assimilation is finished at this point
 	// freeing the memory
 	free(obs_error_cov);
 	free(bg_error_cov);
-	free(obs_op_jacobian_reduced_matrix);
 	free(relevant_model_dofs_matrix);
 	free(interpolated_model);
 	free(background);
-	free(observations_vector);
+	free(observations_vector_dry);
     
     // These are the arrays for the result of the assimilation process.
     double *temperature = malloc(NO_OF_SCALARS*sizeof(double));
@@ -378,14 +384,83 @@ int main(int argc, char *argv[])
     }
     
     // end of the assimilation of the dry state
+    
     // separate moisture assimilation
-    #pragma omp parallel for
-    for (int i = 0; i < NO_OF_SCALARS; ++i)
-    {
-		water_vapour_density[i] = water_vapour_density_background[i];
-		liquid_water_density[i] = liquid_water_density_background[i];
-		solid_water_density[i] = solid_water_density_background[i];
+    double *observations_vector_moist = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
+	{
+		observations_vector_moist[i] = observations_vector[i];
 	}
+    
+    if (LMOIST == 0)
+    {
+		#pragma omp parallel for
+		for (int i = 0; i < NO_OF_SCALARS; ++i)
+		{
+			water_vapour_density[i] = water_vapour_density_background[i];
+			liquid_water_density[i] = liquid_water_density_background[i];
+			solid_water_density[i] = solid_water_density_background[i];
+		}
+	}
+    if (LMOIST == 1)
+    {
+	    double *background_moist = malloc(NO_OF_SCALARS*sizeof(double));
+    	for (int i = 0; i < NO_OF_SCALARS; ++i)
+    	{
+    		background_moist[i] = water_vapour_density_background[i]/density_dry_background[i];
+    	}
+    	
+		// setting up the measurement error covariance matrix
+		double *obs_error_cov = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST]));
+		double abs_moisture_error_obs = 0.01;
+		for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
+		{
+			obs_error_cov[i] = pow(abs_moisture_error_obs, 2);
+		}
+		
+		// setting up the background error covariance matrix (only the diagonal)
+		double *bg_error_cov = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
+		double abs_moisture_error_model = 0.05;
+		#pragma omp parallel for
+		for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
+		{
+			bg_error_cov[i] = pow(abs_moisture_error_model, 2);
+		}
+		
+		// setting up the observations operator
+		double *interpolated_model = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
+		double (*obs_op_jacobian_reduced_matrix_moist)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+		int (*relevant_model_dofs_matrix)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_MOIST][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+		// setting up the moist obs operator using the dry obs operator
+		for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
+		{
+			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
+			{
+				obs_op_jacobian_reduced_matrix_moist[i][j] = obs_op_jacobian_reduced_matrix_dry[i][j];
+			}
+		}
+		
+		// now, all the constituents of the gain matrix are known
+		double *model_vector = malloc(NO_OF_SCALARS*sizeof(double));
+		oi(obs_error_cov, obs_op_jacobian_reduced_matrix_moist, relevant_model_dofs_matrix, bg_error_cov, interpolated_model, background_moist, observations_vector_moist, model_vector, OI_SOLUTION_METHOD);
+		
+		free(obs_op_jacobian_reduced_matrix_moist);
+		free(background_moist);
+		free(relevant_model_dofs_matrix);
+		free(obs_error_cov);
+		free(bg_error_cov);
+		free(interpolated_model);
+		
+		#pragma omp parallel for
+		for (int i = 0; i < NO_OF_SCALARS; ++i)
+		{
+			water_vapour_density[i] = model_vector[i];
+		}
+		
+		free(model_vector);
+	}
+	free(obs_op_jacobian_reduced_matrix_dry);
+	free(observations_vector_moist);
 	
 	// individual condensate temperatures are for higher resolutions, not yet implemented
     #pragma omp parallel for
@@ -505,7 +580,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
+int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_matrix_dry[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
 {
 	/*
 	This functions calculates the observations operator.
@@ -601,7 +676,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 					for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 					{
 						// we have to divide by the sum of weights here
-						obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
+						obs_op_jacobian_reduced_matrix_dry[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
 					}
 					interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
 				}
@@ -636,7 +711,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 						for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++k)
 						{
 							// we have to divide by the sum of weights here
-							obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
+							obs_op_jacobian_reduced_matrix_dry[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
 						}
 					}
 				}
@@ -668,7 +743,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 						for (int k = NO_OF_REL_MODEL_DOFS_PER_OBS/2; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 						{
 							// we have to divide by the sum of weights here
-							obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
+							obs_op_jacobian_reduced_matrix_dry[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
 						}
 					}
 				}
@@ -679,12 +754,6 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 	// returning 0 indicating success
 	return 0;
 }
-
-
-
-
-
-
 
 
 

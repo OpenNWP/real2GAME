@@ -14,7 +14,7 @@ Github repository: https://github.com/OpenNWP/ndvar
 #include <string.h>
 #include <stdlib.h>
 #include "eccodes.h"
-#include "../../core/src/ndvar.h"
+#include "../../src/ndvar.h"
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
 #define ERRCODE 3
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(ERRCODE);}

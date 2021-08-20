@@ -3,11 +3,13 @@ This source file is part of ndvar, which is released under the MIT license.
 Github repository: https://github.com/OpenNWP/ndvar
 */
 
+// moisture switch
+#define LMOIST 1
 // the number of levels from which we use observations
 #define NO_OF_LEVELS_OBS 6
 // the number of fields we use on each layer
 #define NO_OF_FIELDS_PER_LAYER_OBS 1
-// the number of surface variables (order: surface pressure, precipitation rate)
+// the number of surface variables
 #define NO_OF_SURFACE_FIELDS_OBS 1
 // the number of points per layer of the input model
 #define NO_OF_POINTS_PER_LAYER_OBS 2949120
@@ -15,8 +17,12 @@ Github repository: https://github.com/OpenNWP/ndvar
 #define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 284
 // the total number of observations we take into account
 #define NO_OF_CHOSEN_OBSERVATIONS ((NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + NO_OF_SURFACE_FIELDS_OBS)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
+// the total number of observations we take into account for the moist assimilation
+#define NO_OF_CHOSEN_OBSERVATIONS_MOIST (NO_OF_LEVELS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
 // the total number of model degree of freedoms
 #define NO_OF_MODEL_DOFS (NO_OF_SCALARS + NO_OF_SURFACE_FIELDS_OBS*NO_OF_SCALARS_H)
+// the total number of model degree of freedoms for the moisture assimilation
+#define NO_OF_MODEL_DOFS_MOIST NO_OF_SCALARS
 // the number of model degrees of freedom that are used to interpolate to an observation
 #define NO_OF_REL_MODEL_DOFS_PER_OBS 400
 // values smaller than one smooth the MSLP
