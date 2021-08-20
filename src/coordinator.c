@@ -359,8 +359,6 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
 	{
 		observations_vector_moist[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
-		if (observations_vector_moist[i] < 0)
-			exit(1);
 	}
 	free(observations_vector);
 	
@@ -369,8 +367,6 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 	{
 		background_moist[i] = water_vapour_density_background[i]/(density_dry_background[i] + water_vapour_density_background[i]);
-		if (background_moist[i] < 0)
-			exit(1);
 	}
 	
 	// setting up the measurement error covariance matrix
@@ -422,6 +418,7 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
 		water_vapour_density[i] = model_vector_moist[i]/(1 - model_vector_moist[i])*density_dry[i];
+		printf("%lf\n", water_vapour_density[i]);
 	}
 	
 	free(model_vector_moist);
