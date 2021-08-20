@@ -49,13 +49,10 @@ int main(int argc, char *argv[])
 	codes_handle *handle = NULL;
 	
 	// latitudes of the grid
-	int LAT_OBS_FILE_LENGTH = 100;
-    char *LAT_OBS_FILE_PRE = malloc((LAT_OBS_FILE_LENGTH + 1)*sizeof(char));
+	char LAT_OBS_FILE_PRE[200];
     sprintf(LAT_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-    LAT_OBS_FILE_LENGTH = strlen(LAT_OBS_FILE_PRE);
-	free(LAT_OBS_FILE_PRE);
-    char *LAT_OBS_FILE = malloc((LAT_OBS_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(LAT_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	char LAT_OBS_FILE[strlen(LAT_OBS_FILE_PRE) + 1];
+	strcpy(LAT_OBS_FILE, LAT_OBS_FILE_PRE);
     
 	FILE *ECC_FILE;
 	ECC_FILE = fopen(LAT_OBS_FILE, "r");
@@ -76,13 +73,10 @@ int main(int argc, char *argv[])
     }
     
     // longitudes of the grid
-	int LON_OBS_FILE_LENGTH = 100;
-    char *LON_OBS_FILE_PRE = malloc((LON_OBS_FILE_LENGTH + 1)*sizeof(char));
+	char LON_OBS_FILE_PRE[200];
     sprintf(LON_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-    LON_OBS_FILE_LENGTH = strlen(LON_OBS_FILE_PRE);
-	free(LON_OBS_FILE_PRE);
-    char *LON_OBS_FILE = malloc((LON_OBS_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(LON_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	char LON_OBS_FILE[strlen(LON_OBS_FILE_PRE) + 1];
+	strcpy(LON_OBS_FILE, LON_OBS_FILE_PRE);
     
 	ECC_FILE = fopen(LON_OBS_FILE, "r");
 	free(LON_OBS_FILE);
@@ -123,13 +117,10 @@ int main(int argc, char *argv[])
 	for (int level_index = 0; level_index < NO_OF_LEVELS_OBS; ++level_index)
 	{
 		// vertical position of the current layer
-		int Z_OBS_FILE_LENGTH = 100;
-		char *Z_OBS_FILE_PRE = malloc((Z_OBS_FILE_LENGTH + 1)*sizeof(char));
+		char Z_OBS_FILE_PRE[200];
 		sprintf(Z_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_%d_HHL.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
-		Z_OBS_FILE_LENGTH = strlen(Z_OBS_FILE_PRE);
-		free(Z_OBS_FILE_PRE);
-		char *Z_OBS_FILE = malloc((Z_OBS_FILE_LENGTH + 1)*sizeof(char));
-		sprintf(Z_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_%d_HHL.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		char Z_OBS_FILE[strlen(Z_OBS_FILE_PRE) + 1];
+		strcpy(Z_OBS_FILE, Z_OBS_FILE_PRE);
 		
 		ECC_FILE = fopen(Z_OBS_FILE, "r");
 		free(Z_OBS_FILE);
@@ -143,13 +134,10 @@ int main(int argc, char *argv[])
 		fclose(ECC_FILE);
 		
 	   	// reading the temperature
-		int TEMPERATURE_FILE_LENGTH = 100;
-		char *TEMPERATURE_FILE_PRE = malloc((TEMPERATURE_FILE_LENGTH + 1)*sizeof(char));
+		char TEMPERATURE_FILE_PRE[200];
 		sprintf(TEMPERATURE_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_T.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
-		TEMPERATURE_FILE_LENGTH = strlen(TEMPERATURE_FILE_PRE);
-		free(TEMPERATURE_FILE_PRE);
-		char *TEMPERATURE_FILE = malloc((TEMPERATURE_FILE_LENGTH + 1)*sizeof(char));
-		sprintf(TEMPERATURE_FILE, "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_T.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		char TEMPERATURE_FILE[strlen(TEMPERATURE_FILE_PRE) + 1];
+		strcpy(TEMPERATURE_FILE, TEMPERATURE_FILE_PRE);
 		
 		ECC_FILE = fopen(TEMPERATURE_FILE, "r");
 		free(TEMPERATURE_FILE);
@@ -163,13 +151,10 @@ int main(int argc, char *argv[])
 		fclose(ECC_FILE);
 		
 	   	// reading the specific humidity
-		int SPEC_HUM_FILE_LENGTH = 100;
-		char *SPEC_HUM_FILE_PRE = malloc((SPEC_HUM_FILE_LENGTH + 1)*sizeof(char));
+		char SPEC_HUM_FILE_PRE[200];
 		sprintf(SPEC_HUM_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_QV.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
-		SPEC_HUM_FILE_LENGTH = strlen(SPEC_HUM_FILE_PRE);
-		free(SPEC_HUM_FILE_PRE);
-		char *SPEC_HUM_FILE = malloc((SPEC_HUM_FILE_LENGTH + 1)*sizeof(char));
-		sprintf(SPEC_HUM_FILE, "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_QV.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		char SPEC_HUM_FILE[strlen(SPEC_HUM_FILE_PRE) + 1];
+		strcpy(SPEC_HUM_FILE, SPEC_HUM_FILE_PRE);
 		
 		ECC_FILE = fopen(SPEC_HUM_FILE, "r");
 		free(SPEC_HUM_FILE);
@@ -198,13 +183,10 @@ int main(int argc, char *argv[])
 	
 	// reading the surface height
 	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
-	int SFC_OBS_FILE_LENGTH = 100;
-	char *SFC_OBS_FILE_PRE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
+	char SFC_OBS_FILE_PRE[200];
 	sprintf(SFC_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-	SFC_OBS_FILE_LENGTH = strlen(SFC_OBS_FILE_PRE);
-	free(SFC_OBS_FILE_PRE);
-	char *SFC_OBS_FILE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
-	sprintf(SFC_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	char SFC_OBS_FILE[strlen(SFC_OBS_FILE_PRE) + 1];
+	strcpy(SFC_OBS_FILE, SFC_OBS_FILE_PRE);
 	
 	ECC_FILE = fopen(SFC_OBS_FILE, "r");
 	free(SFC_OBS_FILE);
@@ -221,13 +203,10 @@ int main(int argc, char *argv[])
 	// reading the surface presure
 	double *pressure_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	
-	int SFC_PRES_FILE_LENGTH = 100;
-	char *SFC_PRES_FILE_PRE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
+	char SFC_PRES_FILE_PRE[200];
 	sprintf(SFC_PRES_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-	SFC_PRES_FILE_LENGTH = strlen(SFC_PRES_FILE_PRE);
-	free(SFC_PRES_FILE_PRE);
-	char *SFC_PRES_FILE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
-	sprintf(SFC_PRES_FILE, "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	char SFC_PRES_FILE[strlen(SFC_PRES_FILE_PRE) + 1];
+	strcpy(SFC_PRES_FILE, SFC_PRES_FILE_PRE);
 	
 	ECC_FILE = fopen(SFC_PRES_FILE, "r");
 	free(SFC_PRES_FILE);
@@ -253,13 +232,10 @@ int main(int argc, char *argv[])
     free(chosen_indices);
     
     // Writing the observations to a netcdf file.
-    int OUTPUT_FILE_LENGTH = 100;
-    char *OUTPUT_FILE_PRE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
+    char OUTPUT_FILE_PRE[200];
     sprintf(OUTPUT_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-    OUTPUT_FILE_LENGTH = strlen(OUTPUT_FILE_PRE);
-    free(OUTPUT_FILE_PRE);
-    char *OUTPUT_FILE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(OUTPUT_FILE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	char OUTPUT_FILE[strlen(OUTPUT_FILE_PRE) + 1];
+	strcpy(OUTPUT_FILE, OUTPUT_FILE_PRE);
     
     int ncid, observation_dimid, latitude_id, longitude_id, vert_id, obervations_id;
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
