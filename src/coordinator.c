@@ -369,11 +369,11 @@ int main(int argc, char *argv[])
 	{
 		observations_vector_moist[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
 	}
+	free(observations_vector);
 	
-	
-    double *background_moist = malloc(NO_OF_SCALARS*sizeof(double));
+    double *background_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
     // the data assimilation is being calculated with the specific humidity for pragmatic reasons
-	for (int i = 0; i < NO_OF_SCALARS; ++i)
+	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 	{
 		background_moist[i] = water_vapour_density_background[i]/(density_dry_background[i] + water_vapour_density_background[i]);
 	}
@@ -407,12 +407,12 @@ int main(int argc, char *argv[])
 		{
 			obs_op_jacobian_reduced_matrix_moist[i][j] = obs_op_jacobian_reduced_matrix_dry[i][j];
 			relevant_model_dofs_matrix_moist[i][j] = relevant_model_dofs_matrix_dry[i][j];
-			interpolated_model_moist[i] += obs_op_jacobian_reduced_matrix_moist[i][j] + background_moist[relevant_model_dofs_matrix_dry[i][j]];
+			interpolated_model_moist[i] += obs_op_jacobian_reduced_matrix_moist[i][j]*background_moist[relevant_model_dofs_matrix_dry[i][j]];
 		}
 	}
 	
 	// now, all the constituents of the gain matrix are known
-	double *model_vector_moist = malloc(NO_OF_SCALARS*sizeof(double));
+	double *model_vector_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
 	oi(obs_error_cov_moist, obs_op_jacobian_reduced_matrix_moist, relevant_model_dofs_matrix_moist, bg_error_cov_moist, interpolated_model_moist, background_moist, observations_vector_moist, model_vector_moist, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_MOIST, NO_OF_MODEL_DOFS_MOIST);
 	
 	free(obs_op_jacobian_reduced_matrix_moist);

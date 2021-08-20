@@ -56,13 +56,27 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 	// h_b_ht_plus_r needs to be inversed in order to calculate the gain matrix
 	// this is actually the main task of OI
 	double (*h_b_ht_plus_r_inv)[no_of_obs] = calloc(1, sizeof(double[no_of_obs][no_of_obs]));
-	if (OI_SOLUTION_METHOD == 0)
+	if (no_of_obs == NO_OF_CHOSEN_OBSERVATIONS_DRY)
 	{
-		inv_gauss(h_b_ht_plus_r, h_b_ht_plus_r_inv);
+		if (OI_SOLUTION_METHOD == 0)
+		{
+			inv_gauss_dry(h_b_ht_plus_r, h_b_ht_plus_r_inv);
+		}
+		if (OI_SOLUTION_METHOD == 1)
+		{
+			inv_lu_dry(h_b_ht_plus_r, h_b_ht_plus_r_inv);
+		}
 	}
-	if (OI_SOLUTION_METHOD == 1)
+	if (no_of_obs == NO_OF_CHOSEN_OBSERVATIONS_MOIST)
 	{
-		inv_lu(h_b_ht_plus_r, h_b_ht_plus_r_inv);
+		if (OI_SOLUTION_METHOD == 0)
+		{
+			inv_gauss_moist(h_b_ht_plus_r, h_b_ht_plus_r_inv);
+		}
+		if (OI_SOLUTION_METHOD == 1)
+		{
+			inv_lu_moist(h_b_ht_plus_r, h_b_ht_plus_r_inv);
+		}
 	}
 	
 	// now, the main job is already done
