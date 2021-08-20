@@ -418,7 +418,6 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
 		water_vapour_density[i] = model_vector_moist[i]/(1 - model_vector_moist[i])*density_dry[i];
-		printf("%lf\n", water_vapour_density[i]);
 	}
 	
 	free(model_vector_moist);
