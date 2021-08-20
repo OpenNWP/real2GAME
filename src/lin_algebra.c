@@ -11,9 +11,9 @@ Linear algebra functions.
 #include <stdio.h>
 #include "ndvar.h"
 
-int permute_lines(double [][NO_OF_CHOSEN_OBSERVATIONS], int, int);
+int permute_lines(double [][NO_OF_CHOSEN_OBSERVATIONS_DRY], int, int);
 
-int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][NO_OF_CHOSEN_OBSERVATIONS])
+int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS_DRY], double inv[][NO_OF_CHOSEN_OBSERVATIONS_DRY])
 {
 	/*
 	This function computes the inverse inv of the matrix to_be_inverted, using the Gauss scheme.
@@ -21,7 +21,7 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 	*/
 	
 	// firstly, the inverse is initialized with the unity matrix
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
 	{
 		inv[i][i] = 1;
 	}
@@ -33,7 +33,7 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 	*/
 	int permute_index_found, permute_index_counter;
 	double factor;
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS - 1; ++i)
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY - 1; ++i)
 	{
 		/*
 		checking if a permutation is necessary
@@ -41,7 +41,7 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 		// Firstly, the permutaiton index has to be found.
 		permute_index_found = 0;
 		permute_index_counter = i;
-		while (permute_index_found == 0 && permute_index_counter < NO_OF_CHOSEN_OBSERVATIONS)
+		while (permute_index_found == 0 && permute_index_counter < NO_OF_CHOSEN_OBSERVATIONS_DRY)
 		{
 			if (to_be_inverted[permute_index_counter][i] != 0)
 			{
@@ -53,7 +53,7 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 			}
 		}
 		// checking for an error
-		if (permute_index_counter == NO_OF_CHOSEN_OBSERVATIONS)
+		if (permute_index_counter == NO_OF_CHOSEN_OBSERVATIONS_DRY)
 		{
 			printf("Matrix inversion failed.\n");
 			exit(1);
@@ -66,7 +66,7 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 		}
 		// dividing the line by to_be_inverted[i][i]
 		factor = 1/to_be_inverted[i][i];
-		for (int j = i; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
+		for (int j = i; j < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++j)
 		{
 			to_be_inverted[i][j] = factor*to_be_inverted[i][j];
 		}
@@ -75,10 +75,10 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 			inv[i][j] = factor*inv[i][j];
 		}
 		// loop over all the lines that are below the current line
-		for (int j = i + 1; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
+		for (int j = i + 1; j < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++j)
 		{
 			factor = -to_be_inverted[j][i];
-			for (int k = i; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
+			for (int k = i; k < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++k)
 			{
 				to_be_inverted[j][k] = to_be_inverted[j][k] + factor*to_be_inverted[i][k];
 			}
@@ -89,21 +89,21 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 		}
 	}
 	
-	for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
+	for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++j)
 	{
-		inv[NO_OF_CHOSEN_OBSERVATIONS - 1][j] = inv[NO_OF_CHOSEN_OBSERVATIONS - 1][j]/to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS - 1][NO_OF_CHOSEN_OBSERVATIONS - 1];
+		inv[NO_OF_CHOSEN_OBSERVATIONS_DRY - 1][j] = inv[NO_OF_CHOSEN_OBSERVATIONS_DRY - 1][j]/to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS_DRY - 1][NO_OF_CHOSEN_OBSERVATIONS_DRY - 1];
 	}
-	to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS - 1][NO_OF_CHOSEN_OBSERVATIONS - 1] = 1;
+	to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS_DRY - 1][NO_OF_CHOSEN_OBSERVATIONS_DRY - 1] = 1;
 	
 	/*
 	Gaussian upwards
 	----------------
 	*/
-	for (int i = NO_OF_CHOSEN_OBSERVATIONS - 1; i >= 1; --i)
+	for (int i = NO_OF_CHOSEN_OBSERVATIONS_DRY - 1; i >= 1; --i)
 	{
 		for (int j = i - 1; j >= 0; --j)
 		{
-			for (int k = 0; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
+			for (int k = 0; k < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++k)
 			{
 				inv[j][k] = inv[j][k] - to_be_inverted[j][i]*inv[i][k];
 			}
@@ -112,26 +112,26 @@ int inv_gauss(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][N
 	return 0;
 }
 
-int inv_lu(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][NO_OF_CHOSEN_OBSERVATIONS])
+int inv_lu(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS_DRY], double inv[][NO_OF_CHOSEN_OBSERVATIONS_DRY])
 {
 	// WARNING! untested and neglects permutations
 	/*
 	This function computes the inverse inv of the matrix to_be_inverted, using the LU decomposition.
 	CAUTION: in the process, to_be_inverted will be modified.
 	*/
-	double (*l_matrix)[NO_OF_CHOSEN_OBSERVATIONS] = calloc(1, sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_CHOSEN_OBSERVATIONS]));
+	double (*l_matrix)[NO_OF_CHOSEN_OBSERVATIONS_DRY] = calloc(1, sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_CHOSEN_OBSERVATIONS_DRY]));
 	/*
 	downward sweep
 	--------------
 	to_be_inverted will become the r_matrix now (misuse of name)
 	*/
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS - 1; ++i)
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY - 1; ++i)
 	{
 		l_matrix[i][i] = 1;
-		for (int j = i + 1; j < NO_OF_CHOSEN_OBSERVATIONS; ++j)
+		for (int j = i + 1; j < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++j)
 		{
 			l_matrix[j][i] = to_be_inverted[j][i]/to_be_inverted[i][i];
-			for (int k = i; k < NO_OF_CHOSEN_OBSERVATIONS; ++k)
+			for (int k = i; k < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++k)
 			{
 				to_be_inverted[j][k] = to_be_inverted[j][k] - l_matrix[j][i]*to_be_inverted[i][k];
 			}
@@ -144,8 +144,8 @@ int inv_lu(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][NO_O
 	We know LU = A. We want to solve AA^-1 = 1, a.k.a. LUA^-1 = 1.
 	Therefore, we firstly solve LB = 1 with a downward sweep.
 	*/
-	double (*b_matrix)[NO_OF_CHOSEN_OBSERVATIONS] = calloc(1, sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_CHOSEN_OBSERVATIONS]));
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS - 1; ++i)
+	double (*b_matrix)[NO_OF_CHOSEN_OBSERVATIONS_DRY] = calloc(1, sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_CHOSEN_OBSERVATIONS_DRY]));
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY - 1; ++i)
 	{
 		b_matrix[i][i] = 1/l_matrix[i][i];
 		for (int j = 0; j < i; ++j)
@@ -163,12 +163,12 @@ int inv_lu(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][NO_O
 	Now we have to solve UA^-1 = B with an upward sweep.
 	U is to_be_inverted (see above).
 	*/
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
 	{
-		inv[NO_OF_CHOSEN_OBSERVATIONS - 1][i] = b_matrix[NO_OF_CHOSEN_OBSERVATIONS - 1][i]/to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS - 1][NO_OF_CHOSEN_OBSERVATIONS - 1];
-		for (int j = NO_OF_CHOSEN_OBSERVATIONS - 2; j >= 0; --j)
+		inv[NO_OF_CHOSEN_OBSERVATIONS_DRY - 1][i] = b_matrix[NO_OF_CHOSEN_OBSERVATIONS_DRY - 1][i]/to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS_DRY - 1][NO_OF_CHOSEN_OBSERVATIONS_DRY - 1];
+		for (int j = NO_OF_CHOSEN_OBSERVATIONS_DRY - 2; j >= 0; --j)
 		{
-			for (int k = j + 1; k < NO_OF_CHOSEN_OBSERVATIONS ; ++j)
+			for (int k = j + 1; k < NO_OF_CHOSEN_OBSERVATIONS_DRY ; ++j)
 			{
 				inv[j][i] = b_matrix[j][i] - to_be_inverted[j][k]*inv[k][i]/to_be_inverted[j][j];
 			}
@@ -180,17 +180,17 @@ int inv_lu(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS], double inv[][NO_O
 	return 0;
 }
 
-int permute_lines(double matrix[][NO_OF_CHOSEN_OBSERVATIONS], int line_a, int line_b)
+int permute_lines(double matrix[][NO_OF_CHOSEN_OBSERVATIONS_DRY], int line_a, int line_b)
 {
 	/*
 	Permutes line_a with line_b of matrix.
 	*/
-	double line_a_pre[NO_OF_CHOSEN_OBSERVATIONS];
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
+	double line_a_pre[NO_OF_CHOSEN_OBSERVATIONS_DRY];
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
 	{
 		line_a_pre[i] = matrix[line_a][i];
 	}
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
 	{
 		matrix[line_a][i] = matrix[line_b][i];
 		matrix[line_b][i] = line_a_pre[i];

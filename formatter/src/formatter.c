@@ -7,7 +7,6 @@ Github repository: https://github.com/OpenNWP/ndvar
 // 0: temperature
 // 1: pressure
 // 2: specific humidity
-// 3: total precipitation rate
 
 #include <netcdf.h>
 #include <stdio.h>
@@ -29,13 +28,6 @@ int main(int argc, char *argv[])
 	levels_vector[3] = 63;
 	levels_vector[4] = 77;
 	levels_vector[5] = 90;
-	
-	if (NO_OF_SURFACE_FIELDS_OBS < 1)
-	{
-		printf("NO_OF_SURFACE_FIELDS_OBS must be larger than zero.\n");
-		printf("Aborting.\n");
-		exit(1);
-	}
 	
 	// shell arguments
     size_t len = strlen(argv[1]);
@@ -132,11 +124,10 @@ int main(int argc, char *argv[])
 	}
 	
 	// reading the data from the free atmosphere
-	double *vert_vector_free_atmosphere = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	double *z_height_amsl = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	// loop over all relevant level in the free atmosphere
 	for (int level_index = 0; level_index < NO_OF_LEVELS_OBS; ++level_index)
 	{
-		
 		// vertical position of the current layer
 		int Z_OBS_FILE_LENGTH = 100;
 		char *Z_OBS_FILE_PRE = malloc((Z_OBS_FILE_LENGTH + 1)*sizeof(char));
@@ -152,7 +143,7 @@ int main(int argc, char *argv[])
 		if (err != 0)
 			ECCERR(err);
 		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
-		if ((retval = codes_get_double_array(handle, "values", &vert_vector_free_atmosphere[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+		if ((retval = codes_get_double_array(handle, "values", &z_height_amsl[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
 		fclose(ECC_FILE);
@@ -200,28 +191,28 @@ int main(int argc, char *argv[])
 		// formatting the observations
 		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 		{
-			for (int j = 0; j < NO_OF_FIELDS_PER_LAYER_OBS; ++j)
+			for (int j = 0; j < 2; ++j)
 			{
-				latitude_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[chosen_indices[i]];
-				longitude_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[chosen_indices[i]];
-				vert_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = vert_vector_free_atmosphere[chosen_indices[i]];
+				latitude_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[chosen_indices[i]];
+				longitude_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[chosen_indices[i]];
+				vert_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = z_height_amsl[chosen_indices[i]];
 				
 				if (j == 0)
 				{
-					observations_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = temperature_one_layer[chosen_indices[i]];
+					observations_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = temperature_one_layer[chosen_indices[i]];
 				}
 				if (j == 1)
 				{
-					observations_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[chosen_indices[i]];
+					observations_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[chosen_indices[i]];
 				}
 				
 				if (j == 0)
 				{
-					type_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 0;
+					type_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 0;
 				}
 				if (j == 1)
 				{
-					type_vector[(level_index*NO_OF_FIELDS_PER_LAYER_OBS + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 2;
+					type_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 2;
 				}
 			}
 		}
@@ -229,113 +220,63 @@ int main(int argc, char *argv[])
 	
 	// reading the surface height
 	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
-	// this only needs to be done if we have surface fields
-	if (NO_OF_SURFACE_FIELDS_OBS >= 1)
-	{
-		int SFC_OBS_FILE_LENGTH = 100;
-		char *SFC_OBS_FILE_PRE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
-		sprintf(SFC_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-		SFC_OBS_FILE_LENGTH = strlen(SFC_OBS_FILE_PRE);
-		free(SFC_OBS_FILE_PRE);
-		char *SFC_OBS_FILE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
-		sprintf(SFC_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-		
-		ECC_FILE = fopen(SFC_OBS_FILE, "r");
-		free(SFC_OBS_FILE);
-		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
-		if (err != 0)
-			ECCERR(err);
-		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
-		if ((retval = codes_get_double_array(handle, "values", &surface_height[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
-			ECCERR(retval);
-		codes_handle_delete(handle);
-		fclose(ECC_FILE);
-    }
+	int SFC_OBS_FILE_LENGTH = 100;
+	char *SFC_OBS_FILE_PRE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
+	sprintf(SFC_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	SFC_OBS_FILE_LENGTH = strlen(SFC_OBS_FILE_PRE);
+	free(SFC_OBS_FILE_PRE);
+	char *SFC_OBS_FILE = malloc((SFC_OBS_FILE_LENGTH + 1)*sizeof(char));
+	sprintf(SFC_OBS_FILE, "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	
+	ECC_FILE = fopen(SFC_OBS_FILE, "r");
+	free(SFC_OBS_FILE);
+	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+	if (err != 0)
+		ECCERR(err);
+	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+	if ((retval = codes_get_double_array(handle, "values", &surface_height[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+		ECCERR(retval);
+	codes_handle_delete(handle);
+	fclose(ECC_FILE);
 	
 	// surface pressure
-	if (NO_OF_SURFACE_FIELDS_OBS >= 1)
+	// reading the surface presure
+	double *pressure_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	
+	int SFC_PRES_FILE_LENGTH = 100;
+	char *SFC_PRES_FILE_PRE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
+	sprintf(SFC_PRES_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	SFC_PRES_FILE_LENGTH = strlen(SFC_PRES_FILE_PRE);
+	free(SFC_PRES_FILE_PRE);
+	char *SFC_PRES_FILE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
+	sprintf(SFC_PRES_FILE, "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	
+	ECC_FILE = fopen(SFC_PRES_FILE, "r");
+	free(SFC_PRES_FILE);
+	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+	if (err != 0)
+		ECCERR(err);
+	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
+	if ((retval = codes_get_double_array(handle, "values", &pressure_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+		ECCERR(retval);
+	codes_handle_delete(handle);
+	fclose(ECC_FILE);
+	
+	// writing the surface pressure to the observations
+	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 	{
-		// reading the surface presure
-		double *pressure_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+		latitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[chosen_indices[i]];
 		
-		int SFC_PRES_FILE_LENGTH = 100;
-		char *SFC_PRES_FILE_PRE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
-		sprintf(SFC_PRES_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-		SFC_PRES_FILE_LENGTH = strlen(SFC_PRES_FILE_PRE);
-		free(SFC_PRES_FILE_PRE);
-		char *SFC_PRES_FILE = malloc((SFC_PRES_FILE_LENGTH + 1)*sizeof(char));
-		sprintf(SFC_PRES_FILE, "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+		longitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[chosen_indices[i]];
 		
-		ECC_FILE = fopen(SFC_PRES_FILE, "r");
-		free(SFC_PRES_FILE);
-		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
-		if (err != 0)
-			ECCERR(err);
-		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
-		if ((retval = codes_get_double_array(handle, "values", &pressure_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
-			ECCERR(retval);
-		codes_handle_delete(handle);
-		fclose(ECC_FILE);
+		vert_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
 		
-		// writing the surface pressure to the observations
-		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
-		{
-			latitude_vector[NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[chosen_indices[i]];
-			
-			longitude_vector[NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[chosen_indices[i]];
-			
-			vert_vector[NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
-			
-			observations_vector[NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = pressure_one_layer[chosen_indices[i]];
-			
-			type_vector[NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 1;
-		}
+		observations_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = pressure_one_layer[chosen_indices[i]];
 		
-		free(pressure_one_layer);
+		type_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 1;
 	}
 	
-	// precipitation rate
-	if (NO_OF_SURFACE_FIELDS_OBS >= 2)
-	{	
-		// reading the total precipitation rate
-		double *tot_prec = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
-		
-		int TOT_PREC_FILE_LENGTH = 100;
-		char *TOT_PREC_FILE_PRE = malloc((TOT_PREC_FILE_LENGTH + 1)*sizeof(char));
-		sprintf(TOT_PREC_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_001_TOT_PREC.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-		TOT_PREC_FILE_LENGTH = strlen(TOT_PREC_FILE_PRE);
-		free(TOT_PREC_FILE_PRE);
-		char *TOT_PREC_FILE = malloc((TOT_PREC_FILE_LENGTH + 1)*sizeof(char));
-		sprintf(TOT_PREC_FILE, "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_001_TOT_PREC.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-		
-		ECC_FILE = fopen(TOT_PREC_FILE, "r");
-		free(TOT_PREC_FILE);
-		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
-		if (err != 0)
-			ECCERR(err);
-		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
-		if ((retval = codes_get_double_array(handle, "values", &tot_prec[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
-			ECCERR(retval);
-		codes_handle_delete(handle);
-		fclose(ECC_FILE);
-		
-		// writing the total precipitation rate to the observations
-		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
-		{
-			latitude_vector[(NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[chosen_indices[i]];
-			
-			longitude_vector[(NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[chosen_indices[i]];
-			
-			vert_vector[(NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
-			
-			observations_vector[(NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = tot_prec[chosen_indices[i]];
-			
-			type_vector[(NO_OF_LEVELS_OBS*NO_OF_FIELDS_PER_LAYER_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 1;
-		}
-    
-    	free(tot_prec);
-    
-    }
+	free(pressure_one_layer);
     free(chosen_indices);
     
     // Writing the observations to a netcdf file.
@@ -398,7 +339,7 @@ int main(int argc, char *argv[])
 	free(hour_string);
 	free(latitude_vector_one_layer);
 	free(longitude_vector_one_layer);
-	free(vert_vector_free_atmosphere);
+	free(z_height_amsl);
 	free(surface_height);
 
 	return 0;

@@ -30,12 +30,6 @@ int main(int argc, char *argv[])
 		printf("Aborting.\n");
 		exit(1);
 	}
-	if (NO_OF_SURFACE_FIELDS_OBS < 1)
-	{
-		printf("NO_OF_SURFACE_FIELDS_OBS must be larger than zero.\n");
-		printf("Aborting.\n");
-		exit(2);
-	}
 	double R_D = specific_gas_constants_lookup(0);
 	double C_D_P = spec_heat_capacities_p_gas_lookup(0);
     size_t len = strlen(argv[1]);
@@ -79,7 +73,7 @@ int main(int argc, char *argv[])
     
     // Reading the grid properties.
     int ncid_grid, retval;
-    int GEO_PROP_FILE_LENGTH = 200;
+    int GEO_PROP_FILE_LENGTH = 100;
     char *GEO_PROP_FILE_PRE = malloc((GEO_PROP_FILE_LENGTH + 1)*sizeof(char));
     sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
     GEO_PROP_FILE_LENGTH = strlen(GEO_PROP_FILE_PRE);
@@ -271,23 +265,23 @@ int main(int argc, char *argv[])
 	// Begin of the actual assimilation.
     
     // setting up the measurement error covariance matrix
-    double *obs_error_cov = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY]));
+    double *obs_error_cov_dry = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY]));
     double temperature_error_obs = 1;
     double pressure_error_obs = 100;
     for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
     {
-    	if (i < NO_OF_CHOSEN_OBSERVATIONS_DRY - NO_OF_SURFACE_FIELDS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
+    	if (i < NO_OF_CHOSEN_OBSERVATIONS_DRY - NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
     	{
-			obs_error_cov[i] = pow(temperature_error_obs, 2);
+			obs_error_cov_dry[i] = pow(temperature_error_obs, 2);
 		}
 		else
 		{
-			obs_error_cov[i] = pow(pressure_error_obs, 2);
+			obs_error_cov_dry[i] = pow(pressure_error_obs, 2);
 		}
     }
     
     // setting up the background error covariance matrix (only the diagonal)
-    double *bg_error_cov = malloc(NO_OF_MODEL_DOFS_DRY*sizeof(double));
+    double *bg_error_cov_dry = malloc(NO_OF_MODEL_DOFS_DRY*sizeof(double));
     double temperature_error_model = 1;
     double pressure_error_model = 50;
     #pragma omp parallel for
@@ -295,20 +289,20 @@ int main(int argc, char *argv[])
     {
     	if (i < NO_OF_SCALARS)
     	{
-			bg_error_cov[i] = pow(temperature_error_model, 2);
+			bg_error_cov_dry[i] = pow(temperature_error_model, 2);
     	}
     	else
     	{
     		// density = p/(R_D*T) (Gauss'ian error propagation)
-    		bg_error_cov[i] = pow(pressure_error_model/(R_D*background[i - NO_OF_SCALARS_H]), 2) + pow(background[i]/background[i - NO_OF_SCALARS_H]*temperature_error_model, 2);
+    		bg_error_cov_dry[i] = pow(pressure_error_model/(R_D*background[i - NO_OF_SCALARS_H]), 2) + pow(background[i]/background[i - NO_OF_SCALARS_H]*temperature_error_model, 2);
     	}
     }
     
 	// setting up the observations operator
-	double *interpolated_model = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
+	double *interpolated_model_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
 	double (*obs_op_jacobian_reduced_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	int (*relevant_model_dofs_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-	obs_op_setup(interpolated_model, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
+	obs_op_setup(interpolated_model_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
 	
 	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
 	// setting up the dry observations vector
@@ -318,14 +312,14 @@ int main(int argc, char *argv[])
 	}
 	
 	// now, all the constituents of the gain matrix are known
-	double *model_vector = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
-	oi(obs_error_cov, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, bg_error_cov, interpolated_model, background, observations_vector_dry, model_vector, OI_SOLUTION_METHOD);
+	double *model_vector_dry = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
+	oi(obs_error_cov_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, bg_error_cov_dry, interpolated_model_dry, background, observations_vector_dry, model_vector_dry, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_DRY, NO_OF_MODEL_DOFS_DRY);
 	
 	// data assimilation is finished at this point
 	// freeing the memory
-	free(obs_error_cov);
-	free(bg_error_cov);
-	free(interpolated_model);
+	free(obs_error_cov_dry);
+	free(bg_error_cov_dry);
+	free(interpolated_model_dry);
 	free(background);
 	free(observations_vector_dry);
     
@@ -340,11 +334,11 @@ int main(int argc, char *argv[])
     double *solid_water_temp = malloc(NO_OF_SCALARS*sizeof(double));
     double *exner = malloc(NO_OF_SCALARS*sizeof(double));
     
-    // the temperature comes first in the model_vector
+    // the temperature comes first in the model_vector_dry
     #pragma omp parallel for
     for (int i = 0; i < NO_OF_SCALARS; ++i)
     {
-    	temperature[i] = model_vector[i];
+    	temperature[i] = model_vector_dry[i];
     }
     
     // density is determined out of the hydrostatic equation
@@ -354,11 +348,11 @@ int main(int argc, char *argv[])
     {
     	layer_index = i/NO_OF_SCALARS_H;
     	h_index = i - layer_index*NO_OF_SCALARS_H;
-    	// at the lowest layer the density is part of the model_vector
+    	// at the lowest layer the density is part of the model_vector_dry
     	if (layer_index == NO_OF_LAYERS - 1)
     	{
-        	density_dry[i] = model_vector[NO_OF_SCALARS + h_index];
-        	exner[i] = pow((model_vector[NO_OF_SCALARS + h_index]*R_D*temperature[i])/P_0, R_D/C_D_P);
+        	density_dry[i] = model_vector_dry[NO_OF_SCALARS + h_index];
+        	exner[i] = pow((model_vector_dry[NO_OF_SCALARS + h_index]*R_D*temperature[i])/P_0, R_D/C_D_P);
         }
         else
         {
@@ -373,7 +367,7 @@ int main(int argc, char *argv[])
     }
     
     free(exner);
-    free(model_vector);
+    free(model_vector_dry);
     
     // Wind is set equal to the background wind for now. Later it will be derived from the balance equation.
     #pragma omp parallel for
@@ -390,80 +384,66 @@ int main(int argc, char *argv[])
 	{
 		observations_vector_moist[i] = observations_vector[i];
 	}
-    
-    // if moisture is not assimilated, it is set equally to the background state
-    if (NO_OF_FIELDS_PER_LAYER_OBS == 1)
-    {
-		#pragma omp parallel for
-		for (int i = 0; i < NO_OF_SCALARS; ++i)
+	
+	
+    double *background_moist = malloc(NO_OF_SCALARS*sizeof(double));
+    // the data assimilation is being calculated with the specific humidity for pragmatic reasons
+	for (int i = 0; i < NO_OF_SCALARS; ++i)
+	{
+		background_moist[i] = water_vapour_density_background[i]/(density_dry_background[i] + water_vapour_density_background[i]);
+	}
+	
+	// setting up the measurement error covariance matrix
+	double *obs_error_cov_moist = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST]));
+	double abs_moisture_error_obs = 0.01;
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
+	{
+		obs_error_cov_moist[i] = pow(abs_moisture_error_obs, 2);
+	}
+	
+	// setting up the background error covariance matrix (only the diagonal)
+	double *bg_error_cov_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
+	double abs_moisture_error_model = 0.005;
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
+	{
+		bg_error_cov_moist[i] = pow(abs_moisture_error_model, 2);
+	}
+	
+	// setting up the observations operator
+	double *interpolated_model_moist = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
+	double (*obs_op_jacobian_reduced_matrix_moist)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	int (*relevant_model_dofs_matrix_moist)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_MOIST][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	// setting up the moist obs operator using the dry obs operator
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
+	{
+		interpolated_model_moist[i] = 0;
+		for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
 		{
-			water_vapour_density[i] = water_vapour_density_background[i];
-			liquid_water_density[i] = liquid_water_density_background[i];
-			solid_water_density[i] = solid_water_density_background[i];
+			obs_op_jacobian_reduced_matrix_moist[i][j] = obs_op_jacobian_reduced_matrix_dry[i][j];
+			relevant_model_dofs_matrix_moist[i][j] = relevant_model_dofs_matrix_dry[i][j];
+			interpolated_model_moist[i] += obs_op_jacobian_reduced_matrix_moist[i][j] + background_moist[relevant_model_dofs_matrix_dry[i][j]];
 		}
 	}
-	// this is the case where moisture is assimilated
-    if (NO_OF_FIELDS_PER_LAYER_OBS == 2)
-    {
-	    double *background_moist = malloc(NO_OF_SCALARS*sizeof(double));
-	    // the data assimilation is being calculated with the specific humidity for pragmatic reasons
-    	for (int i = 0; i < NO_OF_SCALARS; ++i)
-    	{
-    		background_moist[i] = water_vapour_density_background[i]/(density_dry_background[i] + water_vapour_density_background[i]);
-    	}
-    	
-		// setting up the measurement error covariance matrix
-		double *obs_error_cov = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST]));
-		double abs_moisture_error_obs = 0.01;
-		for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
-		{
-			obs_error_cov[i] = pow(abs_moisture_error_obs, 2);
-		}
-		
-		// setting up the background error covariance matrix (only the diagonal)
-		double *bg_error_cov = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
-		double abs_moisture_error_model = 0.005;
-		#pragma omp parallel for
-		for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
-		{
-			bg_error_cov[i] = pow(abs_moisture_error_model, 2);
-		}
-		
-		// setting up the observations operator
-		double *interpolated_model = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
-		double (*obs_op_jacobian_reduced_matrix_moist)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-		int (*relevant_model_dofs_matrix_moist)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_MOIST][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-		// setting up the moist obs operator using the dry obs operator
-		for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
-		{
-			interpolated_model[i] = 0;
-			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
-			{
-				obs_op_jacobian_reduced_matrix_moist[i][j] = obs_op_jacobian_reduced_matrix_dry[i][j];
-				relevant_model_dofs_matrix_moist[i][j] = relevant_model_dofs_matrix_dry[i][j];
-				interpolated_model[i] += obs_op_jacobian_reduced_matrix_moist[i][j] + background_moist[relevant_model_dofs_matrix_dry[i][j]];
-			}
-		}
-		
-		// now, all the constituents of the gain matrix are known
-		double *model_vector = malloc(NO_OF_SCALARS*sizeof(double));
-		oi(obs_error_cov, obs_op_jacobian_reduced_matrix_moist, relevant_model_dofs_matrix_moist, bg_error_cov, interpolated_model, background_moist, observations_vector_moist, model_vector, OI_SOLUTION_METHOD);
-		
-		free(obs_op_jacobian_reduced_matrix_moist);
-		free(background_moist);
-		free(relevant_model_dofs_matrix_moist);
-		free(obs_error_cov);
-		free(bg_error_cov);
-		free(interpolated_model);
-		
-		#pragma omp parallel for
-		for (int i = 0; i < NO_OF_SCALARS; ++i)
-		{
-			water_vapour_density[i] = model_vector[i]/(1 - model_vector[i])*density_dry[i];
-		}
-		
-		free(model_vector);
+	
+	// now, all the constituents of the gain matrix are known
+	double *model_vector_moist = malloc(NO_OF_SCALARS*sizeof(double));
+	oi(obs_error_cov_moist, obs_op_jacobian_reduced_matrix_moist, relevant_model_dofs_matrix_moist, bg_error_cov_moist, interpolated_model_moist, background_moist, observations_vector_moist, model_vector_moist, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_MOIST, NO_OF_MODEL_DOFS_MOIST);
+	
+	free(obs_op_jacobian_reduced_matrix_moist);
+	free(background_moist);
+	free(relevant_model_dofs_matrix_moist);
+	free(obs_error_cov_moist);
+	free(bg_error_cov_moist);
+	free(interpolated_model_moist);
+	
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_SCALARS; ++i)
+	{
+		water_vapour_density[i] = model_vector_moist[i]/(1 - model_vector_moist[i])*density_dry[i];
 	}
+	
+	free(model_vector_moist);
 	free(relevant_model_dofs_matrix_dry);
 	free(obs_op_jacobian_reduced_matrix_dry);
 	free(observations_vector_moist);
@@ -588,7 +568,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix_dry[][NO_OF_REL_MODEL_DOFS_PER_OBS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
+int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix_dry[][NO_OF_REL_MODEL_DOFS_PER_OBS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
 {
 	/*
 	This functions calculates the observations operator.
@@ -598,10 +578,10 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 	*/
 	double R_D = specific_gas_constants_lookup(0);
 	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
-	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS/2])); // the vector containing the relevant horizontal model indices for each observation
+	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS/2])); // the vector containing the relevant horizontal model indices for each observation
 	double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double)); // the vector containing the horizontal distances between the observation at hand and each horizontal model gridpoint
 	#pragma omp parallel for
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
 	{
 		// filling up the dist_vector
 		for (int j = 0; j < NO_OF_SCALARS_H; ++j)
@@ -627,13 +607,13 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 	double sum_of_interpol_weights, distance, closest_vert_weight, other_vert_weight;
 	// finally setting up the reduced observations operator
 	#pragma omp parallel for private(vert_distance_vector, weights_vector, closest_vert_index, other_vert_index, sum_of_interpol_weights, distance, closest_vert_weight, other_vert_weight)
-	for (int obs_index = 0; obs_index < NO_OF_CHOSEN_OBSERVATIONS; ++obs_index)
+	for (int obs_index = 0; obs_index < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++obs_index)
 	{
 		// free atmosphere quantities (temperature, specific humidity)
-		if (obs_index < NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
+		if (obs_index < NO_OF_CHOSEN_OBSERVATIONS_DRY - NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
 		{
 			sum_of_interpol_weights = 0;
-			interpolated_model[obs_index] = 0;
+			interpolated_model_dry[obs_index] = 0;
 			// loop over all relevant horizontal model gridpoints
 			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++j)
 			{
@@ -675,8 +655,8 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 				// 1/r-interpolation
 				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, T_INTERPOL_EXP);
 				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, T_INTERPOL_EXP);
-				interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix_dry[obs_index][j]];
-				interpolated_model[obs_index] += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix_dry[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
+				interpolated_model_dry[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix_dry[obs_index][j]];
+				interpolated_model_dry[obs_index] += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix_dry[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
 				sum_of_interpol_weights += weights_vector[j];
 				sum_of_interpol_weights += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2];
 				if (j == NO_OF_REL_MODEL_DOFS_PER_OBS/2 - 1)
@@ -686,7 +666,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 						// we have to divide by the sum of weights here
 						obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
 					}
-					interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
+					interpolated_model_dry[obs_index] = interpolated_model_dry[obs_index]/sum_of_interpol_weights;
 				}
 			}
 		}
@@ -694,7 +674,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 		else
 		{
 			sum_of_interpol_weights = 0;
-			interpolated_model[obs_index] = 0;
+			interpolated_model_dry[obs_index] = 0;
 			// loop over all relevant model degrees of freedom
 			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
 			{
@@ -740,13 +720,13 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 					*R_D*background[relevant_model_dofs_matrix_dry[obs_index][j] - NO_OF_SCALARS_H]
 					*exp(-(z_used_obs[obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]])/SCALE_HEIGHT);
 					// interpolation to the surface pressure
-					interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix_dry[obs_index][j]];
+					interpolated_model_dry[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix_dry[obs_index][j]];
 					sum_of_interpol_weights += 1/pow(distance + EPSILON, SP_INTERPOL_EXP);
 					// the result
 					if (j == NO_OF_REL_MODEL_DOFS_PER_OBS - 1)
 					{
 						// the interpolation to the surface pressure
-						interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
+						interpolated_model_dry[obs_index] = interpolated_model_dry[obs_index]/sum_of_interpol_weights;
 						// loop over all relevant gridpoints
 						for (int k = NO_OF_REL_MODEL_DOFS_PER_OBS/2; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 						{
