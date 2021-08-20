@@ -56,7 +56,6 @@ int main(int argc, char *argv[])
     
 	FILE *ECC_FILE;
 	ECC_FILE = fopen(LAT_OBS_FILE, "r");
-	free(LAT_OBS_FILE);
 	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
@@ -79,7 +78,6 @@ int main(int argc, char *argv[])
 	strcpy(LON_OBS_FILE, LON_OBS_FILE_PRE);
     
 	ECC_FILE = fopen(LON_OBS_FILE, "r");
-	free(LON_OBS_FILE);
 	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
@@ -123,7 +121,6 @@ int main(int argc, char *argv[])
 		strcpy(Z_OBS_FILE, Z_OBS_FILE_PRE);
 		
 		ECC_FILE = fopen(Z_OBS_FILE, "r");
-		free(Z_OBS_FILE);
 		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
@@ -140,7 +137,6 @@ int main(int argc, char *argv[])
 		strcpy(TEMPERATURE_FILE, TEMPERATURE_FILE_PRE);
 		
 		ECC_FILE = fopen(TEMPERATURE_FILE, "r");
-		free(TEMPERATURE_FILE);
 		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
@@ -157,7 +153,6 @@ int main(int argc, char *argv[])
 		strcpy(SPEC_HUM_FILE, SPEC_HUM_FILE_PRE);
 		
 		ECC_FILE = fopen(SPEC_HUM_FILE, "r");
-		free(SPEC_HUM_FILE);
 		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
@@ -189,7 +184,6 @@ int main(int argc, char *argv[])
 	strcpy(SFC_OBS_FILE, SFC_OBS_FILE_PRE);
 	
 	ECC_FILE = fopen(SFC_OBS_FILE, "r");
-	free(SFC_OBS_FILE);
 	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
@@ -209,7 +203,6 @@ int main(int argc, char *argv[])
 	strcpy(SFC_PRES_FILE, SFC_PRES_FILE_PRE);
 	
 	ECC_FILE = fopen(SFC_PRES_FILE, "r");
-	free(SFC_PRES_FILE);
 	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
@@ -240,7 +233,6 @@ int main(int argc, char *argv[])
     int ncid, observation_dimid, latitude_id, longitude_id, vert_id, obervations_id;
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
-    free(OUTPUT_FILE);
     // Defining the dimensions.
     if ((retval = nc_def_dim(ncid, "observation_index", NO_OF_CHOSEN_OBSERVATIONS, &observation_dimid)))
         NCERR(retval);
