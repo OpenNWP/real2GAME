@@ -26,10 +26,9 @@ The documentation of the code can be found in the subdirectory doc.
 
 * Valgrind (Ubuntu: `sudo apt-get install valgrind`, for doing checks)
 
-## Download
+## Download and installation
 
 	git clone https://github.com/OpenNWP/ndvar.git
-
-## Compilation
-
-In order to compile, cd into the directory build\_scripts and execute the shell script build\_install.sh. Scripts with the suffix \_dev install to a destination where new versions can be tested.
+	./compile.sh
+	cd formatter
+	./compile.sh
