@@ -8,9 +8,9 @@ Github repository: https://github.com/OpenNWP/ndvar
 // the number of levels from which we use observations
 #define NO_OF_LEVELS_OBS 6
 // the number of fields we use on each layer
-#define NO_OF_FIELDS_PER_LAYER_OBS 1
+#define NO_OF_FIELDS_PER_LAYER_OBS 2
 // the number of surface variables
-#define NO_OF_SURFACE_FIELDS_OBS 1
+#define NO_OF_SURFACE_FIELDS_OBS 2
 // the number of points per layer of the input model
 #define NO_OF_POINTS_PER_LAYER_OBS 2949120
 // the number of points on each layer

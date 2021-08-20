@@ -392,6 +392,7 @@ int main(int argc, char *argv[])
 		observations_vector_moist[i] = observations_vector[i];
 	}
     
+    // if moisture is not assimilated, it is set equally to the background state
     if (LMOIST == 0)
     {
 		#pragma omp parallel for
@@ -402,12 +403,14 @@ int main(int argc, char *argv[])
 			solid_water_density[i] = solid_water_density_background[i];
 		}
 	}
+	// this is the case where moisture is assimilated
     if (LMOIST == 1)
     {
 	    double *background_moist = malloc(NO_OF_SCALARS*sizeof(double));
+	    // the data assimilation is being calculated with the specific humidity for pragmatic reasons
     	for (int i = 0; i < NO_OF_SCALARS; ++i)
     	{
-    		background_moist[i] = water_vapour_density_background[i]/density_dry_background[i];
+    		background_moist[i] = water_vapour_density_background[i]/(density_dry_background[i] + water_vapour_density_background[i]);
     	}
     	
 		// setting up the measurement error covariance matrix
@@ -420,7 +423,7 @@ int main(int argc, char *argv[])
 		
 		// setting up the background error covariance matrix (only the diagonal)
 		double *bg_error_cov = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
-		double abs_moisture_error_model = 0.05;
+		double abs_moisture_error_model = 0.005;
 		#pragma omp parallel for
 		for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 		{
@@ -454,7 +457,7 @@ int main(int argc, char *argv[])
 		#pragma omp parallel for
 		for (int i = 0; i < NO_OF_SCALARS; ++i)
 		{
-			water_vapour_density[i] = model_vector[i];
+			water_vapour_density[i] = model_vector[i]*density_dry[i]*(1 + model_vector[i]);
 		}
 		
 		free(model_vector);
