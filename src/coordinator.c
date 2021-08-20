@@ -288,8 +288,8 @@ int main(int argc, char *argv[])
 	
 	// now, all the constituents of the gain matrix are known
 	double *model_vector_dry = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
-	oi(obs_error_cov_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, bg_error_cov_dry,
-	interpolated_model_dry, background_dry, observations_vector_dry, model_vector_dry, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_DRY, NO_OF_MODEL_DOFS_DRY);
+	oi(obs_error_cov_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, bg_error_cov_dry, interpolated_model_dry,
+	background_dry, observations_vector_dry, model_vector_dry, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_DRY, NO_OF_MODEL_DOFS_DRY);
 	
 	// data assimilation is finished at this point
 	// freeing the memory
@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
     	if (layer_index == NO_OF_LAYERS - 1)
     	{
         	density_dry[i] = model_vector_dry[NO_OF_SCALARS + h_index];
-        	exner[i] = pow((model_vector_dry[NO_OF_SCALARS + h_index]*R_D*temperature[i])/P_0, R_D/C_D_P);
+        	exner[i] = pow((density_dry[i]*R_D*temperature[i])/P_0, R_D/C_D_P);
         }
         else
         {
@@ -359,6 +359,8 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
 	{
 		observations_vector_moist[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
+		if (observations_vector_moist[i] < 0)
+			exit(1);
 	}
 	free(observations_vector);
 	
@@ -367,6 +369,8 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 	{
 		background_moist[i] = water_vapour_density_background[i]/(density_dry_background[i] + water_vapour_density_background[i]);
+		if (background_moist[i] < 0)
+			exit(1);
 	}
 	
 	// setting up the measurement error covariance matrix
@@ -404,7 +408,8 @@ int main(int argc, char *argv[])
 	
 	// now, all the constituents of the gain matrix are known
 	double *model_vector_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
-	oi(obs_error_cov_moist, obs_op_jacobian_reduced_matrix_moist, relevant_model_dofs_matrix_moist, bg_error_cov_moist, interpolated_model_moist, background_moist, observations_vector_moist, model_vector_moist, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_MOIST, NO_OF_MODEL_DOFS_MOIST);
+	oi(obs_error_cov_moist, obs_op_jacobian_reduced_matrix_moist, relevant_model_dofs_matrix_moist, bg_error_cov_moist, interpolated_model_moist,
+	background_moist, observations_vector_moist, model_vector_moist, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_MOIST, NO_OF_MODEL_DOFS_MOIST);
 	
 	free(obs_op_jacobian_reduced_matrix_moist);
 	free(background_moist);
