@@ -124,6 +124,7 @@ int main(int argc, char *argv[])
     int ncid;
     if ((retval = nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
+    free(BACKGROUND_STATE_FILE);
     int temperature_gas_background_id, density_dry_background_id, wind_background_id, density_vapour_background_id, density_liquid_background_id, density_solid_background_id, temperature_liquid_background_id, temperature_solid_background_id, stretching_parameter_state_id;
     double stretching_parameter_state;
     if ((retval = nc_inq_varid(ncid, "density_dry", &density_dry_background_id)))
@@ -188,7 +189,6 @@ int main(int argc, char *argv[])
 		printf("Aborting.\n");
 		exit(1);
 	}
-    free(GEO_PROP_FILE);
 	double stretching_parameter = stretching_parameter_grid;	
 	
 	// Allocating the memory for the observations.
@@ -510,9 +510,7 @@ int main(int argc, char *argv[])
     printf("Result successfully written.\n");
 
 	free(gravity_potential_model);
-	free(BACKGROUND_STATE_FILE);
 	free(ndvar_root_dir);
-	free(OBSERVATIONS_FILE);
     free(model_home_dir);
 	free(temperature);
 	free(density_dry);
@@ -540,7 +538,6 @@ int main(int argc, char *argv[])
 	free(z_coords_obs);
     free(latitudes_model);
     free(longitudes_model);
-    free(OUTPUT_FILE);
     return 0;
 }
 
