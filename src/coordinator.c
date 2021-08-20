@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
 	// Allocating the memory for the observations.
 	double *latitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	double *longitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	double *vert_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *z_coords_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
     
     int OBSERVATIONS_FILE_LENGTH = 100;
@@ -216,13 +216,13 @@ int main(int argc, char *argv[])
 	printf("reading observations ...\n");
     if ((retval = nc_open(OBSERVATIONS_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
-    int latitude_obs_id, longitude_obs_id, vert_id, obervations_id;
+    int latitude_obs_id, longitude_obs_id, z_coords_id, obervations_id;
     // Defining the variables.
     if ((retval = nc_inq_varid(ncid, "latitude_vector", &latitude_obs_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "longitude_vector", &longitude_obs_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "vert_vector", &vert_id)))
+    if ((retval = nc_inq_varid(ncid, "z_coords_obs", &z_coords_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "observations_vector", &obervations_id)))
         NCERR(retval);
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, longitude_obs_id, &longitude_vector_obs[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, vert_id, &vert_vector[0])))
+    if ((retval = nc_get_var_double(ncid, z_coords_id, &z_coords_obs[0])))
         NCERR(retval);  
     if ((retval = nc_get_var_double(ncid, obervations_id, &observations_vector[0])))
         NCERR(retval);
@@ -279,13 +279,20 @@ int main(int argc, char *argv[])
 	double (*obs_op_jacobian_reduced_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	int (*relevant_model_dofs_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	obs_op_setup(interpolated_model_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry,
-	latitude_vector_obs, longitude_vector_obs, vert_vector, latitudes_model, longitudes_model, z_coords_model, background_dry);
+	latitude_vector_obs, longitude_vector_obs, z_coords_obs, latitudes_model, longitudes_model, z_coords_model, background_dry);
 	
 	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
 	// setting up the dry observations vector
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
 	{
-		observations_vector_dry[i] = observations_vector[i];
+    	if (i < NO_OF_CHOSEN_OBSERVATIONS_DRY - NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
+    	{
+			observations_vector_dry[i] = observations_vector[i];
+		}
+		else
+		{
+			observations_vector_dry[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
+		}
 	}
 	
 	// now, all the constituents of the gain matrix are known
@@ -360,7 +367,7 @@ int main(int argc, char *argv[])
     double *observations_vector_moist = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
 	{
-		observations_vector_moist[i] = observations_vector[i];
+		observations_vector_moist[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
 	}
 	
 	
@@ -534,7 +541,7 @@ int main(int argc, char *argv[])
     free(z_coords_model);
 	free(latitude_vector_obs);
 	free(longitude_vector_obs);
-	free(vert_vector);
+	free(z_coords_obs);
     free(latitudes_model);
     free(longitudes_model);
     free(OUTPUT_FILE);
