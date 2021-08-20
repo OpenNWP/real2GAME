@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 	// Allocating the memory for the final result.
 	double *latitude_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	double *longitude_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	double *vert_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *z_coords_amsl = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	
 	double *temperature_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 			{
 				latitude_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
 				longitude_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
-				vert_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = z_height_amsl[chosen_indices[i]];
+				z_coords_amsl[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = z_height_amsl[chosen_indices[i]];
 			}
 			observations_vector[(level_index*2 + 0)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = temperature_one_layer[chosen_indices[i]];
 			observations_vector[(level_index*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[chosen_indices[i]];
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 	{
 		latitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
 		longitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
-		vert_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
+		z_coords_amsl[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
 		observations_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = pressure_one_layer[chosen_indices[i]];
 	}
 	
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_def_var(ncid, "longitude_vector", NC_DOUBLE, 1, &observation_dimid, &longitude_id)))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "vert_vector", NC_DOUBLE, 1, &observation_dimid, &vert_id)))
+    if ((retval = nc_def_var(ncid, "z_coords_obs", NC_DOUBLE, 1, &observation_dimid, &vert_id)))
         NCERR(retval);
     if ((retval = nc_def_var(ncid, "observations_vector", NC_DOUBLE, 1, &observation_dimid, &obervations_id)))
         NCERR(retval);
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, longitude_id, &longitude_vector[0])))
         NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, vert_id, &vert_vector[0])))
+    if ((retval = nc_put_var_double(ncid, vert_id, &z_coords_amsl[0])))
         NCERR(retval);    
     if ((retval = nc_put_var_double(ncid, obervations_id, &observations_vector[0])))
         NCERR(retval);
@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
     free(ndvar_root_dir);
 	free(latitude_vector);
 	free(longitude_vector);
-	free(vert_vector);
+	free(z_coords_amsl);
 	free(observations_vector);
 	free(year_string);
 	free(month_string);
