@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     
     // Reading the grid properties.
     int ncid_grid, retval;
-    int GEO_PROP_FILE_LENGTH = 100;
+    int GEO_PROP_FILE_LENGTH = 200;
     char *GEO_PROP_FILE_PRE = malloc((GEO_PROP_FILE_LENGTH + 1)*sizeof(char));
     sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
     GEO_PROP_FILE_LENGTH = strlen(GEO_PROP_FILE_PRE);
