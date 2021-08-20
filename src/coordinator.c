@@ -2,6 +2,7 @@
 This source file is part of ndvar, which is released under the MIT license.
 Github repository: https://github.com/OpenNWP/ndvar
 */
+
 /*
 This file coordinates the data assimilation process.
 */
@@ -62,14 +63,10 @@ int main(int argc, char *argv[])
 	printf("background state file: %s\n", BACKGROUND_STATE_FILE);
     
     // Allocating memory for the grid properties.
-    double *direction = malloc(NO_OF_VECTORS_H*sizeof(double));
-    double *latitude_scalar = malloc(NO_OF_SCALARS_H*sizeof(double));
-    double *longitude_scalar = malloc(NO_OF_SCALARS_H*sizeof(double));
-    double *latitude_vector = malloc(NO_OF_VECTORS_H*sizeof(double));
-    double *longitude_vector = malloc(NO_OF_VECTORS_H*sizeof(double));
-    double *z_scalar = malloc(NO_OF_SCALARS*sizeof(double));
-    double *z_vector = malloc(NO_OF_VECTORS*sizeof(double));
-    double *gravity_potential = malloc(NO_OF_VECTORS*sizeof(double));
+    double *latitudes_model = malloc(NO_OF_SCALARS_H*sizeof(double));
+    double *longitudes_model = malloc(NO_OF_SCALARS_H*sizeof(double));
+    double *z_coords_model = malloc(NO_OF_SCALARS*sizeof(double));
+    double *gravity_potential_model = malloc(NO_OF_VECTORS*sizeof(double));
     
     // Reading the grid properties.
     int ncid_grid, retval;
@@ -84,43 +81,27 @@ int main(int argc, char *argv[])
 	printf("reading grid file ...\n");
     if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
         NCERR(retval);
-    int direction_id, latitude_scalar_id, longitude_scalar_id, latitude_vector_id, longitude_vector_id, z_scalar_id, z_vector_id, gravity_potential_id, stretching_parameter_grid_id;
+    int latitudes_model_id, longitudes_model_id, z_coords_model_id, gravity_potential_model_id, stretching_parameter_grid_id;
     double stretching_parameter_grid;
-    if ((retval = nc_inq_varid(ncid_grid, "direction", &direction_id)))
+    if ((retval = nc_inq_varid(ncid_grid, "latitude_scalar", &latitudes_model_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "latitude_scalar", &latitude_scalar_id)))
+    if ((retval = nc_inq_varid(ncid_grid, "longitude_scalar", &longitudes_model_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "longitude_scalar", &longitude_scalar_id)))
+    if ((retval = nc_inq_varid(ncid_grid, "z_scalar", &z_coords_model_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "latitude_vector", &latitude_vector_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "longitude_vector", &longitude_vector_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "z_scalar", &z_scalar_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "z_vector", &z_vector_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "gravity_potential", &gravity_potential_id)))
+    if ((retval = nc_inq_varid(ncid_grid, "gravity_potential", &gravity_potential_model_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid_grid, "stretching_parameter", &stretching_parameter_grid_id)))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid_grid, stretching_parameter_grid_id, &stretching_parameter_grid)))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, direction_id, &direction[0])))
+    if ((retval = nc_get_var_double(ncid_grid, latitudes_model_id, &latitudes_model[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, latitude_scalar_id, &latitude_scalar[0])))
+    if ((retval = nc_get_var_double(ncid_grid, longitudes_model_id, &longitudes_model[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, longitude_scalar_id, &longitude_scalar[0])))
+    if ((retval = nc_get_var_double(ncid_grid, z_coords_model_id, &z_coords_model[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, latitude_vector_id, &latitude_vector[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, longitude_vector_id, &longitude_vector[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, z_scalar_id, &z_scalar[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, z_vector_id, &z_vector[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, gravity_potential_id, &gravity_potential[0])))
+    if ((retval = nc_get_var_double(ncid_grid, gravity_potential_model_id, &gravity_potential_model[0])))
         NCERR(retval);
     if ((retval = nc_close(ncid_grid)))
         NCERR(retval);
@@ -297,7 +278,8 @@ int main(int argc, char *argv[])
 	double *interpolated_model_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
 	double (*obs_op_jacobian_reduced_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	int (*relevant_model_dofs_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-	obs_op_setup(interpolated_model_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
+	obs_op_setup(interpolated_model_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry,
+	latitude_vector_obs, longitude_vector_obs, vert_vector, latitudes_model, longitudes_model, z_coords_model, background);
 	
 	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
 	// setting up the dry observations vector
@@ -308,7 +290,8 @@ int main(int argc, char *argv[])
 	
 	// now, all the constituents of the gain matrix are known
 	double *model_vector_dry = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
-	oi(obs_error_cov_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, bg_error_cov_dry, interpolated_model_dry, background, observations_vector_dry, model_vector_dry, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_DRY, NO_OF_MODEL_DOFS_DRY);
+	oi(obs_error_cov_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, bg_error_cov_dry,
+	interpolated_model_dry, background, observations_vector_dry, model_vector_dry, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_DRY, NO_OF_MODEL_DOFS_DRY);
 	
 	// data assimilation is finished at this point
 	// freeing the memory
@@ -354,7 +337,7 @@ int main(int argc, char *argv[])
 			// solving a quadratic equation for the Exner pressure
 			b = -0.5*exner[i + NO_OF_SCALARS_H]/temperature[i + NO_OF_SCALARS_H]
 			*(temperature[i] - temperature[i + NO_OF_SCALARS_H]
-			+ 2/C_D_P*(gravity_potential[i] - gravity_potential[i + NO_OF_SCALARS_H]));
+			+ 2/C_D_P*(gravity_potential_model[i] - gravity_potential_model[i + NO_OF_SCALARS_H]));
 			c = pow(exner[i + NO_OF_SCALARS_H], 2)*temperature[i]/temperature[i + NO_OF_SCALARS_H];
 			exner[i] = b + pow((pow(b, 2) + c), 0.5);
         	density_dry[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*temperature[i]);
@@ -523,7 +506,7 @@ int main(int argc, char *argv[])
     	NCERR(retval);
     printf("Result successfully written.\n");
 
-	free(gravity_potential);
+	free(gravity_potential_model);
 	free(BACKGROUND_STATE_FILE);
 	free(ndvar_root_dir);
 	free(OBSERVATIONS_FILE);
@@ -548,16 +531,12 @@ int main(int argc, char *argv[])
     free(solid_water_density_background);
     free(liquid_water_temperature_background);
     free(solid_water_temperature_background);
-    free(z_scalar);
+    free(z_coords_model);
 	free(latitude_vector_obs);
 	free(longitude_vector_obs);
 	free(vert_vector);
-    free(z_vector);
-    free(latitude_scalar);
-    free(longitude_scalar);
-    free(direction);
-    free(latitude_vector);
-    free(longitude_vector);
+    free(latitudes_model);
+    free(longitudes_model);
     free(OUTPUT_FILE);
     return 0;
 }
