@@ -173,17 +173,17 @@ int main(int argc, char *argv[])
 	printf("Background state read.\n");
 
 	// saving the relevant part of the background state in one array
-	double *background = malloc(NO_OF_MODEL_DOFS_DRY*sizeof(double));
+	double *background_dry = malloc(NO_OF_MODEL_DOFS_DRY*sizeof(double));
     #pragma omp parallel for
 	for (int i = 0; i < NO_OF_MODEL_DOFS_DRY; ++i)
 	{
 		if (i < NO_OF_SCALARS)
 		{
-			background[i] = temperature_gas_background[i];
+			background_dry[i] = temperature_gas_background[i];
 		}
 		else
 		{
-			background[i] = density_dry_background[i - NO_OF_SCALARS_H];
+			background_dry[i] = density_dry_background[i - NO_OF_SCALARS_H];
 		}
 	}
 
@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
     	else
     	{
     		// density = p/(R_D*T) (Gauss'ian error propagation)
-    		bg_error_cov_dry[i] = pow(pressure_error_model/(R_D*background[i - NO_OF_SCALARS_H]), 2) + pow(background[i]/background[i - NO_OF_SCALARS_H]*temperature_error_model, 2);
+    		bg_error_cov_dry[i] = pow(pressure_error_model/(R_D*background_dry[i - NO_OF_SCALARS_H]), 2) + pow(background_dry[i]/background_dry[i - NO_OF_SCALARS_H]*temperature_error_model, 2);
     	}
     }
     
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
 	double (*obs_op_jacobian_reduced_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	int (*relevant_model_dofs_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	obs_op_setup(interpolated_model_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry,
-	latitude_vector_obs, longitude_vector_obs, vert_vector, latitudes_model, longitudes_model, z_coords_model, background);
+	latitude_vector_obs, longitude_vector_obs, vert_vector, latitudes_model, longitudes_model, z_coords_model, background_dry);
 	
 	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
 	// setting up the dry observations vector
@@ -291,14 +291,14 @@ int main(int argc, char *argv[])
 	// now, all the constituents of the gain matrix are known
 	double *model_vector_dry = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
 	oi(obs_error_cov_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, bg_error_cov_dry,
-	interpolated_model_dry, background, observations_vector_dry, model_vector_dry, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_DRY, NO_OF_MODEL_DOFS_DRY);
+	interpolated_model_dry, background_dry, observations_vector_dry, model_vector_dry, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_DRY, NO_OF_MODEL_DOFS_DRY);
 	
 	// data assimilation is finished at this point
 	// freeing the memory
 	free(obs_error_cov_dry);
 	free(bg_error_cov_dry);
 	free(interpolated_model_dry);
-	free(background);
+	free(background_dry);
 	free(observations_vector_dry);
     
     // These are the arrays for the result of the assimilation process.
