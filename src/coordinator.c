@@ -70,13 +70,10 @@ int main(int argc, char *argv[])
     
     // Reading the grid properties.
     int ncid_grid, retval;
-    int GEO_PROP_FILE_LENGTH = 100;
-    char *GEO_PROP_FILE_PRE = malloc((GEO_PROP_FILE_LENGTH + 1)*sizeof(char));
+    char GEO_PROP_FILE_PRE[200];
     sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
-    GEO_PROP_FILE_LENGTH = strlen(GEO_PROP_FILE_PRE);
-    free(GEO_PROP_FILE_PRE);
-    char *GEO_PROP_FILE = malloc((GEO_PROP_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(GEO_PROP_FILE, "%s/grid_generator/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    char GEO_PROP_FILE[strlen(GEO_PROP_FILE_PRE) + 1];
+    strcpy(GEO_PROP_FILE, GEO_PROP_FILE_PRE);
 	printf("grid file: %s\n", GEO_PROP_FILE);
 	printf("reading grid file ...\n");
     if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
@@ -107,13 +104,10 @@ int main(int argc, char *argv[])
         NCERR(retval);
 	printf("Grid file read.\n");
 	
-    int OUTPUT_FILE_LENGTH = 100;
-    char *OUTPUT_FILE_PRE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
+    char OUTPUT_FILE_PRE[200];
     sprintf(OUTPUT_FILE_PRE, "%s/nwp_init/%s%s%s%s_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour_string, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
-    OUTPUT_FILE_LENGTH = strlen(OUTPUT_FILE_PRE);
-    free(OUTPUT_FILE_PRE);
-    char *OUTPUT_FILE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
-    sprintf(OUTPUT_FILE, "%s/nwp_init/%s%s%s%s_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour_string, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    char OUTPUT_FILE[strlen(OUTPUT_FILE_PRE) + 1];
+    strcpy(OUTPUT_FILE, OUTPUT_FILE_PRE);
     
     // These are the arrays of the background state.
     double *temperature_gas_background = malloc(NO_OF_SCALARS*sizeof(double));
@@ -203,13 +197,10 @@ int main(int argc, char *argv[])
 	double *z_coords_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
     
-    int OBSERVATIONS_FILE_LENGTH = 100;
-    char *OBSERVATIONS_FILE_PRE = malloc((OBSERVATIONS_FILE_LENGTH + 1)*sizeof(char));
+    char OBSERVATIONS_FILE_PRE[200];
     sprintf(OBSERVATIONS_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-    OBSERVATIONS_FILE_LENGTH = strlen(OBSERVATIONS_FILE_PRE);
-    free(OBSERVATIONS_FILE_PRE);
-    char *OBSERVATIONS_FILE = malloc((OBSERVATIONS_FILE_LENGTH + 1)*sizeof(char));
-	sprintf(OBSERVATIONS_FILE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    char OBSERVATIONS_FILE[strlen(OBSERVATIONS_FILE_PRE) + 1];
+    strcpy(OBSERVATIONS_FILE, OBSERVATIONS_FILE_PRE);
 	printf("observations file: %s\n", OBSERVATIONS_FILE);
     
     // Reading the observations.
