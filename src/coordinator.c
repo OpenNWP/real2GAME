@@ -198,9 +198,9 @@ int main(int argc, char *argv[])
 	printf("Background state read.\n");
 
 	// saving the relevant part of the background state in one array
-	double *background = malloc(NO_OF_MODEL_DOFS*sizeof(double));
+	double *background = malloc(NO_OF_MODEL_DOFS_DRY*sizeof(double));
     #pragma omp parallel for
-	for (int i = 0; i < NO_OF_MODEL_DOFS; ++i)
+	for (int i = 0; i < NO_OF_MODEL_DOFS_DRY; ++i)
 	{
 		if (i < NO_OF_SCALARS)
 		{
@@ -223,11 +223,11 @@ int main(int argc, char *argv[])
 	double stretching_parameter = stretching_parameter_grid;	
 	
 	// Allocating the memory for the observations.
-	double *latitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	double *longitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	double *vert_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	int *type_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(int));
+	double *latitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
+	double *longitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
+	double *vert_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
+	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
+	int *type_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(int));
     
     int OBSERVATIONS_FILE_LENGTH = 100;
     char *OBSERVATIONS_FILE_PRE = malloc((OBSERVATIONS_FILE_LENGTH + 1)*sizeof(char));
@@ -271,12 +271,12 @@ int main(int argc, char *argv[])
 	// Begin of the actual assimilation.
     
     // setting up the measurement error covariance matrix
-    double *obs_error_cov = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS]));
+    double *obs_error_cov = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY]));
     double temperature_error_obs = 1;
     double pressure_error_obs = 100;
-    for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
+    for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
     {
-    	if (i < NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SURFACE_FIELDS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
+    	if (i < NO_OF_CHOSEN_OBSERVATIONS_DRY - NO_OF_SURFACE_FIELDS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
     	{
 			obs_error_cov[i] = pow(temperature_error_obs, 2);
 		}
@@ -287,11 +287,11 @@ int main(int argc, char *argv[])
     }
     
     // setting up the background error covariance matrix (only the diagonal)
-    double *bg_error_cov = malloc(NO_OF_MODEL_DOFS*sizeof(double));
+    double *bg_error_cov = malloc(NO_OF_MODEL_DOFS_DRY*sizeof(double));
     double temperature_error_model = 1;
     double pressure_error_model = 50;
     #pragma omp parallel for
-    for (int i = 0; i < NO_OF_MODEL_DOFS; ++i)
+    for (int i = 0; i < NO_OF_MODEL_DOFS_DRY; ++i)
     {
     	if (i < NO_OF_SCALARS)
     	{
@@ -305,14 +305,14 @@ int main(int argc, char *argv[])
     }
     
 	// setting up the observations operator
-	double *interpolated_model = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	double (*obs_op_jacobian_reduced_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-	int (*relevant_model_dofs_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	double *interpolated_model = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
+	double (*obs_op_jacobian_reduced_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	int (*relevant_model_dofs_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	obs_op_setup(interpolated_model, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, latitude_vector_obs, longitude_vector_obs, vert_vector, latitude_scalar, longitude_scalar, z_scalar, background);
 	
-	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
 	// setting up the dry observations vector
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS; ++i)
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
 	{
 		observations_vector_dry[i] = observations_vector[i];
 	}
@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
 	}
     
     // if moisture is not assimilated, it is set equally to the background state
-    if (LMOIST == 0)
+    if (NO_OF_FIELDS_PER_LAYER_OBS == 1)
     {
 		#pragma omp parallel for
 		for (int i = 0; i < NO_OF_SCALARS; ++i)
@@ -403,7 +403,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	// this is the case where moisture is assimilated
-    if (LMOIST == 1)
+    if (NO_OF_FIELDS_PER_LAYER_OBS == 2)
     {
 	    double *background_moist = malloc(NO_OF_SCALARS*sizeof(double));
 	    // the data assimilation is being calculated with the specific humidity for pragmatic reasons
@@ -475,6 +475,8 @@ int main(int argc, char *argv[])
 		liquid_water_temp[i] = temperature[i];
 		solid_water_temp[i] = temperature[i];
     }
+    
+    // precipitation is not assimilated for now
     
     // Writing the result to a netcdf file.
     printf("output file: %s\n", OUTPUT_FILE);
