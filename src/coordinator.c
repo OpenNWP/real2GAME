@@ -217,11 +217,10 @@ int main(int argc, char *argv[])
 	double stretching_parameter = stretching_parameter_grid;	
 	
 	// Allocating the memory for the observations.
-	double *latitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
-	double *longitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
-	double *vert_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
-	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
-	int *type_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(int));
+	double *latitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *longitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *vert_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
     
     int OBSERVATIONS_FILE_LENGTH = 100;
     char *OBSERVATIONS_FILE_PRE = malloc((OBSERVATIONS_FILE_LENGTH + 1)*sizeof(char));
@@ -236,7 +235,7 @@ int main(int argc, char *argv[])
 	printf("reading observations ...\n");
     if ((retval = nc_open(OBSERVATIONS_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
-    int latitude_obs_id, longitude_obs_id, vert_id, obervations_id, type_id;
+    int latitude_obs_id, longitude_obs_id, vert_id, obervations_id;
     // Defining the variables.
     if ((retval = nc_inq_varid(ncid, "latitude_vector", &latitude_obs_id)))
         NCERR(retval);
@@ -246,8 +245,6 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "observations_vector", &obervations_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "type_vector", &type_id)))
-        NCERR(retval);
     if ((retval = nc_get_var_double(ncid, latitude_obs_id, &latitude_vector_obs[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, longitude_obs_id, &longitude_vector_obs[0])))
@@ -255,8 +252,6 @@ int main(int argc, char *argv[])
     if ((retval = nc_get_var_double(ncid, vert_id, &vert_vector[0])))
         NCERR(retval);  
     if ((retval = nc_get_var_double(ncid, obervations_id, &observations_vector[0])))
-        NCERR(retval);    
-    if ((retval = nc_get_var_int(ncid, type_id, &type_vector[0])))
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
@@ -557,7 +552,6 @@ int main(int argc, char *argv[])
 	free(latitude_vector_obs);
 	free(longitude_vector_obs);
 	free(vert_vector);
-	free(type_vector);
     free(z_vector);
     free(latitude_scalar);
     free(longitude_scalar);

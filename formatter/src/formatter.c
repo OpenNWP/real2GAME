@@ -3,11 +3,6 @@ This source file is part of ndvar, which is released under the MIT license.
 Github repository: https://github.com/OpenNWP/ndvar
 */
 
-// types of observations
-// 0: temperature
-// 1: pressure
-// 2: specific humidity
-
 #include <netcdf.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,8 +42,8 @@ int main(int argc, char *argv[])
     strcpy(ndvar_root_dir, argv[5]);
 	
 	// Properties of the input model's grid.
-	double *latitude_vector_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
-	double *longitude_vector_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	double *latitudes_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	double *longitudes_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
     
 	int retval, err;
 	codes_handle *handle = NULL;
@@ -70,14 +65,14 @@ int main(int argc, char *argv[])
 		ECCERR(err);
 	size_t NO_OF_POINTS_PER_LAYER_OBS_SIZE_T;
 	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
-	if ((retval = codes_get_double_array(handle, "values", &latitude_vector_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+	if ((retval = codes_get_double_array(handle, "values", &latitudes_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
 		ECCERR(retval);
 	codes_handle_delete(handle);
     fclose(ECC_FILE);
     
     for (int i = 0; i < NO_OF_POINTS_PER_LAYER_OBS; ++i)
     {
-    	latitude_vector_one_layer[i] = 2*M_PI*latitude_vector_one_layer[i]/360;
+    	latitudes_one_layer[i] = 2*M_PI*latitudes_one_layer[i]/360;
     }
     
     // longitudes of the grid
@@ -95,14 +90,14 @@ int main(int argc, char *argv[])
 	if (err != 0)
 		ECCERR(err);
 	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
-	if ((retval = codes_get_double_array(handle, "values", &longitude_vector_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+	if ((retval = codes_get_double_array(handle, "values", &longitudes_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
 		ECCERR(retval);
 	codes_handle_delete(handle);
     fclose(ECC_FILE);
     
     for (int i = 0; i < NO_OF_POINTS_PER_LAYER_OBS; ++i)
     {
-    	longitude_vector_one_layer[i] = 2*M_PI*longitude_vector_one_layer[i]/360;
+    	longitudes_one_layer[i] = 2*M_PI*longitudes_one_layer[i]/360;
     }
     
 	// Allocating the memory for the final result.
@@ -110,7 +105,6 @@ int main(int argc, char *argv[])
 	double *longitude_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	double *vert_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	int *type_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(int));
 	
 	double *temperature_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	double *spec_hum_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
@@ -193,8 +187,8 @@ int main(int argc, char *argv[])
 		{
 			for (int j = 0; j < 2; ++j)
 			{
-				latitude_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[chosen_indices[i]];
-				longitude_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[chosen_indices[i]];
+				latitude_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
+				longitude_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
 				vert_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = z_height_amsl[chosen_indices[i]];
 				
 				if (j == 0)
@@ -204,15 +198,6 @@ int main(int argc, char *argv[])
 				if (j == 1)
 				{
 					observations_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[chosen_indices[i]];
-				}
-				
-				if (j == 0)
-				{
-					type_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 0;
-				}
-				if (j == 1)
-				{
-					type_vector[(level_index*2 + j)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 2;
 				}
 			}
 		}
@@ -265,15 +250,10 @@ int main(int argc, char *argv[])
 	// writing the surface pressure to the observations
 	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 	{
-		latitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitude_vector_one_layer[chosen_indices[i]];
-		
-		longitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitude_vector_one_layer[chosen_indices[i]];
-		
+		latitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
+		longitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
 		vert_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
-		
 		observations_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = pressure_one_layer[chosen_indices[i]];
-		
-		type_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 1;
 	}
 	
 	free(pressure_one_layer);
@@ -288,7 +268,7 @@ int main(int argc, char *argv[])
     char *OUTPUT_FILE = malloc((OUTPUT_FILE_LENGTH + 1)*sizeof(char));
     sprintf(OUTPUT_FILE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
     
-    int ncid, observation_dimid, latitude_id, longitude_id, vert_id, obervations_id, type_id;
+    int ncid, observation_dimid, latitude_id, longitude_id, vert_id, obervations_id;
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
     free(OUTPUT_FILE);
@@ -304,8 +284,6 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_def_var(ncid, "observations_vector", NC_DOUBLE, 1, &observation_dimid, &obervations_id)))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "type_vector", NC_INT, 1, &observation_dimid, &type_id)))
-        NCERR(retval);
     
     if ((retval = nc_enddef(ncid)))
         NCERR(retval);
@@ -318,8 +296,6 @@ int main(int argc, char *argv[])
     if ((retval = nc_put_var_double(ncid, vert_id, &vert_vector[0])))
         NCERR(retval);    
     if ((retval = nc_put_var_double(ncid, obervations_id, &observations_vector[0])))
-        NCERR(retval);    
-    if ((retval = nc_put_var_int(ncid, type_id, &type_vector[0])))
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
@@ -332,13 +308,12 @@ int main(int argc, char *argv[])
 	free(longitude_vector);
 	free(vert_vector);
 	free(observations_vector);
-	free(type_vector);
 	free(year_string);
 	free(month_string);
 	free(day_string);
 	free(hour_string);
-	free(latitude_vector_one_layer);
-	free(longitude_vector_one_layer);
+	free(latitudes_one_layer);
+	free(longitudes_one_layer);
 	free(z_height_amsl);
 	free(surface_height);
 
