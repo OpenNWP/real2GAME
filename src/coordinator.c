@@ -691,7 +691,8 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 					// 1/r-interpolation
 					weights_vector[j] = 1/pow(distance + EPSILON, SP_INTERPOL_EXP)
 					*R_D*background[relevant_model_dofs_matrix_dry[obs_index][j] - NO_OF_SCALARS_H]
-					*exp(-(z_used_obs[obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]])/SCALE_HEIGHT);
+					*exp(-(z_used_obs[NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index]
+					- z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]])/SCALE_HEIGHT);
 					// interpolation to the surface pressure
 					interpolated_model_dry[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix_dry[obs_index][j]];
 					sum_of_interpol_weights += 1/pow(distance + EPSILON, SP_INTERPOL_EXP);
