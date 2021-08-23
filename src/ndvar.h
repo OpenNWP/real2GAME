@@ -8,7 +8,7 @@ Github repository: https://github.com/OpenNWP/ndvar
 // the number of points per layer of the input model
 #define NO_OF_POINTS_PER_LAYER_OBS 2949120
 // the number of points on each layer
-#define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 720
+#define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 800
 // the total number of observations we take into account for the dry assimilation
 #define NO_OF_CHOSEN_OBSERVATIONS_DRY ((NO_OF_LEVELS_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
 // the total number of observations we take into account for the moist assimilation
@@ -19,7 +19,7 @@ Github repository: https://github.com/OpenNWP/ndvar
 // the total number of model degree of freedoms for the moisture assimilation
 #define NO_OF_MODEL_DOFS_MOIST NO_OF_SCALARS
 // the number of model degrees of freedom that are used to interpolate to an observation
-#define NO_OF_REL_MODEL_DOFS_PER_OBS 86
+#define NO_OF_REL_MODEL_DOFS_PER_OBS 76
 // values smaller than one smooth the MSLP field
 #define SP_INTERPOL_EXP 0.5
 // values smaller than one smooth the temperature field
