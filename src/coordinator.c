@@ -585,7 +585,7 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 	#pragma omp parallel for private(vert_distance_vector, weights_vector, closest_vert_index, other_vert_index, sum_of_interpol_weights, distance, closest_vert_weight, other_vert_weight)
 	for (int obs_index = 0; obs_index < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++obs_index)
 	{
-		// free atmosphere quantities (temperature, specific humidity)
+		// free atmosphere quantities (temperature)
 		if (obs_index < NO_OF_CHOSEN_OBSERVATIONS_DRY - NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
 		{
 			sum_of_interpol_weights = 0;
