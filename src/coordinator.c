@@ -390,7 +390,7 @@ int main(int argc, char *argv[])
 	double *interpolated_model_moist = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
 	double (*obs_op_jacobian_reduced_matrix_moist)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	int (*relevant_model_dofs_matrix_moist)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_MOIST][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-	// setting up the moist obs operator using the dry obs operator
+	// setting up the moist observations operator using the dry observations operator
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
 	{
 		interpolated_model_moist[i] = 0;
@@ -398,9 +398,10 @@ int main(int argc, char *argv[])
 		{
 			obs_op_jacobian_reduced_matrix_moist[i][j] = obs_op_jacobian_reduced_matrix_dry[i][j];
 			relevant_model_dofs_matrix_moist[i][j] = relevant_model_dofs_matrix_dry[i][j];
-			interpolated_model_moist[i] += obs_op_jacobian_reduced_matrix_moist[i][j]*background_moist[relevant_model_dofs_matrix_dry[i][j]];
+			interpolated_model_moist[i] += obs_op_jacobian_reduced_matrix_moist[i][j]*background_moist[relevant_model_dofs_matrix_moist[i][j]];
 		}
 	}
+	free(relevant_model_dofs_matrix_dry);
 	
 	// now, all the constituents of the gain matrix are known
 	double *model_vector_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
@@ -425,7 +426,6 @@ int main(int argc, char *argv[])
 	}
 	
 	free(model_vector_moist);
-	free(relevant_model_dofs_matrix_dry);
 	free(obs_op_jacobian_reduced_matrix_dry);
 	free(observations_vector_moist);
 	
