@@ -9,7 +9,7 @@ analysis_day=${BASH_ARGV[1]}
 analysis_hour=${BASH_ARGV[0]}
 ndvar_root_dir=${BASH_ARGV[4]}
 
-$ndvar_root_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour $ndvar_root_dir
+valgrind $ndvar_root_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour $ndvar_root_dir
 if [ $? -ne 0 ]
 then
 echo -e ${RED}Formatter failed.$NC

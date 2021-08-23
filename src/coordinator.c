@@ -20,6 +20,7 @@ This file coordinates the data assimilation process.
 #define EPSILON 1e-4
 #define SCALE_HEIGHT 8000.0
 #define P_0 100000
+#define T_0 273.15
 
 int obs_op_setup(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [], double [], double [], double []);
 
@@ -418,6 +419,7 @@ int main(int argc, char *argv[])
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
+		// cloud water density
 		water_vapour_density[i] = model_vector_moist[i]/(1 - model_vector_moist[i])*density_dry[i];
 		if (water_vapour_density[i] < 0)
 		{
@@ -430,14 +432,15 @@ int main(int argc, char *argv[])
 	free(observations_vector_moist);
 	
 	// individual condensate temperatures are for higher resolutions, not yet implemented
+	// clouds and precipitation are set equal to the background state
     #pragma omp parallel for
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
 		liquid_water_temp[i] = temperature[i];
 		solid_water_temp[i] = temperature[i];
+		solid_water_density[i] = solid_water_density_background[i];
+		liquid_water_density[i] = liquid_water_density_background[i];
     }
-    
-    // precipitation is not assimilated for now
     
     // Writing the result to a netcdf file.
     printf("output file: %s\n", OUTPUT_FILE);
