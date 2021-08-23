@@ -19,7 +19,7 @@ Github repository: https://github.com/OpenNWP/ndvar
 // the total number of model degree of freedoms for the moisture assimilation
 #define NO_OF_MODEL_DOFS_MOIST NO_OF_SCALARS
 // the number of model degrees of freedom that are used to interpolate to an observation
-#define NO_OF_REL_MODEL_DOFS_PER_OBS 400
+#define NO_OF_REL_MODEL_DOFS_PER_OBS 50
 // values smaller than one smooth the MSLP field
 #define SP_INTERPOL_EXP 0.5
 // values smaller than one smooth the temperature field
