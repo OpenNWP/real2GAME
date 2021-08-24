@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
 	
     char OUTPUT_FILE_PRE[200];
     sprintf(OUTPUT_FILE_PRE, "%s/nwp_init/%s%s%s%s_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour_string, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    free(model_home_dir);
     char OUTPUT_FILE[strlen(OUTPUT_FILE_PRE) + 1];
     strcpy(OUTPUT_FILE, OUTPUT_FILE_PRE);
     
@@ -181,6 +182,7 @@ int main(int argc, char *argv[])
 			background_dry[i] = density_dry_background[i - NO_OF_SCALARS_H];
 		}
 	}
+    free(temperature_gas_background);
 
 	// Comparing the stretching parameters of the grid and the background state.
 	if (stretching_parameter_grid != stretching_parameter_state)
@@ -199,6 +201,11 @@ int main(int argc, char *argv[])
     
     char OBSERVATIONS_FILE_PRE[200];
     sprintf(OBSERVATIONS_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	free(ndvar_root_dir);
+	free(year_string);
+	free(month_string);
+	free(day_string);
+	free(hour_string);
     char OBSERVATIONS_FILE[strlen(OBSERVATIONS_FILE_PRE) + 1];
     strcpy(OBSERVATIONS_FILE, OBSERVATIONS_FILE_PRE);
 	printf("observations file: %s\n", OBSERVATIONS_FILE);
@@ -271,6 +278,12 @@ int main(int argc, char *argv[])
 	int (*relevant_model_dofs_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
 	obs_op_setup(interpolated_model_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry,
 	latitude_vector_obs, longitude_vector_obs, z_coords_obs, latitudes_model, longitudes_model, z_coords_model, background_dry);
+    free(z_coords_model);
+    free(latitudes_model);
+    free(longitudes_model);
+	free(latitude_vector_obs);
+	free(longitude_vector_obs);
+	free(z_coords_obs);
 	
 	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
 	// setting up the dry observations vector
@@ -341,7 +354,7 @@ int main(int argc, char *argv[])
         	density_dry[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*temperature[i]);
         }
     }
-    
+	free(gravity_potential_model);
     free(exner);
     free(model_vector_dry);
     
@@ -351,7 +364,7 @@ int main(int argc, char *argv[])
     {
     	wind[i] = wind_background[i];
     }
-    
+    free(wind_background);
     // end of the assimilation of the dry state
     
     // separate moisture assimilation
@@ -368,6 +381,8 @@ int main(int argc, char *argv[])
 	{
 		background_moist[i] = water_vapour_density_background[i]/(density_dry_background[i] + water_vapour_density_background[i]);
 	}
+    free(density_dry_background);
+    free(water_vapour_density_background);
 	
 	// setting up the measurement error covariance matrix
 	double *obs_error_cov_moist = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST]));
@@ -427,7 +442,6 @@ int main(int argc, char *argv[])
 			water_vapour_density[i] = 0;
 		}
 	}
-	
 	free(model_vector_moist);
 	
 	// individual condensate temperatures are for higher resolutions, not yet implemented
@@ -435,11 +449,15 @@ int main(int argc, char *argv[])
     #pragma omp parallel for
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
-		liquid_water_temp[i] = temperature[i];
-		solid_water_temp[i] = temperature[i];
 		solid_water_density[i] = solid_water_density_background[i];
 		liquid_water_density[i] = liquid_water_density_background[i];
+		solid_water_temp[i] = solid_water_temperature_background[i];
+		liquid_water_temp[i] = liquid_water_temperature_background[i];
     }
+    free(solid_water_density_background);
+    free(liquid_water_density_background);
+    free(solid_water_temperature_background);
+    free(liquid_water_temperature_background);
     
     // Writing the result to a netcdf file.
     printf("output file: %s\n", OUTPUT_FILE);
@@ -510,36 +528,14 @@ int main(int argc, char *argv[])
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
     printf("Result successfully written.\n");
-
-	free(gravity_potential_model);
-	free(ndvar_root_dir);
-    free(model_home_dir);
-	free(temperature);
 	free(density_dry);
+	free(temperature);
 	free(wind);
 	free(water_vapour_density);
-	free(liquid_water_density);
 	free(solid_water_density);
-	free(liquid_water_temp);
+	free(liquid_water_density);
 	free(solid_water_temp);
-	free(year_string);
-	free(month_string);
-	free(day_string);
-	free(hour_string);
-    free(wind_background);
-    free(temperature_gas_background);
-    free(density_dry_background);
-    free(water_vapour_density_background);
-    free(liquid_water_density_background);
-    free(solid_water_density_background);
-    free(liquid_water_temperature_background);
-    free(solid_water_temperature_background);
-    free(z_coords_model);
-	free(latitude_vector_obs);
-	free(longitude_vector_obs);
-	free(z_coords_obs);
-    free(latitudes_model);
-    free(longitudes_model);
+	free(liquid_water_temp);
     return 0;
 }
 
