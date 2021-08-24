@@ -12,7 +12,7 @@ Optimum interpolation.
 #include <stdlib.h>
 #include "geos95.h"
 
-int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double bg_error_cov[], double interpolated_model[], double background[], double observations_vector[], double model_vector[], int OI_SOLUTION_METHOD, int no_of_obs, int no_of_model_dofs)
+int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double bg_error_cov[], double interpolated_model[], double background[], double observations_vector[], double model_vector[], int no_of_obs, int no_of_model_dofs)
 {
 	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
 	double (*h_b_ht_plus_r)[no_of_obs] = malloc(sizeof(double[no_of_obs][no_of_obs]));
@@ -55,25 +55,11 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 	double (*h_b_ht_plus_r_inv)[no_of_obs] = calloc(1, sizeof(double[no_of_obs][no_of_obs]));
 	if (no_of_obs == NO_OF_CHOSEN_OBSERVATIONS_DRY)
 	{
-		if (OI_SOLUTION_METHOD == 0)
-		{
-			inv_gauss_dry(h_b_ht_plus_r, h_b_ht_plus_r_inv);
-		}
-		if (OI_SOLUTION_METHOD == 1)
-		{
-			inv_lu_dry(h_b_ht_plus_r, h_b_ht_plus_r_inv);
-		}
+		inv_gauss_dry(h_b_ht_plus_r, h_b_ht_plus_r_inv);
 	}
 	if (no_of_obs == NO_OF_CHOSEN_OBSERVATIONS_MOIST)
 	{
-		if (OI_SOLUTION_METHOD == 0)
-		{
-			inv_gauss_moist(h_b_ht_plus_r, h_b_ht_plus_r_inv);
-		}
-		if (OI_SOLUTION_METHOD == 1)
-		{
-			inv_lu_moist(h_b_ht_plus_r, h_b_ht_plus_r_inv);
-		}
+		inv_gauss_moist(h_b_ht_plus_r, h_b_ht_plus_r_inv);
 	}
 	
 	// now, the main job is already done

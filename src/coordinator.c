@@ -59,7 +59,6 @@ int main(int argc, char *argv[])
 	int NO_OF_ORO_LAYERS;
     NO_OF_ORO_LAYERS = strtod(argv[9], NULL);
 	int TOA = strtod(argv[10], NULL);
-	int OI_SOLUTION_METHOD = strtod(argv[11], NULL);
 	printf("background state file: %s\n", BACKGROUND_STATE_FILE);
     
     // Allocating memory for the grid properties.
@@ -302,7 +301,7 @@ int main(int argc, char *argv[])
 	// now, all the constituents of the gain matrix are known
 	double *model_vector_dry = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
 	oi(obs_error_cov_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, bg_error_cov_dry, interpolated_model_dry,
-	background_dry, observations_vector_dry, model_vector_dry, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_DRY, NO_OF_MODEL_DOFS_DRY);
+	background_dry, observations_vector_dry, model_vector_dry, NO_OF_CHOSEN_OBSERVATIONS_DRY, NO_OF_MODEL_DOFS_DRY);
 	
 	// data assimilation is finished at this point
 	// freeing the memory
@@ -422,7 +421,7 @@ int main(int argc, char *argv[])
 	// now, all the constituents of the gain matrix are known
 	double *model_vector_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
 	oi(obs_error_cov_moist, obs_op_jacobian_reduced_matrix_moist, relevant_model_dofs_matrix_moist, bg_error_cov_moist, interpolated_model_moist,
-	background_moist, observations_vector_moist, model_vector_moist, OI_SOLUTION_METHOD, NO_OF_CHOSEN_OBSERVATIONS_MOIST, NO_OF_MODEL_DOFS_MOIST);
+	background_moist, observations_vector_moist, model_vector_moist, NO_OF_CHOSEN_OBSERVATIONS_MOIST, NO_OF_MODEL_DOFS_MOIST);
 	
 	free(obs_op_jacobian_reduced_matrix_moist);
 	free(background_moist);
