@@ -20,7 +20,6 @@ This file coordinates the data assimilation process.
 #define EPSILON 1e-4
 #define SCALE_HEIGHT 8000.0
 #define P_0 100000
-#define T_0 273.15
 
 int obs_op_setup(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [], double [], double [], double []);
 
@@ -67,7 +66,7 @@ int main(int argc, char *argv[])
     double *latitudes_model = malloc(NO_OF_SCALARS_H*sizeof(double));
     double *longitudes_model = malloc(NO_OF_SCALARS_H*sizeof(double));
     double *z_coords_model = malloc(NO_OF_SCALARS*sizeof(double));
-    double *gravity_potential_model = malloc(NO_OF_VECTORS*sizeof(double));
+    double *gravity_potential_model = malloc(NO_OF_SCALARS*sizeof(double));
     
     // Reading the grid properties.
     int ncid_grid, retval;
@@ -402,6 +401,7 @@ int main(int argc, char *argv[])
 			interpolated_model_moist[i] += obs_op_jacobian_reduced_matrix_moist[i][j]*background_moist[relevant_model_dofs_matrix_moist[i][j]];
 		}
 	}
+	free(obs_op_jacobian_reduced_matrix_dry);
 	free(relevant_model_dofs_matrix_dry);
 	
 	// now, all the constituents of the gain matrix are known
@@ -415,6 +415,7 @@ int main(int argc, char *argv[])
 	free(obs_error_cov_moist);
 	free(bg_error_cov_moist);
 	free(interpolated_model_moist);
+	free(observations_vector_moist);
 	
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
@@ -428,8 +429,6 @@ int main(int argc, char *argv[])
 	}
 	
 	free(model_vector_moist);
-	free(obs_op_jacobian_reduced_matrix_dry);
-	free(observations_vector_moist);
 	
 	// individual condensate temperatures are for higher resolutions, not yet implemented
 	// clouds and precipitation are set equal to the background state
