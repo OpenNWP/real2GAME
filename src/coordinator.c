@@ -555,7 +555,6 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
 	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_POINTS_PER_LAYER_OBS][NO_OF_REL_MODEL_DOFS_PER_OBS/2])); // the vector containing the relevant horizontal model indices for each observation
 	double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double)); // the vector containing the horizontal distances between the observation at hand and each horizontal model gridpoint
-	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 	{
 		// filling up the dist_vector
