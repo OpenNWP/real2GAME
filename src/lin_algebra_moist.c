@@ -41,7 +41,7 @@ int inv_gauss_moist(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS_MOIST], do
 		// Firstly, the permutation index has to be found.
 		permute_index_found = 0;
 		permute_index_counter = i;
-		while (permute_index_found == 0 && permute_index_counter < NO_OF_CHOSEN_OBSERVATIONS_MOIST)
+		while (permute_index_found == 0)
 		{
 			if (to_be_inverted[permute_index_counter][i] != 0)
 			{
@@ -52,25 +52,21 @@ int inv_gauss_moist(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS_MOIST], do
 				permute_index_counter += 1;
 			}
 		}
-		// checking for an error
-		if (permute_index_counter == NO_OF_CHOSEN_OBSERVATIONS_MOIST)
-		{
-			printf("Matrix inversion failed.\n");
-			exit(1);
-		}
 		// actually performing the permutation
 		if (permute_index_counter > i)
 		{
 			permute_lines_moist(to_be_inverted, i, permute_index_counter);
 			permute_lines_moist(inv, i, permute_index_counter);
 		}
+		
+		// permutation is done, now comes the actual calculation
 		// dividing the line by to_be_inverted[i][i]
 		factor = 1/to_be_inverted[i][i];
 		for (int j = i; j < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++j)
 		{
 			to_be_inverted[i][j] = factor*to_be_inverted[i][j];
 		}
-		for (int j = 0; j <= i; ++j)
+		for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++j)
 		{
 			inv[i][j] = factor*inv[i][j];
 		}
@@ -82,7 +78,7 @@ int inv_gauss_moist(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS_MOIST], do
 			{
 				to_be_inverted[j][k] = to_be_inverted[j][k] + factor*to_be_inverted[i][k];
 			}
-			for (int k = 0; k <= i; ++k)
+			for (int k = 0; k < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++k)
 			{
 				inv[j][k] = inv[j][k] + factor*inv[i][k];
 			}
@@ -129,3 +125,11 @@ int permute_lines_moist(double matrix[][NO_OF_CHOSEN_OBSERVATIONS_MOIST], int li
 	}
 	return 0;
 }
+
+
+
+
+
+
+
+
