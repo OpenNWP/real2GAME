@@ -46,11 +46,8 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 					*obs_op_jacobian_reduced_matrix[j][index_found];
 				}
 			}
-			if (i == j)
-			{
-				h_b_ht_plus_r[i][j] = h_b_ht_plus_r[i][j] + obs_error_cov[i];
-			}
 		}
+		h_b_ht_plus_r[i][i] = h_b_ht_plus_r[i][i] + obs_error_cov[i];
 	}
 	
 	// h_b_ht_plus_r needs to be inversed in order to calculate the gain matrix
