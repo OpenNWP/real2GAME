@@ -241,6 +241,7 @@ int main(int argc, char *argv[])
     double *obs_error_cov_dry = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY]));
     double temperature_error_obs = 1;
     double pressure_error_obs = 100;
+	#pragma omp parallel for
     for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
     {
     	if (i < NO_OF_CHOSEN_OBSERVATIONS_DRY - NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
@@ -286,6 +287,7 @@ int main(int argc, char *argv[])
 	
 	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
 	// setting up the dry observations vector
+	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
 	{
     	if (i < NO_OF_CHOSEN_OBSERVATIONS_DRY - NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
@@ -368,6 +370,7 @@ int main(int argc, char *argv[])
     
     // separate moisture assimilation
     double *observations_vector_moist = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
+	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
 	{
 		observations_vector_moist[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
@@ -376,6 +379,7 @@ int main(int argc, char *argv[])
 	
     double *background_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
     // the data assimilation is being calculated with the specific humidity for pragmatic reasons
+	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 	{
 		background_moist[i] = water_vapour_density_background[i]/(density_dry_background[i] + water_vapour_density_background[i]);
@@ -386,6 +390,7 @@ int main(int argc, char *argv[])
 	// setting up the measurement error covariance matrix
 	double *obs_error_cov_moist = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST]));
 	double abs_moisture_error_obs = 0.005;
+	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
 	{
 		obs_error_cov_moist[i] = pow(abs_moisture_error_obs, 2);
@@ -569,6 +574,7 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 	
 	int layer_index, obs_index_h;
 	// finally setting up the reduced observations operator
+	#pragma omp parallel for private(layer_index, obs_index_h)
 	for (int obs_index = 0; obs_index < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++obs_index)
 	{
 		layer_index = obs_index/NO_OF_CHOSEN_POINTS_PER_LAYER_OBS;
