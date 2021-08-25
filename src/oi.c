@@ -14,7 +14,7 @@ Optimum interpolation.
 
 int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double bg_error_cov[], double interpolated_model[], double background[], double observations_vector[], double model_vector[], int no_of_obs, int no_of_model_dofs)
 {
-	// short notation: b: background error covariance, h: observations operator; r: observations error covariance
+	// short notation: b: background error covariance, h: derivative of the observations operator; r: observations error covariance
 	double (*h_b_ht_plus_r)[no_of_obs] = malloc(sizeof(double[no_of_obs][no_of_obs]));
 	int index_found;
 	int check_vector[NO_OF_REL_MODEL_DOFS_PER_OBS];

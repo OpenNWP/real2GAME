@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
     // setting up the background error covariance matrix (only the diagonal)
     double *bg_error_cov_dry = malloc(NO_OF_MODEL_DOFS_DRY*sizeof(double));
     double temperature_error_model = 1;
-    double pressure_error_model = 50;
+    double pressure_error_model = 100;
     #pragma omp parallel for
     for (int i = 0; i < NO_OF_MODEL_DOFS_DRY; ++i)
     {
@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
 	
 	// setting up the measurement error covariance matrix
 	double *obs_error_cov_moist = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST]));
-	double abs_moisture_error_obs = 0.01;
+	double abs_moisture_error_obs = 0.005;
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
 	{
 		obs_error_cov_moist[i] = pow(abs_moisture_error_obs, 2);
