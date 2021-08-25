@@ -10,6 +10,7 @@ Optimum interpolation.
 #include "game-da.h"
 #include "enum.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include "geos95.h"
 
 int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double bg_error_cov[], double interpolated_model[], double background[], double observations_vector[], double model_vector[], int no_of_obs, int no_of_model_dofs)
@@ -35,18 +36,18 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 			{
 				if (in_bool_calculator(relevant_model_dofs_matrix[j][k], check_vector, NO_OF_REL_MODEL_DOFS_PER_OBS) == 1)
 				{
-					index_found = 0;
-					for (int l = 0; l < NO_OF_REL_MODEL_DOFS_PER_OBS; ++l)
+					index_found = -1;
+					for (int l = 0; l < NO_OF_REL_MODEL_DOFS_PER_OBS && index_found == -1; ++l)
 					{
-						if (relevant_model_dofs_matrix[j][l] == relevant_model_dofs_matrix[i][k])
+						if (relevant_model_dofs_matrix[j][k] == relevant_model_dofs_matrix[i][l])
 						{
 							index_found = l;
 						}
 					}
 					h_b_ht_plus_r[i][j]
 					+= bg_error_cov[relevant_model_dofs_matrix[i][k]]
-					*obs_op_jacobian_reduced_matrix[i][k]
-					*obs_op_jacobian_reduced_matrix[j][index_found];
+					*obs_op_jacobian_reduced_matrix[i][index_found]
+					*obs_op_jacobian_reduced_matrix[j][k];
 				}
 			}
 		}
