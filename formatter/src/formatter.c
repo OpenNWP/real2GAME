@@ -1,6 +1,6 @@
 /*
-This source file is part of ndvar, which is released under the MIT license.
-Github repository: https://github.com/OpenNWP/ndvar
+This source file is part of GAME-DA, which is released under the MIT license.
+Github repository: https://github.com/OpenNWP/GAME-DA
 */
 
 #include <netcdf.h>
@@ -8,7 +8,7 @@ Github repository: https://github.com/OpenNWP/ndvar
 #include <string.h>
 #include <stdlib.h>
 #include "eccodes.h"
-#include "../../src/ndvar.h"
+#include "../../src/game-da.h"
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
 #define ERRCODE 3
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(ERRCODE);}
@@ -38,8 +38,8 @@ int main(int argc, char *argv[])
     char *hour_string = malloc((len + 1)*sizeof(char));
     strcpy(hour_string, argv[4]);
     len = strlen(argv[5]);
-    char *ndvar_root_dir = malloc((len + 1)*sizeof(char));
-    strcpy(ndvar_root_dir, argv[5]);
+    char *game_da_root_dir = malloc((len + 1)*sizeof(char));
+    strcpy(game_da_root_dir, argv[5]);
 	
 	// Properties of the input model's grid.
 	double *latitudes_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	
 	// latitudes of the grid
 	char LAT_OBS_FILE_PRE[200];
-    sprintf(LAT_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    sprintf(LAT_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string);
 	char LAT_OBS_FILE[strlen(LAT_OBS_FILE_PRE) + 1];
 	strcpy(LAT_OBS_FILE, LAT_OBS_FILE_PRE);
     
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     
     // longitudes of the grid
 	char LON_OBS_FILE_PRE[200];
-    sprintf(LON_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    sprintf(LON_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string);
 	char LON_OBS_FILE[strlen(LON_OBS_FILE_PRE) + 1];
 	strcpy(LON_OBS_FILE, LON_OBS_FILE_PRE);
     
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 	{
 		// vertical position of the current layer
 		char Z_OBS_FILE_PRE[200];
-		sprintf(Z_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_%d_HHL.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		sprintf(Z_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_%d_HHL.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
 		char Z_OBS_FILE[strlen(Z_OBS_FILE_PRE) + 1];
 		strcpy(Z_OBS_FILE, Z_OBS_FILE_PRE);
 		
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
 		
 	   	// reading the temperature
 		char TEMPERATURE_FILE_PRE[200];
-		sprintf(TEMPERATURE_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_T.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		sprintf(TEMPERATURE_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_T.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
 		char TEMPERATURE_FILE[strlen(TEMPERATURE_FILE_PRE) + 1];
 		strcpy(TEMPERATURE_FILE, TEMPERATURE_FILE_PRE);
 		
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 		
 	   	// reading the specific humidity
 		char SPEC_HUM_FILE_PRE[200];
-		sprintf(SPEC_HUM_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_QV.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		sprintf(SPEC_HUM_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_QV.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
 		char SPEC_HUM_FILE[strlen(SPEC_HUM_FILE_PRE) + 1];
 		strcpy(SPEC_HUM_FILE, SPEC_HUM_FILE_PRE);
 		
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 	// reading the surface height
 	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	char SFC_OBS_FILE_PRE[200];
-	sprintf(SFC_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	sprintf(SFC_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string);
 	char SFC_OBS_FILE[strlen(SFC_OBS_FILE_PRE) + 1];
 	strcpy(SFC_OBS_FILE, SFC_OBS_FILE_PRE);
 	
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 	double *pressure_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	
 	char SFC_PRES_FILE_PRE[200];
-	sprintf(SFC_PRES_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+	sprintf(SFC_PRES_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string);
 	char SFC_PRES_FILE[strlen(SFC_PRES_FILE_PRE) + 1];
 	strcpy(SFC_PRES_FILE, SFC_PRES_FILE_PRE);
 	
@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
     
     // Writing the observations to a netcdf file.
     char OUTPUT_FILE_PRE[200];
-    sprintf(OUTPUT_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
+    sprintf(OUTPUT_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", game_da_root_dir, year_string, month_string, day_string, hour_string);
 	char OUTPUT_FILE[strlen(OUTPUT_FILE_PRE) + 1];
 	strcpy(OUTPUT_FILE, OUTPUT_FILE_PRE);
     
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
     // Freeing the memory.
 	free(temperature_one_layer);
 	free(spec_hum_one_layer);
-    free(ndvar_root_dir);
+    free(game_da_root_dir);
 	free(latitude_vector);
 	free(longitude_vector);
 	free(z_coords_amsl);

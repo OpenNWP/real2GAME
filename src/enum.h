@@ -1,6 +1,6 @@
 /*
-This source file is part of ndvar, which is released under the MIT license.
-Github repository: https://github.com/OpenNWP/ndvar
+This source file is part of GAME-DA, which is released under the MIT license.
+Github repository: https://github.com/OpenNWP/GAME-DA
 */
 
 #include <math.h>

@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# This source file is part of ndvar, which is released under the MIT license.
-# Github repository: https://github.com/OpenNWP/ndvar
+# This source file is part of GAME-DA, which is released under the MIT license.
+# Github repository: https://github.com/OpenNWP/GAME-DA
 
 analysis_year=${BASH_ARGV[3]}
 analysis_month=${BASH_ARGV[2]}
 analysis_day=${BASH_ARGV[1]}
 analysis_hour=${BASH_ARGV[0]}
-ndvar_root_dir=${BASH_ARGV[4]}
+GAME-DA_root_dir=${BASH_ARGV[4]}
 
-$ndvar_root_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour $ndvar_root_dir
+$GAME-DA_root_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour $GAME-DA_root_dir
 if [ $? -ne 0 ]
 then
 echo -e ${RED}Formatter failed.$NC

@@ -1,6 +1,6 @@
 /*
-This source file is part of ndvar, which is released under the MIT license.
-Github repository: https://github.com/OpenNWP/ndvar
+This source file is part of GAME-DA, which is released under the MIT license.
+Github repository: https://github.com/OpenNWP/GAME-DA
 */
 
 /*
@@ -9,7 +9,7 @@ This file coordinates the data assimilation process.
 
 #include <stdlib.h>
 #include "enum.h"
-#include "ndvar.h"
+#include "game-da.h"
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
     char *BACKGROUND_STATE_FILE = malloc((len + 1)*sizeof(char));
     strcpy(BACKGROUND_STATE_FILE, argv[7]);
     len = strlen(argv[8]);
-    char *ndvar_root_dir = malloc((len + 1)*sizeof(char));
-    strcpy(ndvar_root_dir, argv[8]);
+    char *game_da_root_dir = malloc((len + 1)*sizeof(char));
+    strcpy(game_da_root_dir, argv[8]);
 	int NO_OF_ORO_LAYERS;
     NO_OF_ORO_LAYERS = strtod(argv[9], NULL);
 	int TOA = strtod(argv[10], NULL);
@@ -199,8 +199,8 @@ int main(int argc, char *argv[])
 	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
     
     char OBSERVATIONS_FILE_PRE[200];
-    sprintf(OBSERVATIONS_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", ndvar_root_dir, year_string, month_string, day_string, hour_string);
-	free(ndvar_root_dir);
+    sprintf(OBSERVATIONS_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", game_da_root_dir, year_string, month_string, day_string, hour_string);
+	free(game_da_root_dir);
 	free(year_string);
 	free(month_string);
 	free(day_string);

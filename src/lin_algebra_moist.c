@@ -1,6 +1,6 @@
 /*
-This source file is part of ndvar, which is released under the MIT license.
-Github repository: https://github.com/OpenNWP/ndvar
+This source file is part of GAME-DA, which is released under the MIT license.
+Github repository: https://github.com/OpenNWP/GAME-DA
 */
 
 /*
@@ -9,7 +9,7 @@ Linear algebra functions for the moist assimilation process.
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "ndvar.h"
+#include "game-da.h"
 
 int permute_lines_moist(double [][NO_OF_CHOSEN_OBSERVATIONS_MOIST], int, int);
 

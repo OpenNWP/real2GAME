@@ -28,7 +28,6 @@ The documentation of the code can be found in the subdirectory doc.
 
 ## Download and installation
 
-	git clone https://github.com/OpenNWP/ndvar.git
-	./compile.sh
-	cd formatter
-	./compile.sh
+	git clone https://github.com/OpenNWP/GAME-DA.git
+	cd GAME-DA
+	./build.sh

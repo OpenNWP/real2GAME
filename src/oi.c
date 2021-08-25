@@ -1,13 +1,13 @@
 /*
-This source file is part of ndvar, which is released under the MIT license.
-Github repository: https://github.com/OpenNWP/ndvar
+This source file is part of GAME-DA, which is released under the MIT license.
+Github repository: https://github.com/OpenNWP/GAME-DA
 */
 
 /*
 Optimum interpolation.
 */
 
-#include "ndvar.h"
+#include "game-da.h"
 #include "enum.h"
 #include <stdlib.h>
 #include "geos95.h"
