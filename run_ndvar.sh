@@ -10,7 +10,7 @@ analysis_hour=${BASH_ARGV[1]}
 model_home_directory=${BASH_ARGV[0]}
 orography_id=${BASH_ARGV[5]}
 background_file=${BASH_ARGV[6]}
-GAME-DA_root_dir=${BASH_ARGV[7]}
+game_da_root_dir=${BASH_ARGV[7]}
 orography_layers=${BASH_ARGV[8]}
 toa=${BASH_ARGV[9]}
 omp_num_threads=${BASH_ARGV[10]}
@@ -24,7 +24,7 @@ echo "analysis year: "$analysis_year
 echo "analysis month: "$analysis_month
 echo "analysis day: "$analysis_day
 echo "analysis hour: "$analysis_hour
-$GAME-DA_root_dir/build/GAME-DA $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $GAME-DA_root_dir $orography_layers $toa
+$GAME-DA_root_dir/build/GAME-DA $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $game_da_root_dir $orography_layers $toa
 if [ $? -ne 0 ]
 then
 echo -e ${RED}Data assimilation failed.$NC
