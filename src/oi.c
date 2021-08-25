@@ -19,12 +19,15 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 	int index_found;
 	int check_vector[NO_OF_REL_MODEL_DOFS_PER_OBS];
     //#pragma omp parallel for private(index_found, check_vector)
+    // line index loop
 	for (int i = 0; i < no_of_obs; ++i)
 	{
+		// help vector
 		for (int l = 0; l < NO_OF_REL_MODEL_DOFS_PER_OBS; ++l)
 		{
 			check_vector[l] = relevant_model_dofs_matrix[i][l];
 		}
+		// column index loop
 		for (int j = 0; j < no_of_obs; ++j)
 		{
 			h_b_ht_plus_r[i][j] = 0;
@@ -47,6 +50,7 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 				}
 			}
 		}
+		// adding the observations error
 		h_b_ht_plus_r[i][i] = h_b_ht_plus_r[i][i] + obs_error_cov[i];
 	}
 	
@@ -61,7 +65,6 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 	{
 		inv_gauss_moist(h_b_ht_plus_r, h_b_ht_plus_r_inv);
 	}
-	
 	// now, the main job is already done
 	free(h_b_ht_plus_r);
 	
@@ -83,7 +86,6 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 			}
 		}
 	}
-	
 	free(h_b_ht_plus_r_inv);
 	
     #pragma omp parallel for
