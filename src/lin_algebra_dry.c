@@ -21,6 +21,7 @@ int inv_gauss_dry(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS_DRY], double
 	*/
 	
 	// firstly, the inverse is initialized with the unity matrix
+	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
 	{
 		inv[i][i] = 1;
@@ -62,15 +63,18 @@ int inv_gauss_dry(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS_DRY], double
 		// permutation is done, now comes the actual calculation
 		// dividing the line by to_be_inverted[i][i]
 		factor = 1/to_be_inverted[i][i];
+		#pragma omp parallel for
 		for (int j = i; j < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++j)
 		{
 			to_be_inverted[i][j] = factor*to_be_inverted[i][j];
 		}
+		#pragma omp parallel for
 		for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++j)
 		{
 			inv[i][j] = factor*inv[i][j];
 		}
 		// loop over all the lines that are below the current line
+		#pragma omp parallel for private(factor)
 		for (int j = i + 1; j < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++j)
 		{
 			factor = -to_be_inverted[j][i];
@@ -85,6 +89,7 @@ int inv_gauss_dry(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS_DRY], double
 		}
 	}
 	
+	#pragma omp parallel for
 	for (int j = 0; j < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++j)
 	{
 		inv[NO_OF_CHOSEN_OBSERVATIONS_DRY - 1][j] = inv[NO_OF_CHOSEN_OBSERVATIONS_DRY - 1][j]/to_be_inverted[NO_OF_CHOSEN_OBSERVATIONS_DRY - 1][NO_OF_CHOSEN_OBSERVATIONS_DRY - 1];
@@ -97,6 +102,7 @@ int inv_gauss_dry(double to_be_inverted[][NO_OF_CHOSEN_OBSERVATIONS_DRY], double
 	*/
 	for (int i = NO_OF_CHOSEN_OBSERVATIONS_DRY - 1; i >= 1; --i)
 	{
+		#pragma omp parallel for
 		for (int j = i - 1; j >= 0; --j)
 		{
 			for (int k = 0; k < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++k)
@@ -114,10 +120,12 @@ int permute_lines_dry(double matrix[][NO_OF_CHOSEN_OBSERVATIONS_DRY], int line_a
 	Permutes line_a with line_b of matrix.
 	*/
 	double line_a_pre[NO_OF_CHOSEN_OBSERVATIONS_DRY];
+	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
 	{
 		line_a_pre[i] = matrix[line_a][i];
 	}
+	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
 	{
 		matrix[line_a][i] = matrix[line_b][i];

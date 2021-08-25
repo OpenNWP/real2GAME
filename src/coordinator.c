@@ -554,9 +554,10 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 	double R_D = specific_gas_constants_lookup(0);
 	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
 	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_POINTS_PER_LAYER_OBS][NO_OF_REL_MODEL_DOFS_PER_OBS/2])); // the vector containing the relevant horizontal model indices for each observation
-	double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double)); // the vector containing the horizontal distances between the observation at hand and each horizontal model gridpoint
+	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 	{
+		double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double)); // the vector containing the horizontal distances between the observation at hand and each horizontal model gridpoint
 		// filling up the dist_vector
 		for (int j = 0; j < NO_OF_SCALARS_H; ++j)
 		{
@@ -568,9 +569,8 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 			rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
 			dist_vector[rel_h_index_vector[i][j]] = M_PI + EPSILON;
 		}
+		free(dist_vector);
 	}
-	// dist_vector is no longer needed
-	free(dist_vector);
 	
 	int layer_index, obs_index_h;
 	// finally setting up the reduced observations operator
