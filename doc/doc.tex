@@ -30,11 +30,13 @@
 \chapter{Optimum interpolation}
 \label{chap:optimum_interpolation}
 
+It is
+%
 \begin{align}
 \left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, j} &= \sum_{k = 1}^{M}\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{k, j}.
 \end{align}
 %
-In the special case, where $\overleftrightarrow{B}$ has diagonal form, this reduces to
+If $\overleftrightarrow{B}$ is diagonal, this reduces to
 %
 \begin{align}
 \left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, j} &= \sum_{k = 1}^{M}\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{k, j}\delta_{k, j} = \sum_{k = 1}^{M}\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{j, j}\delta_{k, j} = \overleftrightarrow{H}_{i, j}\overleftrightarrow{B}_{j, j}.
@@ -46,7 +48,7 @@ For $\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T$, one 
 \left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T\right)_{i, j} &= \left[\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)\overleftrightarrow{H}^T\right]_{i, j} = \sum_{k = 1}^{M}\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, k}\overleftrightarrow{H}^T_{k, j} = \sum_{k = 1}^{M}\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, k}\overleftrightarrow{H}_{j, k} = \sum_{k = 1}^{M}\left(\sum_{l = 1}^{M}\overleftrightarrow{H}_{i, l}\overleftrightarrow{B}_{l, k}\right)\overleftrightarrow{H}_{j, k} = \sum_{k, l = 1}^M\overleftrightarrow{H}_{i, l}\overleftrightarrow{B}_{l, k}\overleftrightarrow{H}_{j, k}.
 \end{align}
 %
-In the special case, where $\overleftrightarrow{B}$ has diagonal form, this reduces to
+If $\overleftrightarrow{B}$ is diagonal, this reduces to
 %
 \begin{align}
 \left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T\right)_{i, j} &= \sum_{k = 1}^M\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{k, k}\overleftrightarrow{H}_{j, k} = \sum_{k = 1}^M\overleftrightarrow{B}_{k, k}\left(\overleftrightarrow{H}_{i, k}\overleftrightarrow{H}_{j, k}\right).
@@ -60,7 +62,7 @@ x_i &= x_{B, i} + \sum_{j = 1}^N\left[\overleftrightarrow{B}\overleftrightarrow{
 &= x_{B, i} + \sum_{j = 1}^N\left[\sum_{k = 1}^N\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)_{k, j}\left(\sum_{l = 1}^M\overleftrightarrow{B}_{i, l}\overleftrightarrow{H}_{k, l}\right)\right]\left(y_j - h_j\right).
 \end{align}
 %
-In the special case, where $\overleftrightarrow{B}$ has diagonal form, this reduces to
+If $\overleftrightarrow{B}$ is diagonal, this reduces to
 %
 \begin{align}
 x_i &= x_{B, i} + \sum_{j = 1}^N\left[\sum_{k = 1}^N\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)_{k, j}\left(\overleftrightarrow{B}_{i, i}\overleftrightarrow{H}_{k, i}\right)\right]\left(y_j - h_j\right) = x_{B, i} + \sum_{j = 1}^N\left[\sum_{k = 1}^N\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)_{k, j}\overleftrightarrow{B}_{i, i}\overleftrightarrow{H}_{k, i}\right]\left(y_j - h_j\right).
