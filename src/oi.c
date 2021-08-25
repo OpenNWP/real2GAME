@@ -45,7 +45,7 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 						}
 					}
 					h_b_ht_plus_r[i][j]
-					+= bg_error_cov[relevant_model_dofs_matrix[i][k]]
+					+= bg_error_cov[relevant_model_dofs_matrix[j][k]]
 					*obs_op_jacobian_reduced_matrix[i][index_found]
 					*obs_op_jacobian_reduced_matrix[j][k];
 				}
