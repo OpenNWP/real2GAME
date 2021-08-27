@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 project(GAME-DA VERSION 0.0.2)
-set(CMAKE_C_COMPILER mpicc)
 add_executable(
 GAME-DA src/coordinator.c
 src/oi.c

@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 project(GAME-DA VERSION 0.0)
-set(CMAKE_C_COMPILER gcc)
 add_executable(
 formatter src/formatter.c)
 add_definitions(-Wall)
