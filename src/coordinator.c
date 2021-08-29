@@ -439,7 +439,6 @@ int main(int argc, char *argv[])
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
-		// water vapour density
 		water_vapour_density[i] = model_vector_moist[i]/(1 - model_vector_moist[i])*density_dry[i];
 		if (water_vapour_density[i] < 0)
 		{
