@@ -389,20 +389,20 @@ int main(int argc, char *argv[])
 	
 	// setting up the measurement error covariance matrix
 	double *obs_error_cov_moist = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST]));
-	double abs_moisture_error_obs = 0.005;
+	double spec_hum_error_obs = 0.0025;
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
 	{
-		obs_error_cov_moist[i] = pow(abs_moisture_error_obs, 2);
+		obs_error_cov_moist[i] = pow(spec_hum_error_obs, 2);
 	}
 	
 	// setting up the background error covariance matrix (only the diagonal)
 	double *bg_error_cov_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
-	double abs_moisture_error_model = 0.005;
+	double spec_hum_error_model = 0.005;
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 	{
-		bg_error_cov_moist[i] = pow(abs_moisture_error_model, 2);
+		bg_error_cov_moist[i] = pow(spec_hum_error_model, 2);
 	}
 	
 	// setting up the observations operator
