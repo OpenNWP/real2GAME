@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
 	
 	// setting up the measurement error covariance matrix
 	double *obs_error_cov_moist = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST]));
-	double spec_hum_error_obs = 0.0025;
+	double spec_hum_error_obs = 0.01;
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
 	{
