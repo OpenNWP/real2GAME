@@ -674,7 +674,7 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 						}
 					}
 				}
-				// How is the suface pressure affected by the density in the lowest layer?
+				// How is the surface pressure affected by the density in the lowest layer?
 				else
 				{
 					// as a new interpolation will be conducted now, the sum_of_interpol_weights variable has to be reset to zero

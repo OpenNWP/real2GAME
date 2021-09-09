@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 			latitude_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
 			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
 			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = z_height_amsl[chosen_indices[i]];
-			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = temperature_one_layer[chosen_indices[i]];
+			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[chosen_indices[i]];
 		}
 	}
 	
