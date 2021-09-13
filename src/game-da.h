@@ -8,7 +8,7 @@ Github repository: https://github.com/OpenNWP/GAME-DA
 // the number of points per layer of the input model
 #define NO_OF_POINTS_PER_LAYER_OBS 2949120
 // the number of points on each layer
-#define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 1330
+#define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 1100
 // the total number of observations we take into account for the dry assimilation
 #define NO_OF_CHOSEN_OBSERVATIONS_DRY ((NO_OF_LEVELS_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
 // the total number of observations we take into account for the moist assimilation
