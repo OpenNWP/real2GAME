@@ -120,15 +120,15 @@ int main(int argc, char *argv[])
     if ((retval = nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
     free(BACKGROUND_STATE_FILE);
-    int densities_background_id, temperatures_background_id, wind_background_id, stretching_parameter_state_id;
-    double stretching_parameter_state;
-    if ((retval = nc_inq_varid(ncid, "densityies", &densities_background_id)))
+    int densities_background_id, temperatures_background_id, wind_background_id, stretching_parameter_background_id;
+    double stretching_parameter_background;
+    if ((retval = nc_inq_varid(ncid, "densities", &densities_background_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "temperatures", &temperatures_background_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "wind", &wind_background_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "stretching_parameter", &stretching_parameter_state_id)))
+    if ((retval = nc_inq_varid(ncid, "stretching_parameter", &stretching_parameter_background_id)))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, densities_background_id, &densities_background[0])))
         NCERR(retval);
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, wind_background_id, &wind_background[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, stretching_parameter_state_id, &stretching_parameter_state)))
+    if ((retval = nc_get_var_double(ncid, stretching_parameter_background_id, &stretching_parameter_background)))
         NCERR(retval);
     if ((retval = nc_close(ncid)))
         NCERR(retval);
@@ -147,10 +147,12 @@ int main(int argc, char *argv[])
     #pragma omp parallel for
 	for (int i = 0; i < NO_OF_MODEL_DOFS_DRY; ++i)
 	{
+		// temperature of the gas phase of the background state
 		if (i < NO_OF_SCALARS)
 		{
 			background_dry[i] = temperatures_background[4*NO_OF_SCALARS + i];
 		}
+		// dry air density in the lowest layer of the background state
 		else
 		{
 			background_dry[i] = densities_background[4*NO_OF_SCALARS + i - NO_OF_SCALARS_H];
@@ -159,7 +161,7 @@ int main(int argc, char *argv[])
     free(temperatures_background);
 
 	// Comparing the stretching parameters of the grid and the background state.
-	if (stretching_parameter_grid != stretching_parameter_state)
+	if (stretching_parameter_grid != stretching_parameter_background)
 	{
 		printf("stretching_parameters of grid and background state do not conform.\n");
 		printf("Aborting.\n");
@@ -404,6 +406,7 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
 		// setting the mass densities of the result
+		// condensate densities are not assimilated
 		densities[i] = densities_background[i];
 		densities[NO_OF_SCALARS + i] = densities_background[NO_OF_SCALARS + i];
 		densities[2*NO_OF_SCALARS + i] = densities_background[2*NO_OF_SCALARS + i];
