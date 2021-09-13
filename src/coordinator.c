@@ -110,14 +110,9 @@ int main(int argc, char *argv[])
     strcpy(OUTPUT_FILE, OUTPUT_FILE_PRE);
     
     // These are the arrays of the background state.
-    double *temperature_gas_background = malloc(NO_OF_SCALARS*sizeof(double));
-    double *density_dry_background = malloc(NO_OF_SCALARS*sizeof(double));
+    double *densities_background = malloc(6*NO_OF_SCALARS*sizeof(double));
+    double *temperatures_background = malloc(5*NO_OF_SCALARS*sizeof(double));
     double *wind_background = malloc(NO_OF_VECTORS*sizeof(double));
-    double *water_vapour_density_background = malloc(NO_OF_SCALARS*sizeof(double));
-    double *liquid_water_density_background = malloc(NO_OF_SCALARS*sizeof(double));
-    double *solid_water_density_background = malloc(NO_OF_SCALARS*sizeof(double));
-    double *liquid_water_temperature_background = malloc(NO_OF_SCALARS*sizeof(double));
-    double *solid_water_temperature_background = malloc(NO_OF_SCALARS*sizeof(double));
     
     // Reading the background state.
 	printf("reading background state ...\n");
@@ -125,43 +120,23 @@ int main(int argc, char *argv[])
     if ((retval = nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
     free(BACKGROUND_STATE_FILE);
-    int temperature_gas_background_id, density_dry_background_id, wind_background_id, density_vapour_background_id, density_liquid_background_id, density_solid_background_id, temperature_liquid_background_id, temperature_solid_background_id, stretching_parameter_state_id;
+    int densities_background_id, temperatures_background_id, wind_background_id, stretching_parameter_state_id;
     double stretching_parameter_state;
-    if ((retval = nc_inq_varid(ncid, "density_dry", &density_dry_background_id)))
+    if ((retval = nc_inq_varid(ncid, "densityies", &densities_background_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "temperature_gas",&temperature_gas_background_id)))
+    if ((retval = nc_inq_varid(ncid, "temperatures", &temperatures_background_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "wind", &wind_background_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "density_vapour", &density_vapour_background_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "density_liquid", &density_liquid_background_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "density_solid", &density_solid_background_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "temperature_liquid", &temperature_liquid_background_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "temperature_solid", &temperature_solid_background_id)))
-        NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "stretching_parameter", &stretching_parameter_state_id)))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, stretching_parameter_state_id, &stretching_parameter_state)))
+    if ((retval = nc_get_var_double(ncid, densities_background_id, &densities_background[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, temperature_gas_background_id, &temperature_gas_background[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, density_dry_background_id, &density_dry_background[0])))
+    if ((retval = nc_get_var_double(ncid, temperatures_background_id, &temperatures_background[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, wind_background_id, &wind_background[0])))
-        NCERR(retval);    
-    if ((retval = nc_get_var_double(ncid, density_vapour_background_id, &water_vapour_density_background[0])))
-        NCERR(retval);    
-    if ((retval = nc_get_var_double(ncid, density_liquid_background_id, &liquid_water_density_background[0])))
-        NCERR(retval);    
-    if ((retval = nc_get_var_double(ncid, density_solid_background_id, &solid_water_density_background[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, temperature_liquid_background_id, &liquid_water_temperature_background[0])))
-        NCERR(retval);    
-    if ((retval = nc_get_var_double(ncid, temperature_solid_background_id, &solid_water_temperature_background[0])))
+    if ((retval = nc_get_var_double(ncid, stretching_parameter_state_id, &stretching_parameter_state)))
         NCERR(retval);
     if ((retval = nc_close(ncid)))
         NCERR(retval);
@@ -174,14 +149,14 @@ int main(int argc, char *argv[])
 	{
 		if (i < NO_OF_SCALARS)
 		{
-			background_dry[i] = temperature_gas_background[i];
+			background_dry[i] = temperatures_background[4*NO_OF_SCALARS + i];
 		}
 		else
 		{
-			background_dry[i] = density_dry_background[i - NO_OF_SCALARS_H];
+			background_dry[i] = densities_background[4*NO_OF_SCALARS + i - NO_OF_SCALARS_H];
 		}
 	}
-    free(temperature_gas_background);
+    free(temperatures_background);
 
 	// Comparing the stretching parameters of the grid and the background state.
 	if (stretching_parameter_grid != stretching_parameter_state)
@@ -314,22 +289,9 @@ int main(int argc, char *argv[])
 	free(observations_vector_dry);
     
     // These are the arrays for the result of the assimilation process.
-    double *temperature = malloc(NO_OF_SCALARS*sizeof(double));
     double *density_dry = malloc(NO_OF_SCALARS*sizeof(double));
     double *wind = malloc(NO_OF_VECTORS*sizeof(double));
-    double *water_vapour_density = malloc(NO_OF_SCALARS*sizeof(double));
-    double *liquid_water_density = malloc(NO_OF_SCALARS*sizeof(double));
-    double *solid_water_density = malloc(NO_OF_SCALARS*sizeof(double));
-    double *liquid_water_temp = malloc(NO_OF_SCALARS*sizeof(double));
-    double *solid_water_temp = malloc(NO_OF_SCALARS*sizeof(double));
     double *exner = malloc(NO_OF_SCALARS*sizeof(double));
-    
-    // the temperature comes first in the model_vector_dry
-    #pragma omp parallel for
-    for (int i = 0; i < NO_OF_SCALARS; ++i)
-    {
-    	temperature[i] = model_vector_dry[i];
-    }
     
     // density is determined out of the hydrostatic equation
     int layer_index, h_index;
@@ -342,17 +304,17 @@ int main(int argc, char *argv[])
     	if (layer_index == NO_OF_LAYERS - 1)
     	{
         	density_dry[i] = model_vector_dry[NO_OF_SCALARS + h_index];
-        	exner[i] = pow((density_dry[i]*R_D*temperature[i])/P_0, R_D/C_D_P);
+        	exner[i] = pow((density_dry[i]*R_D*model_vector_dry[i])/P_0, R_D/C_D_P);
         }
         else
         {
 			// solving a quadratic equation for the Exner pressure
-			b = -0.5*exner[i + NO_OF_SCALARS_H]/temperature[i + NO_OF_SCALARS_H]
-			*(temperature[i] - temperature[i + NO_OF_SCALARS_H]
+			b = -0.5*exner[i + NO_OF_SCALARS_H]/model_vector_dry[i + NO_OF_SCALARS_H]
+			*(model_vector_dry[i] - model_vector_dry[i + NO_OF_SCALARS_H]
 			+ 2/C_D_P*(gravity_potential_model[i] - gravity_potential_model[i + NO_OF_SCALARS_H]));
-			c = pow(exner[i + NO_OF_SCALARS_H], 2)*temperature[i]/temperature[i + NO_OF_SCALARS_H];
+			c = pow(exner[i + NO_OF_SCALARS_H], 2)*model_vector_dry[i]/model_vector_dry[i + NO_OF_SCALARS_H];
 			exner[i] = b + pow((pow(b, 2) + c), 0.5);
-        	density_dry[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*temperature[i]);
+        	density_dry[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*model_vector_dry[i]);
         }
     }
 	free(gravity_potential_model);
@@ -382,10 +344,8 @@ int main(int argc, char *argv[])
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 	{
-		background_moist[i] = water_vapour_density_background[i]/(density_dry_background[i] + water_vapour_density_background[i]);
+		background_moist[i] = densities_background[5*NO_OF_SCALARS + i]/(densities_background[4*NO_OF_SCALARS + i] + densities_background[5*NO_OF_SCALARS + i]);
 	}
-    free(density_dry_background);
-    free(water_vapour_density_background);
 	
 	// setting up the measurement error covariance matrix
 	double *obs_error_cov_moist = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST]));
@@ -436,36 +396,36 @@ int main(int argc, char *argv[])
 	free(interpolated_model_moist);
 	free(observations_vector_moist);
 	
-	#pragma omp parallel for
-	for (int i = 0; i < NO_OF_SCALARS; ++i)
-	{
-		water_vapour_density[i] = model_vector_moist[i]/(1 - model_vector_moist[i])*density_dry[i];
-		if (water_vapour_density[i] < 0)
-		{
-			water_vapour_density[i] = 0;
-		}
-	}
-	free(model_vector_moist);
-	
 	// individual condensate temperatures are for higher resolutions, not yet implemented
 	// clouds and precipitation are set equal to the background state
+	double *densities = malloc(6*NO_OF_SCALARS*sizeof(double));
+	double *temperatures = malloc(5*NO_OF_SCALARS*sizeof(double));
     #pragma omp parallel for
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
-		solid_water_density[i] = solid_water_density_background[i];
-		liquid_water_density[i] = liquid_water_density_background[i];
-		solid_water_temp[i] = solid_water_temperature_background[i];
-		liquid_water_temp[i] = liquid_water_temperature_background[i];
+		// setting the mass densities of the result
+		densities[i] = densities_background[i];
+		densities[NO_OF_SCALARS + i] = densities_background[NO_OF_SCALARS + i];
+		densities[2*NO_OF_SCALARS + i] = densities_background[2*NO_OF_SCALARS + i];
+		densities[3*NO_OF_SCALARS + i] = densities_background[3*NO_OF_SCALARS + i];
+		densities[4*NO_OF_SCALARS + i] = density_dry[i];
+		densities[5*NO_OF_SCALARS + i] = model_vector_moist[i]/(1 - model_vector_moist[i])*density_dry[i];
+		// setting the temperatures of the result
+		// assuming an LTE (local thermodynamic equilibrium)
+		temperatures[i] = model_vector_dry[i];
+		temperatures[NO_OF_SCALARS + i] = model_vector_dry[i];
+		temperatures[2*NO_OF_SCALARS + i] = model_vector_dry[i];
+		temperatures[3*NO_OF_SCALARS + i] = model_vector_dry[i];
+		temperatures[4*NO_OF_SCALARS + i] = model_vector_dry[i];
     }
-    free(solid_water_density_background);
-    free(liquid_water_density_background);
-    free(solid_water_temperature_background);
-    free(liquid_water_temperature_background);
+    free(density_dry);
+	free(model_vector_moist);
+	free(densities_background);
     
     // Writing the result to a netcdf file.
     printf("output file: %s\n", OUTPUT_FILE);
     printf("writing result to output file ...\n");
-    int scalar_dimid, vector_dimid, temp_id, density_dry_id, wind_id, density_vapour_id, density_liquid_id, density_solid_id, temperature_liquid_id, temperature_solid_id, single_double_dimid, stretching_parameter_id;
+    int scalar_dimid, vector_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, stretching_parameter_id;
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "scalar_index", NO_OF_SCALARS, &scalar_dimid)))
@@ -474,71 +434,36 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "single_double_dimid_index", 1, &single_double_dimid)))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "stretching_parameter", NC_DOUBLE, 1, &single_double_dimid, &stretching_parameter_id)))
+    if ((retval = nc_def_var(ncid, "densities", NC_DOUBLE, 1, &scalar_dimid, &densities_id)))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "temperature_gas", NC_DOUBLE, 1, &scalar_dimid, &temp_id)))
+    if ((retval = nc_put_att_text(ncid, densities_id, "units", strlen("kg/m^3"), "kg/m^3")))
         NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, temp_id, "units", strlen("K"), "K")))
+    if ((retval = nc_def_var(ncid, "temperatures", NC_DOUBLE, 1, &scalar_dimid, &temperatures_id)))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "density_dry", NC_DOUBLE, 1, &scalar_dimid, &density_dry_id)))
-        NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, density_dry_id, "units", strlen("kg/m^3"), "kg/m^3")))
+    if ((retval = nc_put_att_text(ncid, temperatures_id, "units", strlen("K"), "K")))
         NCERR(retval);
     if ((retval = nc_def_var(ncid, "wind", NC_DOUBLE, 1, &vector_dimid, &wind_id)))
         NCERR(retval);
     if ((retval = nc_put_att_text(ncid, wind_id, "units", strlen("m/s"), "m/s")))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "density_vapour", NC_DOUBLE, 1, &scalar_dimid, &density_vapour_id)))
-        NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, density_vapour_id, "units", strlen("kg/m^3"), "kg/m^3")))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "density_liquid", NC_DOUBLE, 1, &scalar_dimid, &density_liquid_id)))
-        NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, density_liquid_id, "units", strlen("kg/m^3"), "kg/m^3")))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "density_solid", NC_DOUBLE, 1, &scalar_dimid, &density_solid_id)))
-        NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, density_solid_id, "units", strlen("kg/m^3"), "kg/m^3")))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "temperature_liquid", NC_DOUBLE, 1, &scalar_dimid, &temperature_liquid_id)))
-        NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, temperature_liquid_id, "units", strlen("T"), "T")))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "temperature_solid", NC_DOUBLE, 1, &scalar_dimid, &temperature_solid_id)))
-        NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, temperature_solid_id, "units", strlen("T"), "T")))
+    if ((retval = nc_def_var(ncid, "stretching_parameter", NC_DOUBLE, 1, &single_double_dimid, &stretching_parameter_id)))
         NCERR(retval);
     if ((retval = nc_enddef(ncid)))
         NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, stretching_parameter_id, &stretching_parameter)))
+    if ((retval = nc_put_var_double(ncid, densities_id, &densities[0])))
         NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, temp_id, &temperature[0])))
-        NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, density_dry_id, &density_dry[0])))
+    if ((retval = nc_put_var_double(ncid, temperatures_id, &temperatures[0])))
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, wind_id, &wind[0])))
-        NCERR(retval);    
-    if ((retval = nc_put_var_double(ncid, density_vapour_id, &water_vapour_density[0])))
-        NCERR(retval);    
-    if ((retval = nc_put_var_double(ncid, density_liquid_id, &liquid_water_density[0])))
         NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, density_solid_id, &solid_water_density[0])))
-        NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, temperature_liquid_id, &liquid_water_temp[0])))
-        NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, temperature_solid_id, &solid_water_temp[0])))
+    if ((retval = nc_put_var_double(ncid, stretching_parameter_id, &stretching_parameter)))
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
     printf("Result successfully written.\n");
-	free(density_dry);
-	free(temperature);
+	free(densities);
+	free(temperatures);
 	free(wind);
-	free(water_vapour_density);
-	free(solid_water_density);
-	free(liquid_water_density);
-	free(solid_water_temp);
-	free(liquid_water_temp);
     return 0;
 }
 
