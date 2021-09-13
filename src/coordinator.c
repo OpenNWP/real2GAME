@@ -413,6 +413,10 @@ int main(int argc, char *argv[])
 		densities[3*NO_OF_SCALARS + i] = densities_background[3*NO_OF_SCALARS + i];
 		densities[4*NO_OF_SCALARS + i] = density_dry[i];
 		densities[5*NO_OF_SCALARS + i] = model_vector_moist[i]/(1 - model_vector_moist[i])*density_dry[i];
+		if (densities[5*NO_OF_SCALARS + i] < 0)
+		{
+			densities[5*NO_OF_SCALARS + i] = 0;
+		}
 		// setting the temperatures of the result
 		// assuming an LTE (local thermodynamic equilibrium)
 		temperatures[i] = model_vector_dry[i];
@@ -428,20 +432,22 @@ int main(int argc, char *argv[])
     // Writing the result to a netcdf file.
     printf("output file: %s\n", OUTPUT_FILE);
     printf("writing result to output file ...\n");
-    int scalar_dimid, vector_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, stretching_parameter_id;
+    int densities_dimid, temperatures_dimid, vector_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, stretching_parameter_id;
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
-    if ((retval = nc_def_dim(ncid, "scalar_index", NO_OF_SCALARS, &scalar_dimid)))
+    if ((retval = nc_def_dim(ncid, "densities_index", 6*NO_OF_SCALARS, &densities_dimid)))
+        NCERR(retval);
+    if ((retval = nc_def_dim(ncid, "temperatures_index", 5*NO_OF_SCALARS, &temperatures_dimid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "vector_index", NO_OF_VECTORS, &vector_dimid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "single_double_dimid_index", 1, &single_double_dimid)))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "densities", NC_DOUBLE, 1, &scalar_dimid, &densities_id)))
+    if ((retval = nc_def_var(ncid, "densities", NC_DOUBLE, 1, &densities_dimid, &densities_id)))
         NCERR(retval);
     if ((retval = nc_put_att_text(ncid, densities_id, "units", strlen("kg/m^3"), "kg/m^3")))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "temperatures", NC_DOUBLE, 1, &scalar_dimid, &temperatures_id)))
+    if ((retval = nc_def_var(ncid, "temperatures", NC_DOUBLE, 1, &temperatures_dimid, &temperatures_id)))
         NCERR(retval);
     if ((retval = nc_put_att_text(ncid, temperatures_id, "units", strlen("K"), "K")))
         NCERR(retval);
