@@ -321,7 +321,6 @@ int main(int argc, char *argv[])
     }
 	free(gravity_potential_model);
     free(exner);
-    free(model_vector_dry);
     
     // Wind is set equal to the background wind for now. Later it will be derived from the balance equation.
     #pragma omp parallel for
@@ -425,6 +424,7 @@ int main(int argc, char *argv[])
 		temperatures[3*NO_OF_SCALARS + i] = model_vector_dry[i];
 		temperatures[4*NO_OF_SCALARS + i] = model_vector_dry[i];
     }
+    free(model_vector_dry);
     free(density_dry);
 	free(model_vector_moist);
 	free(densities_background);
