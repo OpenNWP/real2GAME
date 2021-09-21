@@ -33,28 +33,21 @@ int main(int argc, char *argv[])
 	}
 	double R_D = specific_gas_constants_lookup(0);
 	double C_D_P = spec_heat_capacities_p_gas_lookup(0);
-    size_t len = strlen(argv[1]);
-    char *year_string = malloc((len + 1)*sizeof(char));
+    char year_string[strlen(argv[1]) + 1];
     strcpy(year_string, argv[1]);
-    len = strlen(argv[2]);
-    char *month_string = malloc((len + 1)*sizeof(char));
+    char month_string[strlen(argv[2]) + 1];
     strcpy(month_string, argv[2]);
-    len = strlen(argv[3]);
-    char *day_string = malloc((len + 1)*sizeof(char));
+    char day_string[strlen(argv[3]) + 1];
     strcpy(day_string, argv[3]);
-    len = strlen(argv[4]);
-    char *hour_string = malloc((len + 1)*sizeof(char));
+    char hour_string[strlen(argv[4]) + 1];
     strcpy(hour_string, argv[4]);
-    len = strlen(argv[5]);
-    char *model_home_dir = malloc((len + 1)*sizeof(char));
+    char model_home_dir[strlen(argv[5]) + 1];
     strcpy(model_home_dir, argv[5]);
 	int ORO_ID;
     ORO_ID = strtod(argv[6], NULL);
-    len = strlen(argv[7]);
-    char *BACKGROUND_STATE_FILE = malloc((len + 1)*sizeof(char));
+    char BACKGROUND_STATE_FILE[strlen(argv[7]) + 1];
     strcpy(BACKGROUND_STATE_FILE, argv[7]);
-    len = strlen(argv[8]);
-    char *game_da_root_dir = malloc((len + 1)*sizeof(char));
+    char game_da_root_dir[strlen(argv[8]) + 1];
     strcpy(game_da_root_dir, argv[8]);
 	int NO_OF_ORO_LAYERS;
     NO_OF_ORO_LAYERS = strtod(argv[9], NULL);
@@ -66,7 +59,6 @@ int main(int argc, char *argv[])
     double *longitudes_model = malloc(NO_OF_SCALARS_H*sizeof(double));
     double *z_coords_model = malloc(NO_OF_SCALARS*sizeof(double));
     double *gravity_potential_model = malloc(NO_OF_SCALARS*sizeof(double));
-    
     // Reading the grid properties.
     int ncid_grid, retval;
     char GEO_PROP_FILE_PRE[200];
@@ -105,7 +97,6 @@ int main(int argc, char *argv[])
 	
     char OUTPUT_FILE_PRE[200];
     sprintf(OUTPUT_FILE_PRE, "%s/nwp_init/%s%s%s%s_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour_string, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
-    free(model_home_dir);
     char OUTPUT_FILE[strlen(OUTPUT_FILE_PRE) + 1];
     strcpy(OUTPUT_FILE, OUTPUT_FILE_PRE);
     
@@ -119,7 +110,6 @@ int main(int argc, char *argv[])
     int ncid;
     if ((retval = nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
-    free(BACKGROUND_STATE_FILE);
     int densities_background_id, temperatures_background_id, wind_background_id, stretching_parameter_background_id;
     double stretching_parameter_background;
     if ((retval = nc_inq_varid(ncid, "densities", &densities_background_id)))
@@ -177,11 +167,6 @@ int main(int argc, char *argv[])
     
     char OBSERVATIONS_FILE_PRE[200];
     sprintf(OBSERVATIONS_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", game_da_root_dir, year_string, month_string, day_string, hour_string);
-	free(game_da_root_dir);
-	free(year_string);
-	free(month_string);
-	free(day_string);
-	free(hour_string);
     char OBSERVATIONS_FILE[strlen(OBSERVATIONS_FILE_PRE) + 1];
     strcpy(OBSERVATIONS_FILE, OBSERVATIONS_FILE_PRE);
 	printf("observations file: %s\n", OBSERVATIONS_FILE);
@@ -561,8 +546,8 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 				// radius does not matter here
 				distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index_h][j]], lon_model[rel_h_index_vector[obs_index_h][j]], 1);
 				// 1/r-interpolation
-				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, T_INTERPOL_EXP);
-				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, T_INTERPOL_EXP);
+				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, INTERPOL_EXP);
+				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, INTERPOL_EXP);
 				interpolated_model_dry[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix_dry[obs_index][j]];
 				interpolated_model_dry[obs_index] += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix_dry[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
 				sum_of_interpol_weights += weights_vector[j];
@@ -589,14 +574,15 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 				if (j < NO_OF_REL_MODEL_DOFS_PER_OBS/2)
 				{
 					// radius does not matter here
-					distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index_h][j]], lon_model[rel_h_index_vector[obs_index_h][j]], 1);
+					distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index],
+					lat_model[rel_h_index_vector[obs_index_h][j]], lon_model[rel_h_index_vector[obs_index_h][j]], 1);
 					// now we know which gridpoint is relevant to this observation
 					relevant_model_dofs_matrix_dry[obs_index][j] = closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j];
 					// 1/r-interpolation
-					weights_vector[j] = 1/pow(distance + EPSILON, SP_INTERPOL_EXP)
+					weights_vector[j] = 1/pow(distance + EPSILON, INTERPOL_EXP)
 					*R_D*background[relevant_model_dofs_matrix_dry[obs_index][j] + NO_OF_SCALARS_H]
-					*exp(-(z_used_obs[obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j]])/SCALE_HEIGHT);
-					sum_of_interpol_weights += 1/pow(distance + EPSILON, SP_INTERPOL_EXP);
+					*exp(-(z_used_obs[NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j]])/SCALE_HEIGHT);
+					sum_of_interpol_weights += 1/pow(distance + EPSILON, INTERPOL_EXP);
 					// the result
 					if (j == NO_OF_REL_MODEL_DOFS_PER_OBS/2 - 1)
 					{
@@ -617,17 +603,18 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 						sum_of_interpol_weights = 0;
 					}
 					// radius does not matter here
-					distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index_h][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]], lon_model[rel_h_index_vector[obs_index_h][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]], 1);
+					distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index],
+					lat_model[rel_h_index_vector[obs_index_h][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]], lon_model[rel_h_index_vector[obs_index_h][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]], 1);
 					// now we know which gridpoint is relevant to this observation
 					relevant_model_dofs_matrix_dry[obs_index][j] = (closest_vert_index + 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2];
 					// 1/r-interpolation
-					weights_vector[j] = 1/pow(distance + EPSILON, SP_INTERPOL_EXP)
+					weights_vector[j] = 1/pow(distance + EPSILON, INTERPOL_EXP)
 					*R_D*background[relevant_model_dofs_matrix_dry[obs_index][j] - NO_OF_SCALARS_H]
 					*exp(-(z_used_obs[NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index]
 					- z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]])/SCALE_HEIGHT);
 					// interpolation to the surface pressure
 					interpolated_model_dry[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix_dry[obs_index][j]];
-					sum_of_interpol_weights += 1/pow(distance + EPSILON, SP_INTERPOL_EXP);
+					sum_of_interpol_weights += 1/pow(distance + EPSILON, INTERPOL_EXP);
 				}
 			}
 			// the result

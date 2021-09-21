@@ -25,20 +25,15 @@ int main(int argc, char *argv[])
 	levels_vector[5] = 90;
 	
 	// shell arguments
-    size_t len = strlen(argv[1]);
-    char *year_string = malloc((len + 1)*sizeof(char));
+    char year_string[strlen(argv[1]) + 1];
     strcpy(year_string, argv[1]);
-    len = strlen(argv[2]);
-    char *month_string = malloc((len + 1)*sizeof(char));
+    char month_string[strlen(argv[2]) + 1];
     strcpy(month_string, argv[2]);
-    len = strlen(argv[3]);
-    char *day_string = malloc((len + 1)*sizeof(char));
+    char day_string[strlen(argv[3]) + 1];
     strcpy(day_string, argv[3]);
-    len = strlen(argv[4]);
-    char *hour_string = malloc((len + 1)*sizeof(char));
+    char hour_string[strlen(argv[4]) + 1];
     strcpy(hour_string, argv[4]);
-    len = strlen(argv[5]);
-    char *game_da_root_dir = malloc((len + 1)*sizeof(char));
+    char game_da_root_dir[strlen(argv[5]) + 1];
     strcpy(game_da_root_dir, argv[5]);
 	
 	// Properties of the input model's grid.
@@ -163,6 +158,7 @@ int main(int argc, char *argv[])
 		fclose(ECC_FILE);
 		
 		// formatting the observations
+		#pragma omp parallel for
 		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 		{
 			// pressure
@@ -178,6 +174,8 @@ int main(int argc, char *argv[])
 			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[chosen_indices[i]];
 		}
 	}
+	free(z_height_amsl);
+	free(temperature_one_layer);
 	
 	// reading the surface height
 	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
@@ -216,6 +214,7 @@ int main(int argc, char *argv[])
 	fclose(ECC_FILE);
 	
 	// writing the surface pressure to the observations
+	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 	{
 		latitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
@@ -223,7 +222,9 @@ int main(int argc, char *argv[])
 		z_coords_amsl[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
 		observations_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = pressure_one_layer[chosen_indices[i]];
 	}
-	
+	free(latitudes_one_layer);
+	free(longitudes_one_layer);
+	free(surface_height);
 	free(pressure_one_layer);
     free(chosen_indices);
     
@@ -265,21 +266,11 @@ int main(int argc, char *argv[])
     	NCERR(retval);
     
     // Freeing the memory.
-	free(temperature_one_layer);
 	free(spec_hum_one_layer);
-    free(game_da_root_dir);
 	free(latitude_vector);
 	free(longitude_vector);
 	free(z_coords_amsl);
 	free(observations_vector);
-	free(year_string);
-	free(month_string);
-	free(day_string);
-	free(hour_string);
-	free(latitudes_one_layer);
-	free(longitudes_one_layer);
-	free(z_height_amsl);
-	free(surface_height);
 
 	return 0;
 }
