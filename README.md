@@ -15,8 +15,7 @@ The documentation of the code can be found in the subdirectory doc.
 ## Dependencies
 
 * [geos95](https://github.com/OpenNWP/geos95)
-* netcdf library (Ubuntu: `sudo apt-get libnetcdf-dev`)
-* CMake (Ubuntu: `sudo apt-get install cmake`)
+* netcdf library (Ubuntu: `sudo apt-get install libnetcdf-dev`)
 * [atmostracers](https://github.com/OpenNWP/atmostracers)
 * bzip2 (Ubuntu: `sudo apt-get install bzip2`)
 
