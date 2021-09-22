@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 	int NO_OF_ORO_LAYERS;
     NO_OF_ORO_LAYERS = strtod(argv[9], NULL);
 	int TOA = strtod(argv[10], NULL);
-	printf("background state file: %s\n", BACKGROUND_STATE_FILE);
+	printf("Background state file: %s\n", BACKGROUND_STATE_FILE);
     
     // Allocating memory for the grid properties.
     double *latitudes_model = malloc(NO_OF_SCALARS_H*sizeof(double));
@@ -65,8 +65,8 @@ int main(int argc, char *argv[])
     sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
     char GEO_PROP_FILE[strlen(GEO_PROP_FILE_PRE) + 1];
     strcpy(GEO_PROP_FILE, GEO_PROP_FILE_PRE);
-	printf("grid file: %s\n", GEO_PROP_FILE);
-	printf("reading grid file ...\n");
+	printf("Grid file: %s\n", GEO_PROP_FILE);
+	printf("Reading grid file ...\n");
     if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
         NCERR(retval);
     int latitudes_model_id, longitudes_model_id, z_coords_model_id, gravity_potential_model_id, stretching_parameter_grid_id;
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
     double *wind_background = malloc(NO_OF_VECTORS*sizeof(double));
     
     // Reading the background state.
-	printf("reading background state ...\n");
+	printf("Reading background state ...\n");
     int ncid;
     if ((retval = nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 	// Comparing the stretching parameters of the grid and the background state.
 	if (stretching_parameter_grid != stretching_parameter_background)
 	{
-		printf("stretching_parameters of grid and background state do not conform.\n");
+		printf("Stretching_parameters of grid and background state do not conform.\n");
 		printf("Aborting.\n");
 		exit(1);
 	}
@@ -169,10 +169,10 @@ int main(int argc, char *argv[])
     sprintf(OBSERVATIONS_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", game_da_root_dir, year_string, month_string, day_string, hour_string);
     char OBSERVATIONS_FILE[strlen(OBSERVATIONS_FILE_PRE) + 1];
     strcpy(OBSERVATIONS_FILE, OBSERVATIONS_FILE_PRE);
-	printf("observations file: %s\n", OBSERVATIONS_FILE);
+	printf("Observations file: %s\n", OBSERVATIONS_FILE);
     
     // Reading the observations.
-	printf("reading observations ...\n");
+	printf("Reading observations ...\n");
     if ((retval = nc_open(OBSERVATIONS_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
     int latitude_obs_id, longitude_obs_id, z_coords_id, obervations_id;
@@ -415,8 +415,8 @@ int main(int argc, char *argv[])
 	free(densities_background);
     
     // Writing the result to a netcdf file.
-    printf("output file: %s\n", OUTPUT_FILE);
-    printf("writing result to output file ...\n");
+    printf("Output file: %s\n", OUTPUT_FILE);
+    printf("Writing result to output file ...\n");
     int densities_dimid, temperatures_dimid, vector_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, stretching_parameter_id;
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
