@@ -59,6 +59,10 @@ int main(int argc, char *argv[])
     double *longitudes_model = malloc(NO_OF_SCALARS_H*sizeof(double));
     double *z_coords_model = malloc(NO_OF_SCALARS*sizeof(double));
     double *gravity_potential_model = malloc(NO_OF_SCALARS*sizeof(double));
+    double *normal_distance = malloc(NO_OF_VECTORS_H*sizeof(double));
+    int *from_index = malloc(NO_OF_VECTORS_H*sizeof(int));
+    int *to_index = malloc(NO_OF_VECTORS_H*sizeof(int));
+    int *adjacent_vector_indices_h = malloc(6*NO_OF_SCALARS_H*sizeof(int));
     // Reading the grid properties.
     int ncid_grid, retval;
     char GEO_PROP_FILE_PRE[200];
@@ -220,7 +224,9 @@ int main(int argc, char *argv[])
     double (*bg_error_cov_dry)[7] = malloc(sizeof(double[NO_OF_MODEL_DOFS_DRY][7]));
     double temperature_error_model = 1;
     double pressure_error_model = 400;
-    #pragma omp parallel for
+    double e_folding_length, distance;
+    e_folding_length = 750e3;
+    #pragma omp parallel for private(distance)
     for (int i = 0; i < NO_OF_MODEL_DOFS_DRY; ++i)
     {
     	// diagonal terms
@@ -236,7 +242,8 @@ int main(int argc, char *argv[])
     	// non-diagonal terms
     	for (int j = 1; j < 7; ++j)
     	{
-    		bg_error_cov_dry[i][j] = bg_error_cov_dry[i][0]*exp(-1000.0/1.0);
+    		distance = 1000*e_folding_length;
+    		bg_error_cov_dry[i][j] = bg_error_cov_dry[i][0]*exp(-distance/e_folding_length);
     	}
     }
     
@@ -351,16 +358,21 @@ int main(int argc, char *argv[])
 	// setting up the background error covariance matrix (only the diagonal)
 	double (*bg_error_cov_moist)[7] = malloc(sizeof(double[NO_OF_MODEL_DOFS_MOIST][7]));
 	double spec_hum_error_model = 0.01;
-	#pragma omp parallel for
+	#pragma omp parallel for private(distance)
 	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 	{
 		bg_error_cov_moist[i][0] = pow(spec_hum_error_model, 2);
     	// non-diagonal terms
     	for (int j = 1; j < 7; ++j)
     	{
-    		bg_error_cov_moist[i][j] = bg_error_cov_moist[i][0]*exp(-1000.0/1.0);
+    		distance = 1000*e_folding_length;
+    		bg_error_cov_moist[i][j] = bg_error_cov_moist[i][0]*exp(-distance/e_folding_length);
     	}
 	}
+    free(normal_distance);
+    free(from_index);
+    free(to_index);
+    free(adjacent_vector_indices_h);
 	
 	// setting up the observations operator
 	double *interpolated_model_moist = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
