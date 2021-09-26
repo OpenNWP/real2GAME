@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     double *longitudes_model = malloc(NO_OF_SCALARS_H*sizeof(double));
     double *z_coords_model = malloc(NO_OF_SCALARS*sizeof(double));
     double *gravity_potential_model = malloc(NO_OF_SCALARS*sizeof(double));
-    double *normal_distance = malloc(NO_OF_VECTORS_H*sizeof(double));
+    double *normal_distance = malloc(NO_OF_VECTORS*sizeof(double));
     int *from_index = malloc(NO_OF_VECTORS_H*sizeof(int));
     int *to_index = malloc(NO_OF_VECTORS_H*sizeof(int));
     int *adjacent_vector_indices_h = malloc(6*NO_OF_SCALARS_H*sizeof(int));
