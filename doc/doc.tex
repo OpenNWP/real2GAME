@@ -48,33 +48,17 @@ For $\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T$, one 
 \left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T\right)_{i, j} &= \left[\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)\overleftrightarrow{H}^T\right]_{i, j} = \sum_{k = 1}^{M}\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, k}\overleftrightarrow{H}^T_{k, j} = \sum_{k = 1}^{M}\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, k}\overleftrightarrow{H}_{j, k} = \sum_{k = 1}^{M}\left(\sum_{l = 1}^{M}\overleftrightarrow{H}_{i, l}\overleftrightarrow{B}_{l, k}\right)\overleftrightarrow{H}_{j, k} = \sum_{k, l = 1}^M\overleftrightarrow{H}_{i, l}\overleftrightarrow{B}_{l, k}\overleftrightarrow{H}_{j, k}.
 \end{align}
 %
-If $\overleftrightarrow{B}$ is diagonal, this reduces to
-%
-\begin{center}
-\doublebox{\parbox{0.8\textwidth}{
-\begin{center}
-\begin{align}
-\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T\right)_{i, j} &= \sum_{k = 1}^M\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{k, k}\overleftrightarrow{H}_{j, k} = \sum_{k = 1}^M\overleftrightarrow{B}_{k, k}\left(\overleftrightarrow{H}_{i, k}\overleftrightarrow{H}_{j, k}\right).
-\end{align}
-\end{center}
-}}
-\end{center}
-%
 For the final result, we obtain
 %
 \begin{align}
 x_i &= x_{B, i} + \sum_{j = 1}^N\left[\overleftrightarrow{B}\overleftrightarrow{H}^T\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)^{-1}\right]_{i, j}\left(y_j - h_j\right) = x_{B, i} + \sum_{j = 1}^N\left[\sum_{k = 1}^N\left(\overleftrightarrow{B}\overleftrightarrow{H}^T\right)_{i, k}\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)^{-1}_{k, j}\right]\left(y_j - h_j\right)\nonumber\\
-&= x_{B, i} + \sum_{j = 1}^N\left[\sum_{k = 1}^N\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)^{-1}_{k, j}\left(\overleftrightarrow{B}\overleftrightarrow{H}^T\right)_{i, k}\right]\left(y_j - h_j\right) = x_{B, i} + \sum_{j = 1}^N\left[\sum_{k = 1}^N\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)^{-1}_{k, j}\left(\sum_{l = 1}^M\overleftrightarrow{B}_{i, l}\overleftrightarrow{H}^T_{l, k}\right)\right]\left(y_j - h_j\right)\nonumber\\
-&= x_{B, i} + \sum_{j = 1}^N\left[\sum_{k = 1}^N\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)^{-1}_{k, j}\left(\sum_{l = 1}^M\overleftrightarrow{B}_{i, l}\overleftrightarrow{H}_{k, l}\right)\right]\left(y_j - h_j\right).
+&= x_{B, i} + \sum_{j = 1}^N\left[\sum_{k = 1}^N\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)^{-1}_{k, j}\left(\overleftrightarrow{B}\overleftrightarrow{H}^T\right)_{i, k}\right]\left(y_j - h_j\right) = x_{B, i} + \sum_{j = 1}^N\left[\sum_{k = 1}^N\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)^{-1}_{k, j}\left(\sum_{l = 1}^M\overleftrightarrow{B}_{i, l}\overleftrightarrow{H}^T_{l, k}\right)\right]\left(y_j - h_j\right)\nonumber
 \end{align}
-%
-If $\overleftrightarrow{B}$ is diagonal, this reduces to
-%
 \begin{center}
 \doublebox{\parbox{0.8\textwidth}{
 \begin{center}
 \begin{align}
-x_i &= x_{B, i} + \sum_{j = 1}^N\left[\sum_{k = 1}^N\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)^{-1}_{k, j}\overleftrightarrow{B}_{i, i}\overleftrightarrow{H}_{k, i}\right]\left(y_j - h_j\right).
+\Rightarrow x_i &= x_{B, i} + \sum_{j = 1}^N\left[\sum_{k = 1}^N\left(\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T + \overleftrightarrow{R}\right)^{-1}_{k, j}\left(\sum_{l = 1}^M\overleftrightarrow{B}_{i, l}\overleftrightarrow{H}_{k, l}\right)\right]\left(y_j - h_j\right).
 \end{align}
 \end{center}
 }}

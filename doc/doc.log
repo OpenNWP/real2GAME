@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.10.12)  11 SEP 2021 18:02
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2021.6.28)  26 SEP 2021 18:32
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -123,7 +123,7 @@ Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 \bibhang=\skip56
 \blx@bcfin=\read2
 \blx@bcfout=\write3
-\blx@langwohyphens=\language12
+\blx@langwohyphens=\language38
 \c@mincomprange=\count285
 \c@maxcomprange=\count286
 \c@mincompwidth=\count287
@@ -945,11 +945,11 @@ LaTeX Font Info:    Font shape `T1/fnc/b/n' will be
 LaTeX Font Info:    Font shape `T1/fnc/b/n' will be
 (Font)              scaled to size 5.57996pt on input line 33.
 LaTeX Font Info:    Font shape `T1/fnc/m/n' will be
-(Font)              scaled to size 13.39188pt on input line 83.
+(Font)              scaled to size 13.39188pt on input line 67.
 LaTeX Font Info:    Font shape `T1/fnc/b/n' will be
-(Font)              scaled to size 13.39188pt on input line 83.
+(Font)              scaled to size 13.39188pt on input line 67.
 LaTeX Font Info:    Font shape `T1/fnc/m/sc' will be
-(Font)              scaled to size 9.29993pt on input line 88.
+(Font)              scaled to size 9.29993pt on input line 72.
 [1
 
 ]
@@ -959,7 +959,7 @@ Chapter 2.
 ]
 Chapter 3.
 
-LaTeX Warning: Empty bibliography on input line 107.
+LaTeX Warning: Empty bibliography on input line 91.
 
 [3
 
@@ -969,12 +969,12 @@ Package logreq Info: Writing requests to 'doc.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 14729 strings out of 483057
- 246092 string characters out of 5962300
- 904659 words of memory out of 5000000
- 29569 multiletter control sequences out of 15000+600000
+ 14729 strings out of 482480
+ 246092 string characters out of 5946190
+ 901032 words of memory out of 5000000
+ 29603 multiletter control sequences out of 15000+600000
  584887 words of font info for 99 fonts, out of 8000000 for 9000
- 59 hyphenation exceptions out of 8191
+ 395 hyphenation exceptions out of 8191
  41i,24n,45p,927b,743s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc} </home/max/.texli
 ve2019/texmf-var/fonts/pk/ljfour/jknappen/ec/ectc1000.600pk> </home/max/.texliv
@@ -988,7 +988,7 @@ pe1/public/fourier/fourier-mlit.pfb></usr/share/texlive/texmf-dist/fonts/type1/
 public/fourier/fourier-ms.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/nc
 ntrsbk/uncb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/ncntrsbk/uncr8
 a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/ncntrsbk/uncri8a.pfb>
-Output written on doc.pdf (4 pages, 59786 bytes).
+Output written on doc.pdf (4 pages, 59692 bytes).
 PDF statistics:
  90 PDF objects out of 1000 (max. 8388607)
  51 compressed objects within 1 object stream
