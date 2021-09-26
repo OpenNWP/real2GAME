@@ -73,7 +73,8 @@ int main(int argc, char *argv[])
 	printf("Reading grid file ...\n");
     if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
         NCERR(retval);
-    int latitudes_model_id, longitudes_model_id, z_coords_model_id, gravity_potential_model_id, stretching_parameter_grid_id;
+    int latitudes_model_id, longitudes_model_id, z_coords_model_id, gravity_potential_model_id, stretching_parameter_grid_id,
+    normal_distance_id, from_index_id, to_index_id, adjacent_vector_indices_h_id;
     double stretching_parameter_grid;
     if ((retval = nc_inq_varid(ncid_grid, "latitude_scalar", &latitudes_model_id)))
         NCERR(retval);
@@ -83,9 +84,21 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid_grid, "gravity_potential", &gravity_potential_model_id)))
         NCERR(retval);
+    if ((retval = nc_inq_varid(ncid_grid, "normal_distance", &normal_distance_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid_grid, "from_index", &from_index_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid_grid, "to_index", &to_index_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid_grid, "adjacent_vector_indices_h", &adjacent_vector_indices_h_id)))
+        NCERR(retval);
     if ((retval = nc_inq_varid(ncid_grid, "stretching_parameter", &stretching_parameter_grid_id)))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, stretching_parameter_grid_id, &stretching_parameter_grid)))
+    if ((retval = nc_get_var_int(ncid_grid, from_index_id, &from_index[0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_int(ncid_grid, to_index_id, &to_index[0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_int(ncid_grid, adjacent_vector_indices_h_id, &adjacent_vector_indices_h[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid_grid, latitudes_model_id, &latitudes_model[0])))
         NCERR(retval);
@@ -94,6 +107,10 @@ int main(int argc, char *argv[])
     if ((retval = nc_get_var_double(ncid_grid, z_coords_model_id, &z_coords_model[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid_grid, gravity_potential_model_id, &gravity_potential_model[0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid_grid, normal_distance_id, &normal_distance[0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid_grid, stretching_parameter_grid_id, &stretching_parameter_grid)))
         NCERR(retval);
     if ((retval = nc_close(ncid_grid)))
         NCERR(retval);
@@ -221,14 +238,17 @@ int main(int argc, char *argv[])
     }
     
     // setting up the background error covariance matrix (only the diagonal)
+    int layer_index, h_index;
     double (*bg_error_cov_dry)[7] = malloc(sizeof(double[NO_OF_MODEL_DOFS_DRY][7]));
     double temperature_error_model = 1;
     double pressure_error_model = 400;
     double e_folding_length, distance;
     e_folding_length = 750e3;
-    #pragma omp parallel for private(distance)
+    #pragma omp parallel for private(distance, layer_index, h_index)
     for (int i = 0; i < NO_OF_MODEL_DOFS_DRY; ++i)
     {
+    	layer_index = i/NO_OF_SCALARS_H;
+    	h_index = i - layer_index*NO_OF_SCALARS_H;
     	// diagonal terms
     	if (i < NO_OF_SCALARS)
     	{
@@ -294,7 +314,6 @@ int main(int argc, char *argv[])
     double *exner = malloc(NO_OF_SCALARS*sizeof(double));
     
     // density is determined out of the hydrostatic equation
-    int layer_index, h_index;
     double b, c;
     for (int i = NO_OF_SCALARS - 1; i >= 0; --i)
     {
