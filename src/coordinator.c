@@ -239,16 +239,26 @@ int main(int argc, char *argv[])
     
     // setting up the background error covariance matrix (only the diagonal)
     int layer_index, h_index;
-    double (*bg_error_cov_dry)[7] = malloc(sizeof(double[NO_OF_MODEL_DOFS_DRY][7]));
+    double (*bg_error_cov_dry)[7] = calloc(1, sizeof(double[NO_OF_MODEL_DOFS_DRY][7]));
     double temperature_error_model = 1;
     double pressure_error_model = 400;
     double e_folding_length, distance;
     e_folding_length = 750e3;
-    #pragma omp parallel for private(distance, layer_index, h_index)
+    int no_of_edges;
+    #pragma omp parallel for private(distance, layer_index, h_index, no_of_edges)
     for (int i = 0; i < NO_OF_MODEL_DOFS_DRY; ++i)
     {
     	layer_index = i/NO_OF_SCALARS_H;
     	h_index = i - layer_index*NO_OF_SCALARS_H;
+    	if (layer_index == NO_OF_LAYERS)
+    	{
+    		layer_index = NO_OF_LAYERS - 1;
+    	}
+    	no_of_edges = 6;
+    	if (h_index < NO_OF_PENTAGONS)
+    	{
+    		no_of_edges = 5;
+    	}
     	// diagonal terms
     	if (i < NO_OF_SCALARS)
     	{
@@ -260,9 +270,9 @@ int main(int argc, char *argv[])
     		bg_error_cov_dry[i][0] = pow(pressure_error_model/(R_D*background_dry[i - NO_OF_SCALARS_H]), 2) + pow(background_dry[i]/background_dry[i - NO_OF_SCALARS_H]*temperature_error_model, 2);
     	}
     	// non-diagonal terms
-    	for (int j = 1; j < 7; ++j)
+    	for (int j = 1; j < no_of_edges + 1; ++j)
     	{
-    		distance = 1000*e_folding_length;
+    		distance = normal_distance[NO_OF_SCALARS_H + layer_index*NO_OF_VECTORS_PER_LAYER + adjacent_vector_indices_h[6*h_index + j - 1]];
     		bg_error_cov_dry[i][j] = bg_error_cov_dry[i][0]*exp(-distance/e_folding_length);
     	}
     }
@@ -375,16 +385,27 @@ int main(int argc, char *argv[])
 	}
 	
 	// setting up the background error covariance matrix (only the diagonal)
-	double (*bg_error_cov_moist)[7] = malloc(sizeof(double[NO_OF_MODEL_DOFS_MOIST][7]));
+	double (*bg_error_cov_moist)[7] = calloc(1, sizeof(double[NO_OF_MODEL_DOFS_MOIST][7]));
 	double spec_hum_error_model = 0.01;
-	#pragma omp parallel for private(distance)
+	#pragma omp parallel for private(distance, layer_index, h_index, no_of_edges)
 	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 	{
+    	layer_index = i/NO_OF_SCALARS_H;
+    	h_index = i - layer_index*NO_OF_SCALARS_H;
+    	if (layer_index == NO_OF_LAYERS)
+    	{
+    		layer_index = NO_OF_LAYERS - 1;
+    	}
+    	no_of_edges = 6;
+    	if (h_index < NO_OF_PENTAGONS)
+    	{
+    		no_of_edges = 5;
+    	}
 		bg_error_cov_moist[i][0] = pow(spec_hum_error_model, 2);
     	// non-diagonal terms
-    	for (int j = 1; j < 7; ++j)
+    	for (int j = 1; j < no_of_edges + 1; ++j)
     	{
-    		distance = 1000*e_folding_length;
+    		distance = normal_distance[NO_OF_SCALARS_H + layer_index*NO_OF_VECTORS_PER_LAYER + adjacent_vector_indices_h[6*h_index + j - 1]];
     		bg_error_cov_moist[i][j] = bg_error_cov_moist[i][0]*exp(-distance/e_folding_length);
     	}
 	}
