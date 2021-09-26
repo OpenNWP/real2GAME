@@ -217,20 +217,26 @@ int main(int argc, char *argv[])
     }
     
     // setting up the background error covariance matrix (only the diagonal)
-    double *bg_error_cov_dry = malloc(NO_OF_MODEL_DOFS_DRY*sizeof(double));
+    double (*bg_error_cov_dry)[7] = malloc(sizeof(double[NO_OF_MODEL_DOFS_DRY][7]));
     double temperature_error_model = 1;
     double pressure_error_model = 400;
     #pragma omp parallel for
     for (int i = 0; i < NO_OF_MODEL_DOFS_DRY; ++i)
     {
+    	// diagonal terms
     	if (i < NO_OF_SCALARS)
     	{
-			bg_error_cov_dry[i] = pow(temperature_error_model, 2);
+			bg_error_cov_dry[i][0] = pow(temperature_error_model, 2);
     	}
     	else
     	{
     		// density = p/(R_D*T) (Gauss'ian error propagation)
-    		bg_error_cov_dry[i] = pow(pressure_error_model/(R_D*background_dry[i - NO_OF_SCALARS_H]), 2) + pow(background_dry[i]/background_dry[i - NO_OF_SCALARS_H]*temperature_error_model, 2);
+    		bg_error_cov_dry[i][0] = pow(pressure_error_model/(R_D*background_dry[i - NO_OF_SCALARS_H]), 2) + pow(background_dry[i]/background_dry[i - NO_OF_SCALARS_H]*temperature_error_model, 2);
+    	}
+    	// non-diagonal terms
+    	for (int j = 1; j < 7; ++j)
+    	{
+    		bg_error_cov_dry[i][j] = bg_error_cov_dry[i][0]*exp(-1000.0/1.0);
     	}
     }
     
@@ -343,12 +349,17 @@ int main(int argc, char *argv[])
 	}
 	
 	// setting up the background error covariance matrix (only the diagonal)
-	double *bg_error_cov_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
+	double (*bg_error_cov_moist)[7] = malloc(sizeof(double[NO_OF_MODEL_DOFS_MOIST][7]));
 	double spec_hum_error_model = 0.01;
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 	{
-		bg_error_cov_moist[i] = pow(spec_hum_error_model, 2);
+		bg_error_cov_moist[i][0] = pow(spec_hum_error_model, 2);
+    	// non-diagonal terms
+    	for (int j = 1; j < 7; ++j)
+    	{
+    		bg_error_cov_moist[i][j] = bg_error_cov_moist[i][0]*exp(-1000.0/1.0);
+    	}
 	}
 	
 	// setting up the observations operator
