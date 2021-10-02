@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.10.12)  2 OCT 2021 21:07
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.10.12)  2 OCT 2021 21:17
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1009,9 +1009,9 @@ nts/type1/public/fourier/fourier-ml.pfb></usr/share/texlive/texmf-dist/fonts/ty
 pe1/public/fourier/fourier-ms.pfb></usr/share/texlive/texmf-dist/fonts/type1/ur
 w/ncntrsbk/uncb8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/ncntrsbk/u
 ncr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/ncntrsbk/uncri8a.pfb>
-Output written on doc.pdf (7 pages, 72052 bytes).
+Output written on doc.pdf (7 pages, 72424 bytes).
 PDF statistics:
- 122 PDF objects out of 1000 (max. 8388607)
+ 123 PDF objects out of 1000 (max. 8388607)
  56 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)

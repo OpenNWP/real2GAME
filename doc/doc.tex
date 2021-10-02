@@ -45,9 +45,9 @@ Depending on the resolution and the type and amount of observations, certain met
 In any of the three cases, the basic workflow is as follows:
 %
 \begin{enumerate}
-\item downloading observations
-\item bringing the observations into a standardized format
-\item executing the data assimilation itself, resulting in an input file for the model run
+\item Downloading the observations. This is done by the bash scripts residing in the directory \texttt{obs\_collector}.
+\item Bringing the observations into a standardized format. This is done by the separate executable \texttt{formatter} residing in the directory of the same name.
+\item Executing the data assimilation itself, resulting in an input file for the model.
 \end{enumerate}
 
 \chapter{Optimum interpolation}
