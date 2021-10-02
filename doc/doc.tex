@@ -30,16 +30,12 @@
 \chapter{Optimum interpolation}
 \label{chap:optimum_interpolation}
 
-Let $M \geq 1$ be the number of degrees freedom of the model, $N \geq 1$ the number of observations, $\mathbf{h} \in \mathbb{R}^N$ the the observations as reconstructed from the background state, $\mathbf{y} \in \mathbb{R}^N$ the actual observations, $\overleftrightarrow{H} \in \mathbb{R}^{N\times M}$ the Jacobian of the observations operator, $\overleftrightarrow{H} \in \mathbb{B}^{M\times M}$ the background error covariance matrix and $\overleftrightarrow{R} \in \mathbb{R}^{N\times N}$ the model error covariance matrix. It is
+Let $M \geq 1$ be the number of degrees of freedom of the model, $N \geq 1$ the number of observations, $\mathbf{h} \in \mathbb{R}^N$ the observations as reconstructed from the background state, $\mathbf{y} \in \mathbb{R}^N$ the actual observations, $\overleftrightarrow{H} \in \mathbb{R}^{N\times M}$ the Jacobian of the observations operator, $\overleftrightarrow{B} \in \mathbb{R}^{M\times M}$ the background error covariance matrix and $\overleftrightarrow{R} \in \mathbb{R}^{N\times N}$ the observations error covariance matrix. $\overleftrightarrow{R}$ is usually assumed to be diagonal, which is an excellent approximation if the observation erros are of statistical nature. This does not lead to useful simplifications, however.
+
+It is
 %
 \begin{align}
 \left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, j} &= \sum_{k = 1}^{M}\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{k, j}.
-\end{align}
-%
-If $\overleftrightarrow{B}$ is diagonal, this reduces to
-%
-\begin{align}
-\left(\overleftrightarrow{H}\overleftrightarrow{B}\right)_{i, j} &= \sum_{k = 1}^{M}\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{k, j}\delta_{k, j} = \sum_{k = 1}^{M}\overleftrightarrow{H}_{i, k}\overleftrightarrow{B}_{j, j}\delta_{k, j} = \overleftrightarrow{H}_{i, j}\overleftrightarrow{B}_{j, j}.
 \end{align}
 %
 For $\overleftrightarrow{H}\overleftrightarrow{B}\overleftrightarrow{H}^T$, one obtains
