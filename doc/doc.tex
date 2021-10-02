@@ -20,12 +20,35 @@
 \newcommand{\epsilonbi}{\text{{\osgbi ϵ}}}
 \newcommand{\etabi}{\text{{\osgbi η}}}
 \newcommand{\zetabi}{\text{{\osgbi ζ}}}
-\addbibresource{/home/max/my_texts/references.bib}
+\addbibresource{references.bib}
 \DeclareFieldFormat[article]{title}{{#1}}
 
 \begin{document}
 
 \maketitle
+
+\tableofcontents
+
+\chapter{Introduction}
+\label{sec:introduction}
+
+\texttt{GAME-DA} provides \textit{data assimilation (DA)} funcitonality for the \texttt{GAME} model. The theoretical derivations are presented in \cite{kompendium}. This documentation contains the technical details of the implementations of the data assimilation algorithms. Three different methods of DA are implemented in GAME-DA:
+%
+\begin{itemize}
+\item optimum interplation (OI)
+\item three-dimensional variational data assimilation (3D-Var)
+\item four-dimensional variational data assimilation (4D-Var)
+\end{itemize}
+%
+Depending on the resolution and the type and amount of observations, certain methods are more suitable than others.
+
+In any of the three cases, the basic workflow is as follows:
+%
+\begin{enumerate}
+\item downloading observations
+\item bringing the observations into a standardized format
+\item executing the data assimilation itself, resulting in an input file for the model run
+\end{enumerate}
 
 \chapter{Optimum interpolation}
 \label{chap:optimum_interpolation}
