@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.10.12)  2 OCT 2021 21:17
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2021.6.28)  9 OCT 2021 10:15
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -123,7 +123,7 @@ Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 \bibhang=\skip56
 \blx@bcfin=\read2
 \blx@bcfout=\write3
-\blx@langwohyphens=\language12
+\blx@langwohyphens=\language38
 \c@mincomprange=\count285
 \c@maxcomprange=\count286
 \c@mincompwidth=\count287
@@ -991,12 +991,12 @@ Package logreq Info: Writing requests to 'doc.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 14960 strings out of 483057
- 250471 string characters out of 5962300
- 897625 words of memory out of 5000000
- 29791 multiletter control sequences out of 15000+600000
+ 14960 strings out of 482480
+ 250471 string characters out of 5946190
+ 898998 words of memory out of 5000000
+ 29825 multiletter control sequences out of 15000+600000
  589060 words of font info for 103 fonts, out of 8000000 for 9000
- 59 hyphenation exceptions out of 8191
+ 395 hyphenation exceptions out of 8191
  41i,24n,45p,927b,1222s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc} </home/max/.texli
 ve2019/texmf-var/fonts/pk/ljfour/jknappen/ec/ectc1000.600pk> </home/max/.texliv
