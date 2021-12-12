@@ -1,7 +1,7 @@
 #!/bin/bash
 
-./clean.sh
+./clean_da.sh
 
 cd formatter
-./clean.sh
+./clean_formatter.sh
 cd ..
