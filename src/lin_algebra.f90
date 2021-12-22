@@ -32,7 +32,7 @@ module lin_algebra
 
     ! firstly, the inverse is initialized with the unity matrix
     !$omp parallel
-    !$omp do
+    !$omp do private(i)
     do i = 1,matrix_size
       inv(i,i) = 1._wp
     enddo
@@ -64,14 +64,14 @@ module lin_algebra
       ! dividing the line by to_be_inverted(i,i)
       factor = 1._wp/to_be_inverted(i,i)
       !$omp parallel
-      !$omp do
+      !$omp do private(j)
       do j=i,matrix_size
         to_be_inverted(i,j) = factor*to_be_inverted(i,j)
       enddo
       !$omp end do
       !$omp end parallel
       !$omp parallel
-      !$omp do
+      !$omp do private(j)
       do j = 1,matrix_size
         inv(i,j) = factor*inv(i,j)
       enddo
@@ -79,7 +79,7 @@ module lin_algebra
       !$omp end parallel
       ! loop over all the lines that are below the current line
       !$omp parallel
-      !$omp do private(factor)
+      !$omp do private(factor,j,k)
       do j=i+1,matrix_size
         factor = -to_be_inverted(j,i)
         do k=i,matrix_size
@@ -92,7 +92,7 @@ module lin_algebra
     enddo
 
     !$omp parallel
-    !$omp do
+    !$omp do private(j)
     do j = 1,matrix_size
       inv(matrix_size,j) = inv(matrix_size,j)/to_be_inverted(matrix_size,matrix_size)
     enddo
@@ -104,7 +104,7 @@ module lin_algebra
     ! ----------------
     do i = matrix_size,2,-1
       !$omp parallel
-      !$omp do
+      !$omp do private(j)
       do j = i-1,1,-1
         inv(j,:) = inv(j,:) - to_be_inverted(j,i)*inv(i,:)
       enddo
