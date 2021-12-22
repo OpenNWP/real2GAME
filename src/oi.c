@@ -58,7 +58,7 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 	// h_b_ht_plus_r needs to be inversed in order to calculate the gain matrix
 	// this is actually the main task of OI
 	double (*h_b_ht_plus_r_inv)[no_of_obs] = calloc(1, sizeof(double[no_of_obs][no_of_obs]));
-	gauss(h_b_ht_plus_r, h_b_ht_plus_r_inv, no_of_obs);
+	gauss(h_b_ht_plus_r, h_b_ht_plus_r_inv, &no_of_obs);
 	// now, the main job is already done
 	free(h_b_ht_plus_r);
 	
