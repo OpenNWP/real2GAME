@@ -70,13 +70,7 @@ module lin_algebra
       enddo
       !$omp end do
       !$omp end parallel
-      !$omp parallel
-      !$omp do private(j)
-      do j = 1,matrix_size
-        inv(i,j) = factor*inv(i,j)
-      enddo
-      !$omp end do
-      !$omp end parallel
+      inv(i,:) = factor*inv(i,:)
       ! loop over all the lines that are below the current line
       !$omp parallel
       !$omp do private(factor,j,k)
@@ -90,14 +84,8 @@ module lin_algebra
       !$omp end do
       !$omp end parallel
     enddo
-
-    !$omp parallel
-    !$omp do private(j)
-    do j = 1,matrix_size
-      inv(matrix_size,j) = inv(matrix_size,j)/to_be_inverted(matrix_size,matrix_size)
-    enddo
-    !$omp end do
-    !$omp end parallel
+ 
+    inv(matrix_size,:) = inv(matrix_size,:)/to_be_inverted(matrix_size,matrix_size)
     to_be_inverted(matrix_size,matrix_size) = 1._wp
 
     ! Gaussian upwards
