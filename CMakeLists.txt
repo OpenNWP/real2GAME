@@ -11,6 +11,8 @@ enable_language(Fortran)
 add_executable(
 game-da src/coordinator.c
 src/oi.c
+src/lin_algebra_dry.c
+src/lin_algebra_moist.c
 src/lin_algebra.f90)
 find_package(OpenMP)
 SET(CMAKE_C_FLAGS "${OpenMP_C_FLAGS} -O2 -Wall")

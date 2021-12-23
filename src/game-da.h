@@ -24,3 +24,6 @@ Github repository: https://github.com/OpenNWP/GAME-DA
 #define INTERPOL_EXP 2.001
 
 int oi(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [][7], double [], double [], double [], double [], int, int);
+int inv_gauss_dry(double [][NO_OF_CHOSEN_OBSERVATIONS_DRY], double [][NO_OF_CHOSEN_OBSERVATIONS_DRY]);
+int inv_gauss_moist(double [][NO_OF_CHOSEN_OBSERVATIONS_MOIST], double [][NO_OF_CHOSEN_OBSERVATIONS_MOIST]);
+
