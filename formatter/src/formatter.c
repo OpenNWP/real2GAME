@@ -251,8 +251,8 @@ int main(int argc, char *argv[])
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_SST_POINTS; ++i)
 	{
-		latitude_vector[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_sst[i];
-		longitude_vector[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_sst[i];
+		latitude_vector[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 2*M_PI*latitudes_sst[i]/360;
+		longitude_vector[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 2*M_PI*longitudes_sst[i]/360;
 		z_coords_amsl[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 0;
 		observations_vector[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = sst[i];
 	}
