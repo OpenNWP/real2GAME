@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 	double *sst = malloc(NO_OF_SST_POINTS*sizeof(double));
 	
 	char SST_FILE_PRE[200];
-	sprintf(SST_FILE_PRE , "%s/input/rtgssthr_grb_0.083.grib2", game_da_root_dir);
+	sprintf(SST_FILE_PRE , "%s/input/rtgssthr_grb_0.5.grib2", game_da_root_dir);
 	char SST_FILE[strlen(SST_FILE_PRE) + 1];
 	strcpy(SST_FILE, SST_FILE_PRE);
 	

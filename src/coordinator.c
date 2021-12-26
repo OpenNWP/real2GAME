@@ -14,8 +14,8 @@ This file coordinates the data assimilation process.
 #include <string.h>
 #include <math.h>
 #include <netcdf.h>
-#include "geos95.h"
-#include "atmostracers.h"
+#include <geos95.h>
+#include <atmostracers.h>
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
 #define EPSILON 1e-4
 #define SCALE_HEIGHT 8000.0
@@ -284,10 +284,6 @@ int main(int argc, char *argv[])
 	obs_op_setup(interpolated_model_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry,
 	latitude_vector_obs, longitude_vector_obs, z_coords_obs, latitudes_model, longitudes_model, z_coords_model, background_dry);
     free(z_coords_model);
-    free(latitudes_model);
-    free(longitudes_model);
-	free(latitude_vector_obs);
-	free(longitude_vector_obs);
 	free(z_coords_obs);
 	
 	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
@@ -365,7 +361,6 @@ int main(int argc, char *argv[])
 	{
 		observations_vector_moist[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
 	}
-	free(observations_vector);
 	
     double *background_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
     // the data assimilation is being calculated with the specific humidity for pragmatic reasons
@@ -437,6 +432,7 @@ int main(int argc, char *argv[])
 	oi(obs_error_cov_moist, obs_op_jacobian_reduced_matrix_moist, relevant_model_dofs_matrix_moist, bg_error_cov_moist, interpolated_model_moist,
 	background_moist, observations_vector_moist, model_vector_moist, NO_OF_CHOSEN_OBSERVATIONS_MOIST, NO_OF_MODEL_DOFS_MOIST);
 	
+	// freeing arrays we do not need anymore
 	free(obs_op_jacobian_reduced_matrix_moist);
 	free(background_moist);
 	free(relevant_model_dofs_matrix_moist);
@@ -444,6 +440,30 @@ int main(int argc, char *argv[])
 	free(bg_error_cov_moist);
 	free(interpolated_model_moist);
 	free(observations_vector_moist);
+	
+	// interpolation of the SST
+	printf("Interpolating the SST to the model grid ...");
+	double *sst = malloc(NO_OF_SCALARS_H*sizeof(double));
+	int min_index;
+	#pragma omp parallel for private(min_index)
+	for (int i = 0; i < NO_OF_SCALARS_H; ++i)
+	{
+    	double *distance_vector = malloc(NO_OF_SST_POINTS*sizeof(double));
+    	for (int j = 0; j < NO_OF_SST_POINTS; ++j)
+    	{
+    		distance_vector[j] = calculate_distance_h(latitude_vector_obs[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + j],
+    		longitude_vector_obs[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + j], latitudes_model[i], longitudes_model[i], 1);
+    	}
+		min_index = find_min_index(distance_vector, NO_OF_SST_POINTS);
+		sst[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + min_index];
+		free(distance_vector);
+	}
+	printf("Interpolation of the SST completed.");
+    free(latitudes_model);
+    free(longitudes_model);
+	free(latitude_vector_obs);
+	free(longitude_vector_obs);
+	free(observations_vector);
 	
 	// individual condensate temperatures are for higher resolutions, not yet implemented
 	// clouds and precipitation are set equal to the background state
@@ -480,7 +500,7 @@ int main(int argc, char *argv[])
     // Writing the result to a netcdf file.
     printf("Output file: %s\n", OUTPUT_FILE);
     printf("Writing result to output file ...\n");
-    int densities_dimid, temperatures_dimid, vector_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, stretching_parameter_id;
+    int densities_dimid, temperatures_dimid, vector_dimid, scalar_h_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, sst_id, stretching_parameter_id;
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "densities_index", 6*NO_OF_SCALARS, &densities_dimid)))
@@ -488,6 +508,8 @@ int main(int argc, char *argv[])
     if ((retval = nc_def_dim(ncid, "temperatures_index", 5*NO_OF_SCALARS, &temperatures_dimid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "vector_index", NO_OF_VECTORS, &vector_dimid)))
+        NCERR(retval);
+    if ((retval = nc_def_dim(ncid, "scalar_h_index", NO_OF_SCALARS_H, &scalar_h_dimid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "single_double_dimid_index", 1, &single_double_dimid)))
         NCERR(retval);
@@ -503,6 +525,10 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_put_att_text(ncid, wind_id, "units", strlen("m/s"), "m/s")))
         NCERR(retval);
+    if ((retval = nc_def_var(ncid, "sst", NC_DOUBLE, 1, &scalar_h_dimid, &sst_id)))
+        NCERR(retval);
+    if ((retval = nc_put_att_text(ncid, sst_id, "units", strlen("K"), "K")))
+        NCERR(retval);
     if ((retval = nc_def_var(ncid, "stretching_parameter", NC_DOUBLE, 1, &single_double_dimid, &stretching_parameter_id)))
         NCERR(retval);
     if ((retval = nc_enddef(ncid)))
@@ -513,6 +539,8 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, wind_id, &wind[0])))
         NCERR(retval);
+    if ((retval = nc_put_var_double(ncid, sst_id, &sst[0])))
+        NCERR(retval);
     if ((retval = nc_put_var_double(ncid, stretching_parameter_id, &stretching_parameter)))
         NCERR(retval);
     if ((retval = nc_close(ncid)))
@@ -521,6 +549,7 @@ int main(int argc, char *argv[])
 	free(densities);
 	free(temperatures);
 	free(wind);
+	free(sst);
     return 0;
 }
 
