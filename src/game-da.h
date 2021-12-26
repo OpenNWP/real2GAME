@@ -7,6 +7,8 @@ Github repository: https://github.com/OpenNWP/GAME-DA
 #define NO_OF_LEVELS_OBS 6
 // the number of points per layer of the input model
 #define NO_OF_POINTS_PER_LAYER_OBS 2949120
+// the number of points of the SST grid
+#define NO_OF_SST_POINTS 9331200
 // the number of points on each layer
 #define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 1200
 // the total number of observations we take into account for the dry assimilation

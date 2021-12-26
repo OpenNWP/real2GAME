@@ -194,7 +194,6 @@ int main(int argc, char *argv[])
 	codes_handle_delete(handle);
 	fclose(ECC_FILE);
 	
-	// surface pressure
 	// reading the surface presure
 	double *pressure_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	
@@ -209,6 +208,24 @@ int main(int argc, char *argv[])
 		ECCERR(err);
 	NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
 	if ((retval = codes_get_double_array(handle, "values", &pressure_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+		ECCERR(retval);
+	codes_handle_delete(handle);
+	fclose(ECC_FILE);
+	
+	// reading the SST
+	double *sst = malloc(NO_OF_SST_POINTS*sizeof(double));
+	
+	char SST_FILE_PRE[200];
+	sprintf(SST_FILE_PRE , "%s/input/rtgssthr_grb_0.083.grib2", game_da_root_dir);
+	char SST_FILE[strlen(SST_FILE_PRE) + 1];
+	strcpy(SST_FILE, SST_FILE_PRE);
+	
+	ECC_FILE = fopen(SST_FILE, "r");
+	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+	if (err != 0)
+		ECCERR(err);
+	size_t NO_OF_SST_POINTS_SIZE_T = (size_t) NO_OF_SST_POINTS;
+	if ((retval = codes_get_double_array(handle, "values", &sst[0], &NO_OF_SST_POINTS_SIZE_T)))
 		ECCERR(retval);
 	codes_handle_delete(handle);
 	fclose(ECC_FILE);
