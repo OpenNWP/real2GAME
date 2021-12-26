@@ -39,6 +39,8 @@ int main(int argc, char *argv[])
 	// Properties of the input model's grid.
 	double *latitudes_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	double *longitudes_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	double *latitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
+	double *longitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
     
 	int retval, err;
 	codes_handle *handle = NULL;
@@ -98,7 +100,6 @@ int main(int argc, char *argv[])
 	
 	// the indices of the chosen points
 	int *chosen_indices = malloc(NO_OF_CHOSEN_POINTS_PER_LAYER_OBS*sizeof(int));
-	
 	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 	{
 		chosen_indices[i] = NO_OF_POINTS_PER_LAYER_OBS/NO_OF_CHOSEN_POINTS_PER_LAYER_OBS*i;
@@ -194,6 +195,7 @@ int main(int argc, char *argv[])
 	codes_handle_delete(handle);
 	fclose(ECC_FILE);
 	
+	// surface pressure
 	// reading the surface presure
 	double *pressure_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	
@@ -212,6 +214,17 @@ int main(int argc, char *argv[])
 	codes_handle_delete(handle);
 	fclose(ECC_FILE);
 	
+	// writing the surface pressure to the observations
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
+	{
+		latitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
+		longitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
+		z_coords_amsl[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
+		observations_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = pressure_one_layer[chosen_indices[i]];
+	}
+	
+	// SST
 	// reading the SST
 	double *sst = malloc(NO_OF_SST_POINTS*sizeof(double));
 	
@@ -227,18 +240,27 @@ int main(int argc, char *argv[])
 	size_t NO_OF_SST_POINTS_SIZE_T = (size_t) NO_OF_SST_POINTS;
 	if ((retval = codes_get_double_array(handle, "values", &sst[0], &NO_OF_SST_POINTS_SIZE_T)))
 		ECCERR(retval);
+	if ((retval = codes_get_double_array(handle, "latitudes", &latitudes_sst[0], &NO_OF_SST_POINTS_SIZE_T)))
+		ECCERR(retval);
+	if ((retval = codes_get_double_array(handle, "longitudes", &longitudes_sst[0], &NO_OF_SST_POINTS_SIZE_T)))
+		ECCERR(retval);
 	codes_handle_delete(handle);
 	fclose(ECC_FILE);
 	
-	// writing the surface pressure to the observations
+	// writing the SST to the observations
 	#pragma omp parallel for
-	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
+	for (int i = 0; i < NO_OF_SST_POINTS; ++i)
 	{
-		latitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
-		longitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
-		z_coords_amsl[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
-		observations_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = pressure_one_layer[chosen_indices[i]];
+		latitude_vector[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_sst[i];
+		longitude_vector[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_sst[i];
+		z_coords_amsl[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 0;
+		observations_vector[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = sst[i];
 	}
+	
+	// freeing the memory
+	free(sst);
+	free(latitudes_sst);
+	free(longitudes_sst);
 	free(latitudes_one_layer);
 	free(longitudes_one_layer);
 	free(surface_height);
