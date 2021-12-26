@@ -20,6 +20,7 @@ The documentation of the code can be found in the subdirectory doc.
 * netcdf library (Ubuntu: `sudo apt-get install libnetcdf-dev`)
 * [atmostracers](https://github.com/OpenNWP/atmostracers)
 * bzip2 (Ubuntu: `sudo apt-get install bzip2`)
+* basic calculator (Ubuntu: `sudo apt-get install bc`)
 
 #### For developing
 

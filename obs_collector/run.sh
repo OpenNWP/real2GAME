@@ -10,3 +10,4 @@ analysis_day=${BASH_ARGV[1]}
 analysis_hour=${BASH_ARGV[0]}
 
 source $game_da_root_dir/obs_collector/dl_dwd.sh
+source $game_da_root_dir/obs_collector/dl_sst.sh
