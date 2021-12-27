@@ -442,7 +442,7 @@ int main(int argc, char *argv[])
 	free(observations_vector_moist);
 	
 	// interpolation of the SST
-	printf("Interpolating the SST to the model grid ...");
+	printf("Interpolating the SST to the model grid ...\n");
 	double *sst = malloc(NO_OF_SCALARS_H*sizeof(double));
 	int min_index;
 	#pragma omp parallel for private(min_index)
@@ -458,7 +458,7 @@ int main(int argc, char *argv[])
 		sst[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + min_index];
 		free(distance_vector);
 	}
-	printf("Interpolation of the SST completed.");
+	printf("Interpolation of the SST completed.\n");
     free(latitudes_model);
     free(longitudes_model);
 	free(latitude_vector_obs);
