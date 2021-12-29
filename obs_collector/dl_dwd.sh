@@ -46,6 +46,16 @@ filename="icon_global_icosahedral_model-level_"$analysis_year$analysis_month$ana
 url=$url_base"/"$analysis_hour"/t/"$filename
 wget --no-verbose --directory-prefix=$game_da_root_dir/input $url
 bzip2 -d $game_da_root_dir/input/$filename
+# u wind on model levels
+filename="icon_global_icosahedral_model-level_"$analysis_year$analysis_month$analysis_day$analysis_hour"_000_"$level"_U.grib2.bz2"
+url=$url_base"/"$analysis_hour"/u/"$filename
+wget --no-verbose --directory-prefix=$game_da_root_dir/input $url
+bzip2 -d $game_da_root_dir/input/$filename
+# v wind on model levels
+filename="icon_global_icosahedral_model-level_"$analysis_year$analysis_month$analysis_day$analysis_hour"_000_"$level"_V.grib2.bz2"
+url=$url_base"/"$analysis_hour"/v/"$filename
+wget --no-verbose --directory-prefix=$game_da_root_dir/input $url
+bzip2 -d $game_da_root_dir/input/$filename
 # specific humidity on pressure levels
 filename="icon_global_icosahedral_model-level_"$analysis_year$analysis_month$analysis_day$analysis_hour"_000_"$level"_QV.grib2.bz2"
 url=$url_base"/"$analysis_hour"/qv/"$filename
