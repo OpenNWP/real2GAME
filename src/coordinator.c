@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
     double *z_coords_model = malloc(NO_OF_SCALARS*sizeof(double));
     double *latitudes_model_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
     double *longitudes_model_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
+    double *directions = malloc(NO_OF_VECTORS_H*sizeof(double));
     double *z_coords_model_wind = malloc(NO_OF_VECTORS*sizeof(double));
     double *gravity_potential_model = malloc(NO_OF_SCALARS*sizeof(double));
     double *normal_distance = malloc(NO_OF_VECTORS*sizeof(double));
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     int latitudes_model_id, latitudes_model_wind_id, longitudes_model_id, longitudes_model_wind_id, z_coords_model_id,
     z_coords_model_wind_id, gravity_potential_model_id, stretching_parameter_grid_id,
-    normal_distance_id, from_index_id, to_index_id, adjacent_vector_indices_h_id;
+    normal_distance_id, from_index_id, to_index_id, adjacent_vector_indices_h_id, directions_id;
     double stretching_parameter_grid;
     if ((retval = nc_inq_varid(ncid_grid, "latitude_scalar", &latitudes_model_id)))
         NCERR(retval);
@@ -89,6 +90,8 @@ int main(int argc, char *argv[])
     if ((retval = nc_inq_varid(ncid_grid, "latitude_vector", &latitudes_model_wind_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid_grid, "longitude_vector", &longitudes_model_wind_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid_grid, "direction", &directions_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid_grid, "z_vector", &z_coords_model_wind_id)))
         NCERR(retval);
@@ -119,6 +122,8 @@ int main(int argc, char *argv[])
     if ((retval = nc_get_var_double(ncid_grid, latitudes_model_wind_id, &latitudes_model_wind[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid_grid, longitudes_model_wind_id, &longitudes_model_wind[0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid_grid, directions_id, &directions[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid_grid, z_coords_model_wind_id, &z_coords_model_wind[0])))
         NCERR(retval);
@@ -301,6 +306,7 @@ int main(int argc, char *argv[])
 	latitude_vector_obs, longitude_vector_obs, z_coords_obs, latitudes_model, longitudes_model, z_coords_model, background_dry);
     free(z_coords_model);
     free(z_coords_model_wind);
+    free(directions);
 	free(z_coords_obs);
 	
 	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));

@@ -96,6 +96,8 @@ int main(int argc, char *argv[])
 	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	
 	double *temperature_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	double *u_wind_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS/2*sizeof(double));
+	double *v_wind_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS/2*sizeof(double));
 	double *spec_hum_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	
 	// the indices of the chosen points
@@ -128,7 +130,8 @@ int main(int argc, char *argv[])
 		
 	   	// reading the temperature
 		char TEMPERATURE_FILE_PRE[200];
-		sprintf(TEMPERATURE_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_T.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		sprintf(TEMPERATURE_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_T.grib2",
+		game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
 		char TEMPERATURE_FILE[strlen(TEMPERATURE_FILE_PRE) + 1];
 		strcpy(TEMPERATURE_FILE, TEMPERATURE_FILE_PRE);
 		
@@ -144,7 +147,8 @@ int main(int argc, char *argv[])
 		
 	   	// reading the specific humidity
 		char SPEC_HUM_FILE_PRE[200];
-		sprintf(SPEC_HUM_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_QV.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		sprintf(SPEC_HUM_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_QV.grib2",
+		game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
 		char SPEC_HUM_FILE[strlen(SPEC_HUM_FILE_PRE) + 1];
 		strcpy(SPEC_HUM_FILE, SPEC_HUM_FILE_PRE);
 		
@@ -158,11 +162,45 @@ int main(int argc, char *argv[])
 		codes_handle_delete(handle);
 		fclose(ECC_FILE);
 		
+	   	// reading the u wind
+		char U_WIND_FILE_PRE[200];
+		sprintf(U_WIND_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_U.grib2",
+		game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		char U_WIND_FILE[strlen(U_WIND_FILE_PRE) + 1];
+		strcpy(U_WIND_FILE, U_WIND_FILE_PRE);
+		
+		ECC_FILE = fopen(U_WIND_FILE, "r");
+		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		if (err != 0)
+			ECCERR(err);
+		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS/2;
+		if ((retval = codes_get_double_array(handle, "values", &u_wind_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+			ECCERR(retval);
+		codes_handle_delete(handle);
+		fclose(ECC_FILE);
+		
+	   	// reading the v wind
+		char V_WIND_FILE_PRE[200];
+		sprintf(V_WIND_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_V.grib2",
+		game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		char V_WIND_FILE[strlen(V_WIND_FILE_PRE) + 1];
+		strcpy(V_WIND_FILE, V_WIND_FILE_PRE);
+		
+		ECC_FILE = fopen(V_WIND_FILE, "r");
+		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		if (err != 0)
+			ECCERR(err);
+		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS/2;
+		if ((retval = codes_get_double_array(handle, "values", &v_wind_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
+			ECCERR(retval);
+		codes_handle_delete(handle);
+		fclose(ECC_FILE);
+		
 		// formatting the observations
 		#pragma omp parallel for
 		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 		{
-			// pressure
+			// temperature
 			latitude_vector[level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
 			longitude_vector[level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
 			z_coords_amsl[level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = z_height_amsl[chosen_indices[i]];
@@ -173,10 +211,32 @@ int main(int argc, char *argv[])
 			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
 			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = z_height_amsl[chosen_indices[i]];
 			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[chosen_indices[i]];
+			
+			// u wind
+			latitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
+			= latitudes_one_layer[chosen_indices[i]];
+			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
+			= longitudes_one_layer[chosen_indices[i]];
+			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
+			= z_height_amsl[chosen_indices[i]];
+			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
+			= u_wind_one_layer[chosen_indices[i]];
+			
+			// v wind
+			latitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
+			= latitudes_one_layer[chosen_indices[i]];
+			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
+			= longitudes_one_layer[chosen_indices[i]];
+			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
+			= z_height_amsl[chosen_indices[i]];
+			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
+			= v_wind_one_layer[chosen_indices[i]];
 		}
 	}
 	free(z_height_amsl);
 	free(temperature_one_layer);
+	free(u_wind_one_layer);
+	free(v_wind_one_layer);
 	
 	// reading the surface height
 	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
@@ -251,10 +311,10 @@ int main(int argc, char *argv[])
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_SST_POINTS; ++i)
 	{
-		latitude_vector[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 2*M_PI*latitudes_sst[i]/360;
-		longitude_vector[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 2*M_PI*longitudes_sst[i]/360;
-		z_coords_amsl[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = 0;
-		observations_vector[(NO_OF_LEVELS_OBS*2 + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = sst[i];
+		latitude_vector[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + i] = 2*M_PI*latitudes_sst[i]/360;
+		longitude_vector[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + i] = 2*M_PI*longitudes_sst[i]/360;
+		z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + i] = 0;
+		observations_vector[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + i] = sst[i];
 	}
 	
 	// freeing the memory
