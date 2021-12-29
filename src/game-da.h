@@ -11,12 +11,14 @@ Github repository: https://github.com/OpenNWP/GAME-DA
 #define NO_OF_SST_POINTS 259200
 // the number of points on each layer
 #define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 1200
+// the number of wind points on each layer
+#define NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS 600
 // the total number of observations we take into account for the dry assimilation
 #define NO_OF_CHOSEN_OBSERVATIONS_DRY ((NO_OF_LEVELS_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
-// the total number of observations we take into account for the wind assimilation
-#define NO_OF_CHOSEN_OBSERVATIONS_WIND (NO_OF_LEVELS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
 // the total number of observations we take into account for the moist assimilation
 #define NO_OF_CHOSEN_OBSERVATIONS_MOIST (NO_OF_LEVELS_OBS*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
+// the total number of observations we take into account for the wind assimilation (factor 2 for two directions in the horizontal)
+#define NO_OF_CHOSEN_OBSERVATIONS_WIND (NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS)
 // the total number of observations including SST
 #define NO_OF_CHOSEN_OBSERVATIONS (NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + NO_OF_CHOSEN_OBSERVATIONS_WIND + NO_OF_SST_POINTS)
 // the total number of model degree of freedoms for the dry assimilation

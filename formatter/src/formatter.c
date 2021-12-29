@@ -96,15 +96,21 @@ int main(int argc, char *argv[])
 	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	
 	double *temperature_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
-	double *u_wind_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS/2*sizeof(double));
-	double *v_wind_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS/2*sizeof(double));
+	double *u_wind_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	double *v_wind_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	double *spec_hum_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	
-	// the indices of the chosen points
+	// the indices of the chosen points for the scalar assimilation
 	int *chosen_indices = malloc(NO_OF_CHOSEN_POINTS_PER_LAYER_OBS*sizeof(int));
 	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 	{
 		chosen_indices[i] = NO_OF_POINTS_PER_LAYER_OBS/NO_OF_CHOSEN_POINTS_PER_LAYER_OBS*i;
+	}
+	// the indices of the chosen points for the wind assimilation
+	int *chosen_indices_wind = malloc(NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS*sizeof(int));
+	for (int i = 0; i < NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS; ++i)
+	{
+		chosen_indices_wind[i] = NO_OF_POINTS_PER_LAYER_OBS/NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS*i;
 	}
 	
 	// reading the data from the free atmosphere
@@ -213,30 +219,31 @@ int main(int argc, char *argv[])
 			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[chosen_indices[i]];
 			
 			// u wind
-			latitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
-			= latitudes_one_layer[chosen_indices[i]];
-			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
-			= longitudes_one_layer[chosen_indices[i]];
-			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
-			= z_height_amsl[chosen_indices[i]];
-			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
-			= u_wind_one_layer[chosen_indices[i]];
+			latitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
+			= latitudes_one_layer[chosen_indices_wind[i]];
+			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
+			= longitudes_one_layer[chosen_indices_wind[i]];
+			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
+			= z_height_amsl[chosen_indices_wind[i]];
+			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
+			= u_wind_one_layer[chosen_indices_wind[i]];
 			
 			// v wind
-			latitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
-			= latitudes_one_layer[chosen_indices[i]];
-			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
-			= longitudes_one_layer[chosen_indices[i]];
-			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
-			= z_height_amsl[chosen_indices[i]];
-			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i]
-			= v_wind_one_layer[chosen_indices[i]];
+			latitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + NO_OF_CHOSEN_OBSERVATIONS_WIND/2 + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
+			= latitudes_one_layer[chosen_indices_wind[i]];
+			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + NO_OF_CHOSEN_OBSERVATIONS_WIND/2 + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
+			= longitudes_one_layer[chosen_indices_wind[i]];
+			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + NO_OF_CHOSEN_OBSERVATIONS_WIND/2 + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
+			= z_height_amsl[chosen_indices_wind[i]];
+			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + NO_OF_CHOSEN_OBSERVATIONS_WIND/2 + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
+			= v_wind_one_layer[chosen_indices_wind[i]];
 		}
 	}
 	free(z_height_amsl);
 	free(temperature_one_layer);
 	free(u_wind_one_layer);
 	free(v_wind_one_layer);
+	free(chosen_indices_wind);
 	
 	// reading the surface height
 	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
