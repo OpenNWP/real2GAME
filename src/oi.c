@@ -4,7 +4,7 @@ Github repository: https://github.com/OpenNWP/GAME-DA
 */
 
 /*
-Optimum interpolation.
+optimum interpolation
 */
 
 #include "game-da.h"

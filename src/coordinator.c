@@ -884,6 +884,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 		}
 	}
 	free(rel_h_index_vector);
+	
 	// returning 0 indicating success
 	return 0;
 }
@@ -1004,6 +1005,7 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 		interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
 	}
 	free(rel_h_index_vector);
+	
 	// returning 0 indicating success
 	return 0;
 }
