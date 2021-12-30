@@ -4,7 +4,7 @@ Github repository: https://github.com/OpenNWP/GAME-DA
 */
 
 /*
-Linear algebra functions for the moist assimilation process.
+linear algebra functions for the moist assimilation process
 */
 
 #include <stdlib.h>

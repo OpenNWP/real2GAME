@@ -4,7 +4,7 @@ Github repository: https://github.com/OpenNWP/GAME-DA
 */
 
 /*
-Linear algebra functions for the dry assimilation process.
+linear algebra functions for the dry assimilation process
 */
 
 #include <stdlib.h>
