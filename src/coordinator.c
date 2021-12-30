@@ -929,8 +929,8 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 		double vert_distance_vector[NO_OF_LAYERS];
 		// the vector containing preliminary interpolation weights
 		double weights_vector[NO_OF_REL_MODEL_DOFS_PER_OBS];
-		// the vector containing preliminary interpolation weights with sin or cos prefactors accouting for the direction of the
-		// vectors on teh C-grid
+		// the vector containing preliminary interpolation weights with sin or cos prefactors accounting for the direction of the
+		// vectors on the C-grid
 		double weights_vector_with_direction[NO_OF_REL_MODEL_DOFS_PER_OBS];
 		// the closest vertical indices
 		int closest_vert_index, other_vert_index;
@@ -996,7 +996,7 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 			{
 				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, INTERPOL_EXP);
 				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, INTERPOL_EXP);
-				weights_vector_with_direction[j] = weights_vector_with_direction[j]*sin(directions[rel_h_index_vector[obs_index_h][j]]);
+				weights_vector_with_direction[j] = weights_vector[j]*sin(directions[rel_h_index_vector[obs_index_h][j]]);
 				weights_vector_with_direction[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*sin(directions[rel_h_index_vector[obs_index_h][j]]);
 			}
 			interpolated_model[obs_index] += weights_vector_with_direction[j]*background[relevant_model_dofs_matrix[obs_index][j]];
