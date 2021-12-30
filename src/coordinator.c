@@ -249,6 +249,19 @@ int main(int argc, char *argv[])
     */
 	
 	printf("Starting the dry assimilation ...\n");
+    
+	// setting up the observations operator
+	double *interpolated_model_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
+	double (*obs_op_jacobian_reduced_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	int (*relevant_model_dofs_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	
+	// setting up the obervations operator
+	obs_op_setup(interpolated_model_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry,
+	latitude_vector_obs, longitude_vector_obs, z_coords_obs, latitudes_model, longitudes_model, z_coords_model, background_dry);
+    
+    free(z_coords_model);
+	// now, all the constituents of the gain matrix are known
+	
 	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
 	// setting up the dry observations vector
 	#pragma omp parallel for
@@ -280,6 +293,7 @@ int main(int argc, char *argv[])
 			obs_error_cov_dry[i] = pow(pressure_error_obs, 2);
 		}
     }
+    
     // setting up the background error covariance matrix (only the diagonal)
     double (*bg_error_cov_dry)[7] = calloc(1, sizeof(double[NO_OF_MODEL_DOFS_DRY][7]));
     double temperature_error_model = 1;
@@ -318,15 +332,6 @@ int main(int argc, char *argv[])
     		bg_error_cov_dry[i][j] = bg_error_cov_dry[i][0]*exp(-distance/e_folding_length);
     	}
     }
-    
-	// setting up the observations operator
-	double *interpolated_model_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
-	double (*obs_op_jacobian_reduced_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-	int (*relevant_model_dofs_matrix_dry)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_DRY][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-	obs_op_setup(interpolated_model_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry,
-	latitude_vector_obs, longitude_vector_obs, z_coords_obs, latitudes_model, longitudes_model, z_coords_model, background_dry);
-    free(z_coords_model);
-	// now, all the constituents of the gain matrix are known
 	
 	/*
 	Calling the optimum interpolation
@@ -374,7 +379,7 @@ int main(int argc, char *argv[])
     }
 	free(gravity_potential_model);
     free(exner);
-    // end of the assimilation of the dry state
+    // end of the assimilation of the dry thermodynamic state
 	printf("Dry assimilation completed.\n");
     
     /*
@@ -383,31 +388,6 @@ int main(int argc, char *argv[])
     */
     
 	printf("Starting the moist assimilation ...\n");
-    // writing the moist observations into a single vector
-    double *observations_vector_moist = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
-	#pragma omp parallel for
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
-	{
-		observations_vector_moist[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
-	}
-	
-	// writing the background state into a single vector
-    double *background_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
-    // the data assimilation is being calculated with the specific humidity for pragmatic reasons
-	#pragma omp parallel for
-	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
-	{
-		background_moist[i] = densities_background[5*NO_OF_SCALARS + i]/(densities_background[4*NO_OF_SCALARS + i] + densities_background[5*NO_OF_SCALARS + i]);
-	}
-	
-	// setting up the measurement error covariance matrix
-	double *obs_error_cov_moist = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST]));
-	double spec_hum_error_obs = 0.0025;
-	#pragma omp parallel for
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
-	{
-		obs_error_cov_moist[i] = pow(spec_hum_error_obs, 2);
-	}
 	
 	// setting up the background error covariance matrix (only the diagonal)
 	double (*bg_error_cov_moist)[7] = calloc(1, sizeof(double[NO_OF_MODEL_DOFS_MOIST][7]));
@@ -441,6 +421,15 @@ int main(int argc, char *argv[])
     free(to_index);
     free(adjacent_vector_indices_h);
 	
+	// writing the background state into a single vector
+    double *background_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
+    // the data assimilation is being calculated with the specific humidity for pragmatic reasons
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
+	{
+		background_moist[i] = densities_background[5*NO_OF_SCALARS + i]/(densities_background[4*NO_OF_SCALARS + i] + densities_background[5*NO_OF_SCALARS + i]);
+	}
+	
 	// setting up the observations operator
 	double *interpolated_model_moist = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
 	double (*obs_op_jacobian_reduced_matrix_moist)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST][NO_OF_REL_MODEL_DOFS_PER_OBS]));
@@ -458,6 +447,23 @@ int main(int argc, char *argv[])
 	}
 	free(obs_op_jacobian_reduced_matrix_dry);
 	free(relevant_model_dofs_matrix_dry);
+	
+    // writing the moist observations into a single vector
+    double *observations_vector_moist = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
+	{
+		observations_vector_moist[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
+	}
+	
+	// setting up the measurement error covariance matrix
+	double *obs_error_cov_moist = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_MOIST]));
+	double spec_hum_error_obs = 0.0025;
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
+	{
+		obs_error_cov_moist[i] = pow(spec_hum_error_obs, 2);
+	}
 	
 	/*
 	Calling the optimum interpolation
@@ -483,14 +489,6 @@ int main(int argc, char *argv[])
 	*/
 	
 	printf("Starting the wind assimilation ...\n");
-    // writing the observations into one vector
-	double *observations_vector_wind = malloc(NO_OF_CHOSEN_OBSERVATIONS_WIND*sizeof(double));
-	#pragma omp parallel for
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_WIND; ++i)
-	{
-		observations_vector_wind[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
-	}
-	
 	// writing the background state into a single vector
 	double *background_wind = malloc(NO_OF_H_VECTORS*sizeof(double));
     #pragma omp parallel for private(layer_index, h_index)
@@ -499,6 +497,28 @@ int main(int argc, char *argv[])
 		layer_index = i/NO_OF_VECTORS_H;
 		h_index = i - layer_index*NO_OF_VECTORS_H;
 		background_wind[i] = wind_background[NO_OF_SCALARS_H + layer_index*NO_OF_VECTORS_PER_LAYER + h_index];
+	}
+
+	double *interpolated_model_wind = malloc(NO_OF_CHOSEN_OBSERVATIONS_WIND*sizeof(double));
+	double (*obs_op_jacobian_reduced_matrix_wind)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_WIND][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	int (*relevant_model_dofs_matrix_wind)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_WIND][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	
+	// setting up the obervations operator
+	obs_op_setup_wind(interpolated_model_wind, obs_op_jacobian_reduced_matrix_wind, relevant_model_dofs_matrix_wind,
+	latitude_vector_obs, longitude_vector_obs, z_coords_obs, latitudes_model_wind, longitudes_model_wind, z_coords_model_wind, directions, background_wind);
+    
+    free(z_coords_model_wind);
+    free(directions);
+	free(z_coords_obs);
+    free(latitudes_model_wind);
+    free(longitudes_model_wind);
+	
+    // writing the observations into one vector
+	double *observations_vector_wind = malloc(NO_OF_CHOSEN_OBSERVATIONS_WIND*sizeof(double));
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_WIND; ++i)
+	{
+		observations_vector_wind[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
 	}
 	
 	// setting the wind observations error covariance matrix
@@ -527,21 +547,12 @@ int main(int argc, char *argv[])
     		bg_error_cov_wind[i][j] = bg_error_cov_wind[i][0]*exp(-distance/e_folding_length);
     	}
     }
-
-	// for the wind
-	double *interpolated_model_wind = malloc(NO_OF_CHOSEN_OBSERVATIONS_WIND*sizeof(double));
-	double (*obs_op_jacobian_reduced_matrix_wind)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_WIND][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-	int (*relevant_model_dofs_matrix_wind)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_WIND][NO_OF_REL_MODEL_DOFS_PER_OBS]));
-	obs_op_setup_wind(interpolated_model_wind, obs_op_jacobian_reduced_matrix_wind, relevant_model_dofs_matrix_wind,
-	latitude_vector_obs, longitude_vector_obs, z_coords_obs, latitudes_model_wind, longitudes_model_wind, z_coords_model_wind, directions, background_wind);
-    free(z_coords_model_wind);
-    free(directions);
-	free(z_coords_obs);
-	
+    
 	/*
 	Calling the optimum interpolation
 	---------------------------------
 	*/
+    
 	double *model_vector_wind = malloc(NO_OF_H_VECTORS*sizeof(double));
 	oi(obs_error_cov_wind, obs_op_jacobian_reduced_matrix_wind, relevant_model_dofs_matrix_wind, bg_error_cov_wind, interpolated_model_wind,
 	background_wind, observations_vector_wind, model_vector_wind, NO_OF_CHOSEN_OBSERVATIONS_WIND, NO_OF_H_VECTORS);
@@ -552,24 +563,7 @@ int main(int argc, char *argv[])
 	free(interpolated_model_wind);
 	free(background_wind);
 	free(observations_vector_wind);
-    
-    // writing the result of the wind data assimilation to the resulting wind field
-    #pragma omp parallel for private(layer_index, h_index)
-    for (int i = 0; i < NO_OF_VECTORS; ++i)
-    {
-    	layer_index = i/NO_OF_VECTORS_PER_LAYER;
-    	h_index = i - layer_index*NO_OF_VECTORS_PER_LAYER;
-    	if (h_index < NO_OF_SCALARS_H)
-    	{
-    		wind[i] = wind_background[i];
-    	}
-    	else
-    	{
-    		wind[i] = model_vector_wind[layer_index*NO_OF_VECTORS_H + h_index - NO_OF_SCALARS_H];
-    	}
-    }
-    free(model_vector_wind);
-    free(wind_background);
+	
 	printf("Wind assimilation completed.\n");
 	
 	/*
@@ -592,14 +586,18 @@ int main(int argc, char *argv[])
 		sst[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + min_index];
 		free(distance_vector);
 	}
-	printf("Interpolation of the SST completed.\n");
     free(latitudes_model);
     free(longitudes_model);
-    free(latitudes_model_wind);
-    free(longitudes_model_wind);
 	free(latitude_vector_obs);
 	free(longitude_vector_obs);
 	free(observations_vector);
+	
+	printf("Interpolation of the SST completed.\n");
+
+	/*
+	PREPARING THE OUTPUT
+	--------------------
+	*/
 	
 	// individual condensate temperatures are for higher resolutions, not yet implemented
 	// clouds and precipitation are set equal to the background state
@@ -633,7 +631,29 @@ int main(int argc, char *argv[])
 	free(model_vector_moist);
 	free(densities_background);
     
-    // Writing the result to a netcdf file.
+    // writing the result of the wind data assimilation to the resulting wind field
+    #pragma omp parallel for private(layer_index, h_index)
+    for (int i = 0; i < NO_OF_VECTORS; ++i)
+    {
+    	layer_index = i/NO_OF_VECTORS_PER_LAYER;
+    	h_index = i - layer_index*NO_OF_VECTORS_PER_LAYER;
+    	if (h_index < NO_OF_SCALARS_H)
+    	{
+    		wind[i] = wind_background[i];
+    	}
+    	else
+    	{
+    		wind[i] = model_vector_wind[layer_index*NO_OF_VECTORS_H + h_index - NO_OF_SCALARS_H];
+    	}
+    }
+    free(model_vector_wind);
+    free(wind_background);
+    
+    /*
+    writing the result to a netcdf file
+    -----------------------------------
+    */
+    
     printf("Output file: %s\n", OUTPUT_FILE);
     printf("Writing result to output file ...\n");
     int densities_dimid, temperatures_dimid, vector_dimid, scalar_h_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, sst_id, stretching_parameter_id;
@@ -682,10 +702,14 @@ int main(int argc, char *argv[])
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
     printf("Result successfully written.\n");
+    
+    // freeing the stil occupied memory
 	free(densities);
 	free(temperatures);
 	free(wind);
 	free(sst);
+	
+	// that's it
     return 0;
 }
 
@@ -951,7 +975,9 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 			// the second closest vertical point
 			relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_index*NO_OF_VECTORS_H + rel_h_index_vector[obs_index_h][j];
 			// radius does not matter here
-			distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index_h][j]], lon_model[rel_h_index_vector[obs_index_h][j]], 1);
+			distance = calculate_distance_h(lat_used_obs[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index],
+			lon_used_obs[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index],
+			lat_model[rel_h_index_vector[obs_index_h][j]], lon_model[rel_h_index_vector[obs_index_h][j]], 1);
 			// interpolation weights
 			// u
 			if (obs_index < NO_OF_CHOSEN_OBSERVATIONS_WIND/2)
