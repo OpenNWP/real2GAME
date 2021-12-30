@@ -931,10 +931,10 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 		double weights_vector[NO_OF_REL_MODEL_DOFS_PER_OBS];
 		// the vector containing preliminary interpolation weights with sin or cos prefactors accounting for the direction of the
 		// vectors on the C-grid
-		double weights_vector_with_direction[NO_OF_REL_MODEL_DOFS_PER_OBS];
+		double weights_vector_with_dir[NO_OF_REL_MODEL_DOFS_PER_OBS];
 		// the closest vertical indices
 		int closest_vert_index, other_vert_index;
-		double sum_of_interpol_weights, distance, closest_vert_weight, other_vert_weight;
+		double sum_of_interpol_weights, distance, closest_vert_weight, other_vert_weight, distance_factor, direction;
 		sum_of_interpol_weights = 0;
 		interpolated_model[obs_index] = 0;
 		// loop over all relevant horizontal model gridpoints
@@ -983,31 +983,33 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 			lon_used_obs[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index],
 			lat_model[rel_h_index_vector[obs_index_h][j]], lon_model[rel_h_index_vector[obs_index_h][j]], 1);
 			// interpolation weights
+			distance_factor = 1.0/pow(distance + EPSILON, INTERPOL_EXP);
+			direction = directions[rel_h_index_vector[obs_index_h][j]];
 			// u
 			if (obs_index < NO_OF_CHOSEN_OBSERVATIONS_WIND/2)
 			{
-				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, INTERPOL_EXP);
-				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, INTERPOL_EXP);
-				weights_vector_with_direction[j] = weights_vector[j]*cos(directions[rel_h_index_vector[obs_index_h][j]]);
-				weights_vector_with_direction[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*cos(directions[rel_h_index_vector[obs_index_h][j]]);
+				weights_vector[j] = closest_vert_weight*distance_factor;
+				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight*distance_factor;
+				weights_vector_with_dir[j] = weights_vector[j]*cos(direction);
+				weights_vector_with_dir[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*cos(direction);
 			}
 			// v
 			else
 			{
-				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, INTERPOL_EXP);
-				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, INTERPOL_EXP);
-				weights_vector_with_direction[j] = weights_vector[j]*sin(directions[rel_h_index_vector[obs_index_h][j]]);
-				weights_vector_with_direction[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*sin(directions[rel_h_index_vector[obs_index_h][j]]);
+				weights_vector[j] = closest_vert_weight*distance_factor;
+				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight*distance_factor;
+				weights_vector_with_dir[j] = weights_vector[j]*sin(direction);
+				weights_vector_with_dir[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*sin(direction);
 			}
-			interpolated_model[obs_index] += weights_vector_with_direction[j]*background[relevant_model_dofs_matrix[obs_index][j]];
-			interpolated_model[obs_index] += weights_vector_with_direction[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
+			interpolated_model[obs_index] += weights_vector_with_dir[j]*background[relevant_model_dofs_matrix[obs_index][j]];
+			interpolated_model[obs_index] += weights_vector_with_dir[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
 			sum_of_interpol_weights += weights_vector[j];
 			sum_of_interpol_weights += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2];
 		}
 		for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 		{
 			// we have to divide by the sum of weights here
-			obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector_with_direction[k]/(0.5*sum_of_interpol_weights);
+			obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector_with_dir[k]/(0.5*sum_of_interpol_weights);
 		}
 		interpolated_model[obs_index] = interpolated_model[obs_index]/(0.5*sum_of_interpol_weights);
 	}
