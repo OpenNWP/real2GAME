@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
-		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS/2;
+		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
 		if ((retval = codes_get_double_array(handle, "values", &u_wind_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
 		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
-		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS/2;
+		NO_OF_POINTS_PER_LAYER_OBS_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_OBS;
 		if ((retval = codes_get_double_array(handle, "values", &v_wind_one_layer[0], &NO_OF_POINTS_PER_LAYER_OBS_SIZE_T)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
@@ -217,7 +217,10 @@ int main(int argc, char *argv[])
 			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
 			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = z_height_amsl[chosen_indices[i]];
 			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[chosen_indices[i]];
-			
+		}
+		#pragma omp parallel for
+		for (int i = 0; i < NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS; ++i)
+		{
 			// u wind
 			latitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
 			= latitudes_one_layer[chosen_indices_wind[i]];

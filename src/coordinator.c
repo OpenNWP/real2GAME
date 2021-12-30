@@ -582,8 +582,7 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 {
 	/*
 	This functions calculates the observations operator.
-	It is the background state, interpolated to the observations
-	+ the derivative of this function, which will be used to calculate
+	It is the background state, interpolated to the observations + the derivative of this function, which will be used to calculate
 	the perturbation induced by the observations.
 	*/
 	double R_D = specific_gas_constants_lookup(0);
