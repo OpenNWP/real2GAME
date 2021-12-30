@@ -749,7 +749,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 				}
 				closest_vert_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
 				// vertical interpolation
-				// first setting for the other vertical index
+				// firstly setting for the other vertical index
 				other_vert_index = closest_vert_index + 1;
 				// if the the closest model point is below the observation, the next higher point is taken into account for the interpolation
 				if (z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j]] < z_used_obs[obs_index])
@@ -872,7 +872,7 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 	
 	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
 	// the vector containing the relevant horizontal model indices for each observation
-	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS][NO_OF_REL_MODEL_DOFS_PER_OBS/4]));
+	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS][NO_OF_REL_MODEL_DOFS_PER_OBS/2]));
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS; ++i)
 	{
@@ -881,24 +881,25 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 		// filling up the dist_vector
 		for (int j = 0; j < NO_OF_VECTORS_H; ++j)
 		{
-			dist_vector[j] = calculate_distance_h(lat_used_obs[i], lon_used_obs[i], lat_model[j], lon_model[j], 1);
+			dist_vector[j] = calculate_distance_h(lat_used_obs[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + i],
+			lon_used_obs[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + i], lat_model[j], lon_model[j], 1);
 		}
 		// finding the NO_OF_REL_MODEL_DOFS_PER_OBS/2 closest points
 		for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++j)
 		{
-			rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
+			rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_VECTORS_H);
 			dist_vector[rel_h_index_vector[i][j]] = M_PI + EPSILON;
 		}
 		free(dist_vector);
 	}
-	
+
 	int layer_index, obs_index_h;
 	// finally setting up the reduced observations operator
 	#pragma omp parallel for private(layer_index, obs_index_h)
 	for (int obs_index = 0; obs_index < NO_OF_CHOSEN_OBSERVATIONS_WIND; ++obs_index)
 	{
-		layer_index = obs_index/(2*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS);
-		obs_index_h = obs_index - layer_index*2*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS;
+		layer_index = fmod(obs_index, NO_OF_CHOSEN_OBSERVATIONS_WIND/2)/NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS;
+		obs_index_h = obs_index - layer_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS;
 		// the vector containing the vertical distance between the observation at hand and the model gridpoints
 		double vert_distance_vector[NO_OF_LAYERS];
 		// the vector containing preliminary interpolation weights
@@ -914,14 +915,16 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 			// finding out which layer is the closest to the observation
 			for (int k = 0; k < NO_OF_LAYERS; ++k)
 			{
-				vert_distance_vector[k] = fabs(z_model[NO_OF_SCALARS_H + k*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]] - z_used_obs[obs_index]);
+				vert_distance_vector[k] = fabs(z_model[NO_OF_SCALARS_H + k*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]]
+				- z_used_obs[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index]);
 			}
 			closest_vert_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
 			// vertical interpolation
-			// first setting for the other vertical index
+			// firstly setting for the other vertical index
 			other_vert_index = closest_vert_index + 1;
 			// if the the closest model point is below the observation, the next higher point is taken into account for the interpolation
-			if (z_model[NO_OF_SCALARS_H + closest_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]] < z_used_obs[obs_index])
+			if (z_model[NO_OF_SCALARS_H + closest_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]]
+			< z_used_obs[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index])
 			{
 				other_vert_index = closest_vert_index - 1;
 			}
@@ -929,22 +932,24 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 			if (other_vert_index == NO_OF_LAYERS)
 			{
 				other_vert_index = NO_OF_LAYERS - 2;
-				closest_vert_weight = 1 - (z_used_obs[obs_index] - z_model[NO_OF_SCALARS_H + closest_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]])
+				closest_vert_weight = 1 - (z_used_obs[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index]
+				- z_model[NO_OF_SCALARS_H + closest_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]])
 				/(z_model[NO_OF_SCALARS_H + other_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]]
 				- z_model[NO_OF_SCALARS_H + closest_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]]);
 			}
 			else
 			{
-				closest_vert_weight = fabs(z_model[NO_OF_SCALARS_H + other_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]] - z_used_obs[obs_index])
+				closest_vert_weight = fabs(z_model[NO_OF_SCALARS_H + other_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]]
+				- z_used_obs[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index])
 				/fabs(z_model[NO_OF_SCALARS_H + closest_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]]
 				- z_model[NO_OF_SCALARS_H + other_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]]);
 			}
 			other_vert_weight = 1 - closest_vert_weight;
 			// now we know which gridpoint is relevant to this observation
 			// the closest vertical point
-			relevant_model_dofs_matrix[obs_index][j] = closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j];
+			relevant_model_dofs_matrix[obs_index][j] = closest_vert_index*NO_OF_VECTORS_H + rel_h_index_vector[obs_index_h][j];
 			// the second closest vertical point
-			relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j];
+			relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_index*NO_OF_VECTORS_H + rel_h_index_vector[obs_index_h][j];
 			// radius does not matter here
 			distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index_h][j]], lon_model[rel_h_index_vector[obs_index_h][j]], 1);
 			// interpolation weights
@@ -977,5 +982,20 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 	// returning 0 indicating success
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

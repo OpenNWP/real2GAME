@@ -66,6 +66,10 @@ int oi(double obs_error_cov[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL
 	{
 		inv_gauss_moist(h_b_ht_plus_r, h_b_ht_plus_r_inv);
 	}
+	if (no_of_obs == NO_OF_CHOSEN_OBSERVATIONS_WIND)
+	{
+		inv_gauss_wind(h_b_ht_plus_r, h_b_ht_plus_r_inv);
+	}
 	// now, the main job is already done
 	free(h_b_ht_plus_r);
 	
