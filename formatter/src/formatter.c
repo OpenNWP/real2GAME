@@ -115,6 +115,7 @@ int main(int argc, char *argv[])
 	
 	// reading the data from the free atmosphere
 	double *z_height_amsl = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
+	int shift_index;
 	// loop over all relevant level in the free atmosphere
 	for (int level_index = 0; level_index < NO_OF_LEVELS_OBS; ++level_index)
 	{
@@ -203,43 +204,40 @@ int main(int argc, char *argv[])
 		fclose(ECC_FILE);
 		
 		// formatting the observations
-		#pragma omp parallel for
+		#pragma omp parallel for private(shift_index)
 		for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 		{
+			
 			// temperature
-			latitude_vector[level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
-			longitude_vector[level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
-			z_coords_amsl[level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = z_height_amsl[chosen_indices[i]];
-			observations_vector[level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = temperature_one_layer[chosen_indices[i]];
+			shift_index = level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS;
+			latitude_vector[shift_index + i] = latitudes_one_layer[chosen_indices[i]];
+			longitude_vector[shift_index + i] = longitudes_one_layer[chosen_indices[i]];
+			z_coords_amsl[shift_index + i] = z_height_amsl[chosen_indices[i]];
+			observations_vector[shift_index + i] = temperature_one_layer[chosen_indices[i]];
 			
 			// specific humidity
-			latitude_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
-			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
-			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = z_height_amsl[chosen_indices[i]];
-			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = spec_hum_one_layer[chosen_indices[i]];
+			shift_index = NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS;
+			latitude_vector[shift_index + i] = latitudes_one_layer[chosen_indices[i]];
+			longitude_vector[shift_index + i] = longitudes_one_layer[chosen_indices[i]];
+			z_coords_amsl[shift_index + i] = z_height_amsl[chosen_indices[i]];
+			observations_vector[shift_index + i] = spec_hum_one_layer[chosen_indices[i]];
 		}
-		#pragma omp parallel for
+		#pragma omp parallel for private(shift_index)
 		for (int i = 0; i < NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS; ++i)
 		{
 			// u wind
-			latitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
-			= latitudes_one_layer[chosen_indices_wind[i]];
-			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
-			= longitudes_one_layer[chosen_indices_wind[i]];
-			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
-			= z_height_amsl[chosen_indices_wind[i]];
-			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
-			= u_wind_one_layer[chosen_indices_wind[i]];
+			shift_index = NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS;
+			latitude_vector[shift_index + i] = latitudes_one_layer[chosen_indices_wind[i]];
+			longitude_vector[shift_index + i] = longitudes_one_layer[chosen_indices_wind[i]];
+			z_coords_amsl[shift_index + i] = z_height_amsl[chosen_indices_wind[i]];
+			observations_vector[shift_index + i] = u_wind_one_layer[chosen_indices_wind[i]];
 			
 			// v wind
-			latitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + NO_OF_CHOSEN_OBSERVATIONS_WIND/2 + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
-			= latitudes_one_layer[chosen_indices_wind[i]];
-			longitude_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + NO_OF_CHOSEN_OBSERVATIONS_WIND/2 + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
-			= longitudes_one_layer[chosen_indices_wind[i]];
-			z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + NO_OF_CHOSEN_OBSERVATIONS_WIND/2 + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
-			= z_height_amsl[chosen_indices_wind[i]];
-			observations_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + NO_OF_CHOSEN_OBSERVATIONS_WIND/2 + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS + i]
-			= v_wind_one_layer[chosen_indices_wind[i]];
+			shift_index = NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + NO_OF_CHOSEN_OBSERVATIONS_WIND/2 + level_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS;
+			latitude_vector[shift_index + i] = latitudes_one_layer[chosen_indices_wind[i]];
+			longitude_vector[shift_index + i] = longitudes_one_layer[chosen_indices_wind[i]];
+			z_coords_amsl[shift_index + i] = z_height_amsl[chosen_indices_wind[i]];
+			observations_vector[shift_index + i] = v_wind_one_layer[chosen_indices_wind[i]];
 		}
 	}
 	free(z_height_amsl);
@@ -285,13 +283,14 @@ int main(int argc, char *argv[])
 	fclose(ECC_FILE);
 	
 	// writing the surface pressure to the observations
-	#pragma omp parallel for
+	#pragma omp parallel for private(shift_index)
 	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 	{
-		latitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = latitudes_one_layer[chosen_indices[i]];
-		longitude_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = longitudes_one_layer[chosen_indices[i]];
-		z_coords_amsl[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = surface_height[chosen_indices[i]];
-		observations_vector[NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS + i] = pressure_one_layer[chosen_indices[i]];
+		shift_index = NO_OF_LEVELS_OBS*2*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS;
+		latitude_vector[shift_index + i] = latitudes_one_layer[chosen_indices[i]];
+		longitude_vector[shift_index + i] = longitudes_one_layer[chosen_indices[i]];
+		z_coords_amsl[shift_index + i] = surface_height[chosen_indices[i]];
+		observations_vector[shift_index + i] = pressure_one_layer[chosen_indices[i]];
 	}
 	
 	// SST
@@ -318,13 +317,14 @@ int main(int argc, char *argv[])
 	fclose(ECC_FILE);
 	
 	// writing the SST to the observations
-	#pragma omp parallel for
+	#pragma omp parallel for private(shift_index)
 	for (int i = 0; i < NO_OF_SST_POINTS; ++i)
 	{
-		latitude_vector[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + i] = 2*M_PI*latitudes_sst[i]/360;
-		longitude_vector[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + i] = 2*M_PI*longitudes_sst[i]/360;
-		z_coords_amsl[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + i] = 0;
-		observations_vector[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + i] = sst[i];
+		shift_index = NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS;
+		latitude_vector[shift_index + i] = 2*M_PI*latitudes_sst[i]/360;
+		longitude_vector[shift_index + i] = 2*M_PI*longitudes_sst[i]/360;
+		z_coords_amsl[shift_index + i] = 0;
+		observations_vector[shift_index + i] = sst[i];
 	}
 	
 	// freeing the memory
