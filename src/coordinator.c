@@ -698,7 +698,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 	*/
 	
 	double R_D = specific_gas_constants_lookup(0);
-	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
+	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS/2 closest grid points (horizontally) for each observation
 	// the vector containing the relevant horizontal model indices for each observation
 	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_POINTS_PER_LAYER_OBS][NO_OF_REL_MODEL_DOFS_PER_OBS/2]));
 	#pragma omp parallel for
@@ -731,7 +731,7 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 		double vert_distance_vector[NO_OF_LAYERS];
 		// the vector containing preliminary interpolation weights
 		double weights_vector[NO_OF_REL_MODEL_DOFS_PER_OBS];
-		// the closest vertical index
+		// the closest vertical indices
 		int closest_vert_index, other_vert_index;
 		double sum_of_interpol_weights, distance, closest_vert_weight, other_vert_weight;
 		// free atmosphere quantities (temperature)
@@ -870,7 +870,7 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 	same as obs_op_setup, only for the wind
 	*/
 	
-	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
+	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS/2 closest grid points (horizontally) for each observation
 	// the vector containing the relevant horizontal model indices for each observation
 	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS][NO_OF_REL_MODEL_DOFS_PER_OBS/2]));
 	#pragma omp parallel for
@@ -904,7 +904,7 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 		double vert_distance_vector[NO_OF_LAYERS];
 		// the vector containing preliminary interpolation weights
 		double weights_vector[NO_OF_REL_MODEL_DOFS_PER_OBS];
-		// the closest vertical index
+		// the closest vertical indices
 		int closest_vert_index, other_vert_index;
 		double sum_of_interpol_weights, distance, closest_vert_weight, other_vert_weight;
 		sum_of_interpol_weights = 0;
