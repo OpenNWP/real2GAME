@@ -1007,9 +1007,9 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 		for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 		{
 			// we have to divide by the sum of weights here
-			obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector_with_direction[k]/sum_of_interpol_weights;
+			obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector_with_direction[k]/(0.5*sum_of_interpol_weights);
 		}
-		interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
+		interpolated_model[obs_index] = interpolated_model[obs_index]/(0.5*sum_of_interpol_weights);
 	}
 	free(rel_h_index_vector);
 	
