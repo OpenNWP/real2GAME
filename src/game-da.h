@@ -10,9 +10,9 @@ Github repository: https://github.com/OpenNWP/GAME-DA
 // the number of points of the SST grid
 #define NO_OF_SST_POINTS 259200
 // the number of points on each layer
-#define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 1200
+#define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 120
 // the number of wind points on each layer
-#define NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS 600
+#define NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS 60
 // the total number of observations we take into account for the dry assimilation
 #define NO_OF_CHOSEN_OBSERVATIONS_DRY ((NO_OF_LEVELS_OBS + 1)*NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
 // the total number of observations we take into account for the moist assimilation
@@ -26,7 +26,7 @@ Github repository: https://github.com/OpenNWP/GAME-DA
 // the total number of model degree of freedoms for the moisture assimilation
 #define NO_OF_MODEL_DOFS_MOIST NO_OF_SCALARS
 // the number of model degrees of freedom that are used to interpolate to an observation
-#define NO_OF_REL_MODEL_DOFS_PER_OBS 14
+#define NO_OF_REL_MODEL_DOFS_PER_OBS 16
 // values smaller than two smooth the fields
 #define INTERPOL_EXP 2.001
 

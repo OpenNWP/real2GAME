@@ -22,6 +22,8 @@ This file coordinates the data assimilation process.
 #define P_0 100000
 
 int obs_op_setup(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [], double [], double [], double []);
+int obs_op_setup_wind(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [],
+double [], double [], double [], double []);
 
 int main(int argc, char *argv[])
 {
@@ -241,6 +243,27 @@ int main(int argc, char *argv[])
 	
 	// Begin of the actual assimilation.
     
+    /*
+    DRY THERMODYNAMIC STATE ASSIMILATION
+    ------------------------------------
+    */
+	
+	printf("Starting the dry assimilation ...\n");
+	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
+	// setting up the dry observations vector
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
+	{
+    	if (i < NO_OF_CHOSEN_OBSERVATIONS_DRY - NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
+    	{
+			observations_vector_dry[i] = observations_vector[i];
+		}
+		else
+		{
+			observations_vector_dry[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
+		}
+	}
+	
     // setting up the measurement error covariance matrix
     double *obs_error_cov_dry = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_DRY]));
     double temperature_error_obs = 0.25;
@@ -257,15 +280,13 @@ int main(int argc, char *argv[])
 			obs_error_cov_dry[i] = pow(pressure_error_obs, 2);
 		}
     }
-    
     // setting up the background error covariance matrix (only the diagonal)
-    int layer_index, h_index;
     double (*bg_error_cov_dry)[7] = calloc(1, sizeof(double[NO_OF_MODEL_DOFS_DRY][7]));
     double temperature_error_model = 1;
     double pressure_error_model = 400;
     double e_folding_length, distance;
     e_folding_length = 750e3;
-    int no_of_edges;
+    int no_of_edges, layer_index, h_index;;
     #pragma omp parallel for private(distance, layer_index, h_index, no_of_edges)
     for (int i = 0; i < NO_OF_MODEL_DOFS_DRY; ++i)
     {
@@ -305,37 +326,23 @@ int main(int argc, char *argv[])
 	obs_op_setup(interpolated_model_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry,
 	latitude_vector_obs, longitude_vector_obs, z_coords_obs, latitudes_model, longitudes_model, z_coords_model, background_dry);
     free(z_coords_model);
-    free(z_coords_model_wind);
-    free(directions);
-	free(z_coords_obs);
-	
-	double *observations_vector_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
-	// setting up the dry observations vector
-	#pragma omp parallel for
-	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_DRY; ++i)
-	{
-    	if (i < NO_OF_CHOSEN_OBSERVATIONS_DRY - NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
-    	{
-			observations_vector_dry[i] = observations_vector[i];
-		}
-		else
-		{
-			observations_vector_dry[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
-		}
-	}
-	
 	// now, all the constituents of the gain matrix are known
+	
+	/*
+	Calling the optimum interpolation
+	---------------------------------
+	*/
 	double *model_vector_dry = malloc((NO_OF_SCALARS + NO_OF_SCALARS_H)*sizeof(double));
 	oi(obs_error_cov_dry, obs_op_jacobian_reduced_matrix_dry, relevant_model_dofs_matrix_dry, bg_error_cov_dry, interpolated_model_dry,
 	background_dry, observations_vector_dry, model_vector_dry, NO_OF_CHOSEN_OBSERVATIONS_DRY, NO_OF_MODEL_DOFS_DRY);
-	
-	// data assimilation is finished at this point
 	// freeing the memory
 	free(obs_error_cov_dry);
 	free(bg_error_cov_dry);
 	free(interpolated_model_dry);
 	free(background_dry);
 	free(observations_vector_dry);
+	
+	// data assimilation is finished at this point
     
     // These are the arrays for the result of the assimilation process.
     double *density_dry = malloc(NO_OF_SCALARS*sizeof(double));
@@ -367,17 +374,16 @@ int main(int argc, char *argv[])
     }
 	free(gravity_potential_model);
     free(exner);
-    
-    // Wind is set equal to the background wind for now. Later it will be derived from the balance equation.
-    #pragma omp parallel for
-    for (int i = 0; i < NO_OF_VECTORS; ++i)
-    {
-    	wind[i] = wind_background[i];
-    }
-    free(wind_background);
     // end of the assimilation of the dry state
+	printf("Dry assimilation completed.\n");
     
-    // separate moisture assimilation
+    /*
+    MOISTURE ASSIMILATION
+    ---------------------
+    */
+    
+	printf("Starting the moist assimilation ...\n");
+    // writing the moist observations into a single vector
     double *observations_vector_moist = malloc(NO_OF_CHOSEN_OBSERVATIONS_MOIST*sizeof(double));
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_MOIST; ++i)
@@ -385,6 +391,7 @@ int main(int argc, char *argv[])
 		observations_vector_moist[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
 	}
 	
+	// writing the background state into a single vector
     double *background_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
     // the data assimilation is being calculated with the specific humidity for pragmatic reasons
 	#pragma omp parallel for
@@ -408,6 +415,9 @@ int main(int argc, char *argv[])
 	#pragma omp parallel for private(distance, layer_index, h_index, no_of_edges)
 	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 	{
+    	// diagonal terms
+		bg_error_cov_moist[i][0] = pow(spec_hum_error_model, 2);
+		
     	layer_index = i/NO_OF_SCALARS_H;
     	h_index = i - layer_index*NO_OF_SCALARS_H;
     	if (layer_index == NO_OF_LAYERS)
@@ -419,7 +429,6 @@ int main(int argc, char *argv[])
     	{
     		no_of_edges = 5;
     	}
-		bg_error_cov_moist[i][0] = pow(spec_hum_error_model, 2);
     	// non-diagonal terms
     	for (int j = 1; j < no_of_edges + 1; ++j)
     	{
@@ -450,7 +459,10 @@ int main(int argc, char *argv[])
 	free(obs_op_jacobian_reduced_matrix_dry);
 	free(relevant_model_dofs_matrix_dry);
 	
-	// now, all the constituents of the gain matrix are known
+	/*
+	Calling the optimum interpolation
+	---------------------------------
+	*/
 	double *model_vector_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
 	oi(obs_error_cov_moist, obs_op_jacobian_reduced_matrix_moist, relevant_model_dofs_matrix_moist, bg_error_cov_moist, interpolated_model_moist,
 	background_moist, observations_vector_moist, model_vector_moist, NO_OF_CHOSEN_OBSERVATIONS_MOIST, NO_OF_MODEL_DOFS_MOIST);
@@ -463,8 +475,107 @@ int main(int argc, char *argv[])
 	free(bg_error_cov_moist);
 	free(interpolated_model_moist);
 	free(observations_vector_moist);
+	printf("Moist assimilation completed.\n");
 	
-	// interpolation of the SST
+	/*
+	WIND ASSIMILATION
+	-----------------
+	*/
+	
+	printf("Starting the wind assimilation ...\n");
+    // writing the observations into one vector
+	double *observations_vector_wind = malloc(NO_OF_CHOSEN_OBSERVATIONS_WIND*sizeof(double));
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_WIND; ++i)
+	{
+		observations_vector_wind[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS_DRY + NO_OF_CHOSEN_OBSERVATIONS_MOIST + i];
+	}
+	
+	// writing the background state into a single vector
+	double *background_wind = malloc(NO_OF_H_VECTORS*sizeof(double));
+    #pragma omp parallel for private(layer_index, h_index)
+	for (int i = 0; i < NO_OF_H_VECTORS; ++i)
+	{
+		layer_index = i/NO_OF_VECTORS_H;
+		h_index = i - layer_index*NO_OF_VECTORS_H;
+		background_wind[i] = wind_background[NO_OF_SCALARS_H + layer_index*NO_OF_VECTORS_PER_LAYER + h_index];
+	}
+	
+	// setting the wind observations error covariance matrix
+    double *obs_error_cov_wind = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_WIND]));
+    double wind_error_obs = 0.5;
+	#pragma omp parallel for
+    for (int i = 0; i < NO_OF_CHOSEN_OBSERVATIONS_WIND; ++i)
+    {
+		obs_error_cov_wind[i] = pow(wind_error_obs, 2);
+    }
+    
+	// setting the background error covariance matrix
+	double (*bg_error_cov_wind)[7] = calloc(1, sizeof(double[NO_OF_H_VECTORS][7]));
+    double wind_error_model = 0.5;
+	#pragma omp parallel for
+    for (int i = 0; i < NO_OF_H_VECTORS; ++i)
+    {
+    	// diagonal terms
+		bg_error_cov_wind[i][0] = pow(wind_error_model, 2);
+    	
+    	// non-diagonal terms
+    	no_of_edges = 6;
+    	for (int j = 1; j < no_of_edges + 1; ++j)
+    	{
+    		distance = 240e3;
+    		bg_error_cov_wind[i][j] = bg_error_cov_wind[i][0]*exp(-distance/e_folding_length);
+    	}
+    }
+
+	// for the wind
+	double *interpolated_model_wind = malloc(NO_OF_CHOSEN_OBSERVATIONS_WIND*sizeof(double));
+	double (*obs_op_jacobian_reduced_matrix_wind)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(double[NO_OF_CHOSEN_OBSERVATIONS_WIND][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	int (*relevant_model_dofs_matrix_wind)[NO_OF_REL_MODEL_DOFS_PER_OBS] = malloc(sizeof(int[NO_OF_CHOSEN_OBSERVATIONS_WIND][NO_OF_REL_MODEL_DOFS_PER_OBS]));
+	obs_op_setup_wind(interpolated_model_wind, obs_op_jacobian_reduced_matrix_wind, relevant_model_dofs_matrix_wind,
+	latitude_vector_obs, longitude_vector_obs, z_coords_obs, latitudes_model_wind, longitudes_model_wind, z_coords_model_wind, directions, background_wind);
+    free(z_coords_model_wind);
+    free(directions);
+	free(z_coords_obs);
+	
+	/*
+	Calling the optimum interpolation
+	---------------------------------
+	*/
+	double *model_vector_wind = malloc(NO_OF_H_VECTORS*sizeof(double));
+	oi(obs_error_cov_wind, obs_op_jacobian_reduced_matrix_wind, relevant_model_dofs_matrix_wind, bg_error_cov_wind, interpolated_model_wind,
+	background_wind, observations_vector_wind, model_vector_wind, NO_OF_CHOSEN_OBSERVATIONS_WIND, NO_OF_H_VECTORS);
+	// freeing the memory
+	free(obs_op_jacobian_reduced_matrix_wind);
+	free(obs_error_cov_wind);
+	free(bg_error_cov_wind);
+	free(interpolated_model_wind);
+	free(background_wind);
+	free(observations_vector_wind);
+    
+    // writing the result of the wind data assimilation to the resulting wind field
+    #pragma omp parallel for private(layer_index, h_index)
+    for (int i = 0; i < NO_OF_VECTORS; ++i)
+    {
+    	layer_index = i/NO_OF_VECTORS_PER_LAYER;
+    	h_index = i - layer_index*NO_OF_VECTORS_PER_LAYER;
+    	if (h_index < NO_OF_SCALARS_H)
+    	{
+    		wind[i] = wind_background[i];
+    	}
+    	else
+    	{
+    		wind[i] = model_vector_wind[layer_index*NO_OF_VECTORS_H + h_index - NO_OF_SCALARS_H];
+    	}
+    }
+    free(model_vector_wind);
+    free(wind_background);
+	printf("Wind assimilation completed.\n");
+	
+	/*
+	INTERPOLATION OF THE SST
+	------------------------
+	*/
 	printf("Interpolating the SST to the model grid ...\n");
 	double *sst = malloc(NO_OF_SCALARS_H*sizeof(double));
 	int min_index;
@@ -578,20 +689,23 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix_dry[][NO_OF_REL_MODEL_DOFS_PER_OBS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
+int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double background[])
 {
 	/*
 	This functions calculates the observations operator.
 	It is the background state, interpolated to the observations + the derivative of this function, which will be used to calculate
 	the perturbation induced by the observations.
 	*/
+	
 	double R_D = specific_gas_constants_lookup(0);
 	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
-	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_POINTS_PER_LAYER_OBS][NO_OF_REL_MODEL_DOFS_PER_OBS/2])); // the vector containing the relevant horizontal model indices for each observation
+	// the vector containing the relevant horizontal model indices for each observation
+	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_POINTS_PER_LAYER_OBS][NO_OF_REL_MODEL_DOFS_PER_OBS/2]));
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_CHOSEN_POINTS_PER_LAYER_OBS; ++i)
 	{
-		double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double)); // the vector containing the horizontal distances between the observation at hand and each horizontal model gridpoint
+		// the vector containing the horizontal distances between the observation at hand and each horizontal model gridpoint
+		double *dist_vector = malloc(NO_OF_SCALARS_H*sizeof(double));
 		// filling up the dist_vector
 		for (int j = 0; j < NO_OF_SCALARS_H; ++j)
 		{
@@ -624,7 +738,7 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 		if (obs_index < NO_OF_CHOSEN_OBSERVATIONS_DRY - NO_OF_CHOSEN_POINTS_PER_LAYER_OBS)
 		{
 			sum_of_interpol_weights = 0;
-			interpolated_model_dry[obs_index] = 0;
+			interpolated_model[obs_index] = 0;
 			// loop over all relevant horizontal model gridpoints
 			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++j)
 			{
@@ -651,21 +765,22 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 				}
 				else
 				{
-					closest_vert_weight = fabs(z_model[other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j]] - z_used_obs[obs_index])/fabs(z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j]] - z_model[other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j]]);
+					closest_vert_weight = fabs(z_model[other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j]] - z_used_obs[obs_index])
+					/fabs(z_model[closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j]] - z_model[other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j]]);
 				}
 				other_vert_weight = 1 - closest_vert_weight;
 				// now we know which gridpoint is relevant to this observation
 				// the closest vertical point
-				relevant_model_dofs_matrix_dry[obs_index][j] = closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j];
+				relevant_model_dofs_matrix[obs_index][j] = closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j];
 				// the second closest vertical point
-				relevant_model_dofs_matrix_dry[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j];
+				relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j];
 				// radius does not matter here
 				distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index_h][j]], lon_model[rel_h_index_vector[obs_index_h][j]], 1);
 				// 1/r-interpolation
 				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, INTERPOL_EXP);
 				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, INTERPOL_EXP);
-				interpolated_model_dry[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix_dry[obs_index][j]];
-				interpolated_model_dry[obs_index] += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix_dry[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
+				interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
+				interpolated_model[obs_index] += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
 				sum_of_interpol_weights += weights_vector[j];
 				sum_of_interpol_weights += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2];
 			}
@@ -674,13 +789,13 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 				// we have to divide by the sum of weights here
 				obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
 			}
-			interpolated_model_dry[obs_index] = interpolated_model_dry[obs_index]/sum_of_interpol_weights;
+			interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
 		}
 		// surface quantities (only surface pressure for now)
 		else
 		{
 			sum_of_interpol_weights = 0;
-			interpolated_model_dry[obs_index] = 0;
+			interpolated_model[obs_index] = 0;
 			// loop over all relevant model degrees of freedom
 			for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS; ++j)
 			{
@@ -693,10 +808,10 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 					distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index],
 					lat_model[rel_h_index_vector[obs_index_h][j]], lon_model[rel_h_index_vector[obs_index_h][j]], 1);
 					// now we know which gridpoint is relevant to this observation
-					relevant_model_dofs_matrix_dry[obs_index][j] = closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j];
+					relevant_model_dofs_matrix[obs_index][j] = closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j];
 					// 1/r-interpolation
 					weights_vector[j] = 1/pow(distance + EPSILON, INTERPOL_EXP)
-					*R_D*background[relevant_model_dofs_matrix_dry[obs_index][j] + NO_OF_SCALARS_H]
+					*R_D*background[relevant_model_dofs_matrix[obs_index][j] + NO_OF_SCALARS_H]
 					*exp(-(z_used_obs[NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index] - z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j]])/SCALE_HEIGHT);
 					sum_of_interpol_weights += 1/pow(distance + EPSILON, INTERPOL_EXP);
 					// the result
@@ -722,20 +837,20 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 					distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index],
 					lat_model[rel_h_index_vector[obs_index_h][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]], lon_model[rel_h_index_vector[obs_index_h][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]], 1);
 					// now we know which gridpoint is relevant to this observation
-					relevant_model_dofs_matrix_dry[obs_index][j] = (closest_vert_index + 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2];
-					// 1/r-interpolation
+					relevant_model_dofs_matrix[obs_index][j] = (closest_vert_index + 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2];
+					// interpolation weights
 					weights_vector[j] = 1/pow(distance + EPSILON, INTERPOL_EXP)
-					*R_D*background[relevant_model_dofs_matrix_dry[obs_index][j] - NO_OF_SCALARS_H]
+					*R_D*background[relevant_model_dofs_matrix[obs_index][j] - NO_OF_SCALARS_H]
 					*exp(-(z_used_obs[NO_OF_CHOSEN_OBSERVATIONS_MOIST + obs_index]
 					- z_model[(NO_OF_LAYERS - 1)*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j - NO_OF_REL_MODEL_DOFS_PER_OBS/2]])/SCALE_HEIGHT);
 					// interpolation to the surface pressure
-					interpolated_model_dry[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix_dry[obs_index][j]];
+					interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
 					sum_of_interpol_weights += 1/pow(distance + EPSILON, INTERPOL_EXP);
 				}
 			}
 			// the result
 			// the interpolation to the surface pressure
-			interpolated_model_dry[obs_index] = interpolated_model_dry[obs_index]/sum_of_interpol_weights;
+			interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
 			// loop over all relevant gridpoints
 			for (int k = NO_OF_REL_MODEL_DOFS_PER_OBS/2; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
 			{
@@ -749,6 +864,118 @@ int obs_op_setup(double interpolated_model_dry[], double obs_op_jacobian_reduced
 	return 0;
 }
 
-
+int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduced_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], int relevant_model_dofs_matrix[][NO_OF_REL_MODEL_DOFS_PER_OBS], double lat_used_obs[], double lon_used_obs[], double z_used_obs[], double lat_model[], double lon_model[], double z_model[], double directions[], double background[])
+{
+	/*
+	same as obs_op_setup, only for the wind
+	*/
+	
+	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS closest grid points (horizontally) for each observation
+	// the vector containing the relevant horizontal model indices for each observation
+	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS][NO_OF_REL_MODEL_DOFS_PER_OBS/4]));
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS; ++i)
+	{
+		// the vector containing the horizontal distances between the observation at hand and each horizontal model gridpoint
+		double *dist_vector = malloc(NO_OF_VECTORS_H*sizeof(double));
+		// filling up the dist_vector
+		for (int j = 0; j < NO_OF_VECTORS_H; ++j)
+		{
+			dist_vector[j] = calculate_distance_h(lat_used_obs[i], lon_used_obs[i], lat_model[j], lon_model[j], 1);
+		}
+		// finding the NO_OF_REL_MODEL_DOFS_PER_OBS/2 closest points
+		for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++j)
+		{
+			rel_h_index_vector[i][j] = find_min_index(dist_vector, NO_OF_SCALARS_H);
+			dist_vector[rel_h_index_vector[i][j]] = M_PI + EPSILON;
+		}
+		free(dist_vector);
+	}
+	
+	int layer_index, obs_index_h;
+	// finally setting up the reduced observations operator
+	#pragma omp parallel for private(layer_index, obs_index_h)
+	for (int obs_index = 0; obs_index < NO_OF_CHOSEN_OBSERVATIONS_WIND; ++obs_index)
+	{
+		layer_index = obs_index/(2*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS);
+		obs_index_h = obs_index - layer_index*2*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS;
+		// the vector containing the vertical distance between the observation at hand and the model gridpoints
+		double vert_distance_vector[NO_OF_LAYERS];
+		// the vector containing preliminary interpolation weights
+		double weights_vector[NO_OF_REL_MODEL_DOFS_PER_OBS];
+		// the closest vertical index
+		int closest_vert_index, other_vert_index;
+		double sum_of_interpol_weights, distance, closest_vert_weight, other_vert_weight;
+		sum_of_interpol_weights = 0;
+		interpolated_model[obs_index] = 0;
+		// loop over all relevant horizontal model gridpoints
+		for (int j = 0; j < NO_OF_REL_MODEL_DOFS_PER_OBS/2; ++j)
+		{
+			// finding out which layer is the closest to the observation
+			for (int k = 0; k < NO_OF_LAYERS; ++k)
+			{
+				vert_distance_vector[k] = fabs(z_model[NO_OF_SCALARS_H + k*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]] - z_used_obs[obs_index]);
+			}
+			closest_vert_index = find_min_index(vert_distance_vector, NO_OF_LAYERS);
+			// vertical interpolation
+			// first setting for the other vertical index
+			other_vert_index = closest_vert_index + 1;
+			// if the the closest model point is below the observation, the next higher point is taken into account for the interpolation
+			if (z_model[NO_OF_SCALARS_H + closest_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]] < z_used_obs[obs_index])
+			{
+				other_vert_index = closest_vert_index - 1;
+			}
+			// if the observation is below the lowest layer of the model
+			if (other_vert_index == NO_OF_LAYERS)
+			{
+				other_vert_index = NO_OF_LAYERS - 2;
+				closest_vert_weight = 1 - (z_used_obs[obs_index] - z_model[NO_OF_SCALARS_H + closest_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]])
+				/(z_model[NO_OF_SCALARS_H + other_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]]
+				- z_model[NO_OF_SCALARS_H + closest_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]]);
+			}
+			else
+			{
+				closest_vert_weight = fabs(z_model[NO_OF_SCALARS_H + other_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]] - z_used_obs[obs_index])
+				/fabs(z_model[NO_OF_SCALARS_H + closest_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]]
+				- z_model[NO_OF_SCALARS_H + other_vert_index*NO_OF_VECTORS_PER_LAYER + rel_h_index_vector[obs_index_h][j]]);
+			}
+			other_vert_weight = 1 - closest_vert_weight;
+			// now we know which gridpoint is relevant to this observation
+			// the closest vertical point
+			relevant_model_dofs_matrix[obs_index][j] = closest_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j];
+			// the second closest vertical point
+			relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_index*NO_OF_SCALARS_H + rel_h_index_vector[obs_index_h][j];
+			// radius does not matter here
+			distance = calculate_distance_h(lat_used_obs[obs_index], lon_used_obs[obs_index], lat_model[rel_h_index_vector[obs_index_h][j]], lon_model[rel_h_index_vector[obs_index_h][j]], 1);
+			// interpolation weights
+			// u
+			if (obs_index < NO_OF_CHOSEN_OBSERVATIONS_WIND/2)
+			{
+				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, INTERPOL_EXP)*cos(directions[rel_h_index_vector[obs_index_h][j]]);
+				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, INTERPOL_EXP)*cos(directions[rel_h_index_vector[obs_index_h][j]]);
+			}
+			// v
+			else
+			{
+				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, INTERPOL_EXP)*sin(directions[rel_h_index_vector[obs_index_h][j]]);
+				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, INTERPOL_EXP)*sin(directions[rel_h_index_vector[obs_index_h][j]]);
+			}
+			
+			interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
+			interpolated_model[obs_index] += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
+			sum_of_interpol_weights += weights_vector[j];
+			sum_of_interpol_weights += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2];
+		}
+		for (int k = 0; k < NO_OF_REL_MODEL_DOFS_PER_OBS; ++k)
+		{
+			// we have to divide by the sum of weights here
+			obs_op_jacobian_reduced_matrix[obs_index][k] = weights_vector[k]/sum_of_interpol_weights;
+		}
+		interpolated_model[obs_index] = interpolated_model[obs_index]/sum_of_interpol_weights;
+	}
+	free(rel_h_index_vector);
+	// returning 0 indicating success
+	return 0;
+}
 
 
