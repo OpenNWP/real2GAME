@@ -922,7 +922,7 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 	#pragma omp parallel for private(layer_index, obs_index_h)
 	for (int obs_index = 0; obs_index < NO_OF_CHOSEN_OBSERVATIONS_WIND; ++obs_index)
 	{
-		layer_index = fmod(obs_index, NO_OF_CHOSEN_OBSERVATIONS_WIND/2)/NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS;
+		layer_index = obs_index/NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS;
 		obs_index_h = obs_index - layer_index*NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS;
 		// the vector containing the vertical distance between the observation at hand and the model gridpoints
 		double vert_distance_vector[NO_OF_LAYERS];
