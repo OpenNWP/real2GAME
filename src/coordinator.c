@@ -965,7 +965,6 @@ int obs_op_setup_wind(double interpolated_model[], double obs_op_jacobian_reduce
 				weights_vector[j] = closest_vert_weight/pow(distance + EPSILON, INTERPOL_EXP)*sin(directions[rel_h_index_vector[obs_index_h][j]]);
 				weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2] = other_vert_weight/pow(distance + EPSILON, INTERPOL_EXP)*sin(directions[rel_h_index_vector[obs_index_h][j]]);
 			}
-			
 			interpolated_model[obs_index] += weights_vector[j]*background[relevant_model_dofs_matrix[obs_index][j]];
 			interpolated_model[obs_index] += weights_vector[j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]*background[relevant_model_dofs_matrix[obs_index][j + NO_OF_REL_MODEL_DOFS_PER_OBS/2]];
 			sum_of_interpol_weights += weights_vector[j];
