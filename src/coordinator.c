@@ -80,9 +80,7 @@ int main(int argc, char *argv[])
     if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
         NCERR(retval);
     int latitudes_model_id, latitudes_model_wind_id, longitudes_model_id, longitudes_model_wind_id, z_coords_model_id,
-    z_coords_model_wind_id, gravity_potential_model_id, stretching_parameter_grid_id,
-    normal_distance_id, from_index_id, to_index_id, adjacent_vector_indices_h_id, directions_id;
-    double stretching_parameter_grid;
+    z_coords_model_wind_id, gravity_potential_model_id, normal_distance_id, from_index_id, to_index_id, adjacent_vector_indices_h_id, directions_id;
     if ((retval = nc_inq_varid(ncid_grid, "latitude_scalar", &latitudes_model_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid_grid, "longitude_scalar", &longitudes_model_id)))
@@ -106,8 +104,6 @@ int main(int argc, char *argv[])
     if ((retval = nc_inq_varid(ncid_grid, "to_index", &to_index_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid_grid, "adjacent_vector_indices_h", &adjacent_vector_indices_h_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "stretching_parameter", &stretching_parameter_grid_id)))
         NCERR(retval);
     if ((retval = nc_get_var_int(ncid_grid, from_index_id, &from_index[0])))
         NCERR(retval);
@@ -133,8 +129,6 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid_grid, normal_distance_id, &normal_distance[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, stretching_parameter_grid_id, &stretching_parameter_grid)))
-        NCERR(retval);
     if ((retval = nc_close(ncid_grid)))
         NCERR(retval);
 	printf("Grid file read.\n");
@@ -154,23 +148,18 @@ int main(int argc, char *argv[])
     int ncid;
     if ((retval = nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
-    int densities_background_id, temperatures_background_id, wind_background_id, stretching_parameter_background_id;
-    double stretching_parameter_background;
+    int densities_background_id, temperatures_background_id, wind_background_id;
     if ((retval = nc_inq_varid(ncid, "densities", &densities_background_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "temperatures", &temperatures_background_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "wind", &wind_background_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "stretching_parameter", &stretching_parameter_background_id)))
-        NCERR(retval);
     if ((retval = nc_get_var_double(ncid, densities_background_id, &densities_background[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, temperatures_background_id, &temperatures_background[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, wind_background_id, &wind_background[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, stretching_parameter_background_id, &stretching_parameter_background)))
         NCERR(retval);
     if ((retval = nc_close(ncid)))
         NCERR(retval);
@@ -192,16 +181,7 @@ int main(int argc, char *argv[])
 			background_dry[i] = densities_background[4*NO_OF_SCALARS + i - NO_OF_SCALARS_H];
 		}
 	}
-    free(temperatures_background);
-
-	// Comparing the stretching parameters of the grid and the background state.
-	if (stretching_parameter_grid != stretching_parameter_background)
-	{
-		printf("Stretching_parameters of grid and background state do not conform.\n");
-		printf("Aborting.\n");
-		exit(1);
-	}
-	double stretching_parameter = stretching_parameter_grid;	
+    free(temperatures_background);	
 	
 	// Allocating the memory for the observations.
 	double *latitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
@@ -656,7 +636,7 @@ int main(int argc, char *argv[])
     
     printf("Output file: %s\n", OUTPUT_FILE);
     printf("Writing result to output file ...\n");
-    int densities_dimid, temperatures_dimid, vector_dimid, scalar_h_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, sst_id, stretching_parameter_id;
+    int densities_dimid, temperatures_dimid, vector_dimid, scalar_h_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, sst_id;
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "densities_index", 6*NO_OF_SCALARS, &densities_dimid)))
@@ -685,8 +665,6 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_put_att_text(ncid, sst_id, "units", strlen("K"), "K")))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "stretching_parameter", NC_DOUBLE, 1, &single_double_dimid, &stretching_parameter_id)))
-        NCERR(retval);
     if ((retval = nc_enddef(ncid)))
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, densities_id, &densities[0])))
@@ -696,8 +674,6 @@ int main(int argc, char *argv[])
     if ((retval = nc_put_var_double(ncid, wind_id, &wind[0])))
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, sst_id, &sst[0])))
-        NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, stretching_parameter_id, &stretching_parameter)))
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
