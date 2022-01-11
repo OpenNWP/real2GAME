@@ -10,9 +10,9 @@ These things can be considered the config of the data assimilation:
 // the number of levels from which we use observations
 #define NO_OF_LEVELS_OBS 6
 // the number of points on each layer
-#define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 1188
+#define NO_OF_CHOSEN_POINTS_PER_LAYER_OBS 1194
 // the number of wind points on each layer
-#define NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS 588
+#define NO_OF_CHOSEN_WIND_POINTS_PER_LAYER_OBS 594
 // the number of model degrees of freedom that are used to interpolate to an observation
 #define NO_OF_REL_MODEL_DOFS_PER_OBS 14
 // values smaller than two smooth the fields
