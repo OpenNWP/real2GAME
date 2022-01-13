@@ -51,9 +51,6 @@ int main(int argc, char *argv[])
     strcpy(BACKGROUND_STATE_FILE, argv[7]);
     char game_da_root_dir[strlen(argv[8]) + 1];
     strcpy(game_da_root_dir, argv[8]);
-	int NO_OF_ORO_LAYERS;
-    NO_OF_ORO_LAYERS = strtod(argv[9], NULL);
-	int TOA = strtod(argv[10], NULL);
 	printf("Background state file: %s\n", BACKGROUND_STATE_FILE);
     
     // Allocating memory for the grid properties.
@@ -72,7 +69,7 @@ int main(int argc, char *argv[])
     // Reading the grid properties.
     int ncid_grid, retval;
     char GEO_PROP_FILE_PRE[200];
-    sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
+    sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, NO_OF_LAYERS, ORO_ID);
     char GEO_PROP_FILE[strlen(GEO_PROP_FILE_PRE) + 1];
     strcpy(GEO_PROP_FILE, GEO_PROP_FILE_PRE);
 	printf("Grid file: %s\n", GEO_PROP_FILE);
@@ -133,10 +130,10 @@ int main(int argc, char *argv[])
         NCERR(retval);
 	printf("Grid file read.\n");
 	
-    char OUTPUT_FILE_PRE[200];
-    sprintf(OUTPUT_FILE_PRE, "%s/nwp_init/%s%s%s%s_B%dL%dT%d_O%d_OL%d_SCVT.nc", model_home_dir, year_string, month_string, day_string, hour_string, RES_ID, NO_OF_LAYERS, TOA, ORO_ID, NO_OF_ORO_LAYERS);
-    char OUTPUT_FILE[strlen(OUTPUT_FILE_PRE) + 1];
-    strcpy(OUTPUT_FILE, OUTPUT_FILE_PRE);
+    char output_file_pre[200];
+    sprintf(output_file_pre, "%s/nwp_init/%s%s%s%s.nc", model_home_dir, year_string, month_string, day_string, hour_string);
+    char output_file[strlen(output_file_pre) + 1];
+    strcpy(output_file, output_file_pre);
     
     // These are the arrays of the background state.
     double *densities_background = malloc(6*NO_OF_SCALARS*sizeof(double));
@@ -634,10 +631,10 @@ int main(int argc, char *argv[])
     -----------------------------------
     */
     
-    printf("Output file: %s\n", OUTPUT_FILE);
+    printf("Output file: %s\n", output_file);
     printf("Writing result to output file ...\n");
     int densities_dimid, temperatures_dimid, vector_dimid, scalar_h_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, sst_id;
-    if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
+    if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "densities_index", 6*NO_OF_SCALARS, &densities_dimid)))
         NCERR(retval);

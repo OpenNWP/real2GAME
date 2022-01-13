@@ -11,9 +11,7 @@ model_home_directory=${BASH_ARGV[0]}
 orography_id=${BASH_ARGV[5]}
 background_file=${BASH_ARGV[6]}
 game_da_root_dir=${BASH_ARGV[7]}
-orography_layers=${BASH_ARGV[8]}
-toa=${BASH_ARGV[9]}
-omp_num_threads=${BASH_ARGV[10]}
+omp_num_threads=${BASH_ARGV[8]}
 
 # parallelization
 export OMP_NUM_THREADS=$omp_num_threads # relevant only for OMP
@@ -24,7 +22,7 @@ echo "analysis year: "$analysis_year
 echo "Analysis month: "$analysis_month
 echo "Analysis day: "$analysis_day
 echo "Analysis hour: "$analysis_hour
-$game_da_root_dir/build/game-da $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $game_da_root_dir $orography_layers $toa
+$game_da_root_dir/build/game-da $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $game_da_root_dir
 if [ $? -ne 0 ]
 then
 echo -e ${RED}Data assimilation failed.$NC
