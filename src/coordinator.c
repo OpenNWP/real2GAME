@@ -15,11 +15,11 @@ This file coordinates the data assimilation process.
 #include <math.h>
 #include <netcdf.h>
 #include <geos95.h>
-#include <atmostracers.h>
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
 #define EPSILON 1e-4
 #define SCALE_HEIGHT 8000.0
 #define P_0 100000
+#define R_D 287.057811
 
 int obs_op_setup(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [], double [], double [], double []);
 int obs_op_setup_wind(double [], double [][NO_OF_REL_MODEL_DOFS_PER_OBS], int [][NO_OF_REL_MODEL_DOFS_PER_OBS], double [], double [], double [], double [],
@@ -33,8 +33,7 @@ int main(int argc, char *argv[])
 		printf("Aborting.\n");
 		exit(1);
 	}
-	double R_D = specific_gas_constants_lookup(0);
-	double C_D_P = spec_heat_capacities_p_gas_lookup(0);
+	double C_D_P = 1005.0;
     char year_string[strlen(argv[1]) + 1];
     strcpy(year_string, argv[1]);
     char month_string[strlen(argv[2]) + 1];
@@ -694,7 +693,6 @@ int obs_op_setup(double interpolated_model[], double obs_op_jacobian_reduced_mat
 	the perturbation induced by the observations.
 	*/
 	
-	double R_D = specific_gas_constants_lookup(0);
 	// finding the NO_OF_REL_MODEL_DOFS_PER_OBS/2 closest grid points (horizontally) for each observation
 	// the vector containing the relevant horizontal model indices for each observation
 	int (*rel_h_index_vector)[NO_OF_REL_MODEL_DOFS_PER_OBS/2] = malloc(sizeof(int[NO_OF_CHOSEN_POINTS_PER_LAYER_OBS][NO_OF_REL_MODEL_DOFS_PER_OBS/2]));
