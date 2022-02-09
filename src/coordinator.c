@@ -138,25 +138,38 @@ int main(int argc, char *argv[])
     double *densities_background = malloc(6*NO_OF_SCALARS*sizeof(double));
     double *temperatures_background = malloc(5*NO_OF_SCALARS*sizeof(double));
     double *wind_background = malloc(NO_OF_VECTORS*sizeof(double));
+    double *tke = malloc(NO_OF_SCALARS*sizeof(double));
     
     // Reading the background state.
 	printf("Reading background state ...\n");
     int ncid;
     if ((retval = nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
-    int densities_background_id, temperatures_background_id, wind_background_id;
+    int densities_background_id, temperatures_background_id, wind_background_id, tke_avail, tke_id;
     if ((retval = nc_inq_varid(ncid, "densities", &densities_background_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "temperatures", &temperatures_background_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "wind", &wind_background_id)))
         NCERR(retval);
+    tke_avail = 0;
+    if (nc_inq_varid(ncid, "tke", &tke_id) == 0)
+    {
+    	tke_avail = 1;
+		if ((retval = nc_inq_varid(ncid, "tke", &tke_id)))
+		    NCERR(retval);
+    }
     if ((retval = nc_get_var_double(ncid, densities_background_id, &densities_background[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, temperatures_background_id, &temperatures_background[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, wind_background_id, &wind_background[0])))
         NCERR(retval);
+    if (tke_avail == 1)
+    {
+		if ((retval = nc_get_var_double(ncid, tke_id, &tke[0])))
+		    NCERR(retval);
+    }
     if ((retval = nc_close(ncid)))
         NCERR(retval);
 	printf("Background state read.\n");
@@ -632,7 +645,7 @@ int main(int argc, char *argv[])
     
     printf("Output file: %s\n", output_file);
     printf("Writing result to output file ...\n");
-    int densities_dimid, temperatures_dimid, vector_dimid, scalar_h_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, sst_id;
+    int densities_dimid, temperatures_dimid, scalar_dimid, vector_dimid, scalar_h_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, sst_id;
     if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "densities_index", 6*NO_OF_SCALARS, &densities_dimid)))
@@ -640,6 +653,8 @@ int main(int argc, char *argv[])
     if ((retval = nc_def_dim(ncid, "temperatures_index", 5*NO_OF_SCALARS, &temperatures_dimid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "vector_index", NO_OF_VECTORS, &vector_dimid)))
+        NCERR(retval);
+    if ((retval = nc_def_dim(ncid, "scalar_index", NO_OF_SCALARS, &scalar_dimid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "scalar_h_index", NO_OF_SCALARS_H, &scalar_h_dimid)))
         NCERR(retval);
@@ -661,6 +676,13 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_put_att_text(ncid, sst_id, "units", strlen("K"), "K")))
         NCERR(retval);
+    if (tke_avail == 1)
+    {
+		if ((retval = nc_def_var(ncid, "tke", NC_DOUBLE, 1, &scalar_dimid, &tke_id)))
+		    NCERR(retval);
+		if ((retval = nc_put_att_text(ncid, tke_id, "units", strlen("J/kg"), "J/kg")))
+		    NCERR(retval);
+    }
     if ((retval = nc_enddef(ncid)))
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, densities_id, &densities[0])))
@@ -671,6 +693,11 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, sst_id, &sst[0])))
         NCERR(retval);
+    if (tke_avail == 1)
+    {
+		if ((retval = nc_put_var_double(ncid, tke_id, &tke[0])))
+		    NCERR(retval);
+    }
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
     printf("Result successfully written.\n");
@@ -680,6 +707,7 @@ int main(int argc, char *argv[])
 	free(temperatures);
 	free(wind);
 	free(sst);
+	free(tke);
 	
 	// that's it
     return 0;
