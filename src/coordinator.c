@@ -139,13 +139,14 @@ int main(int argc, char *argv[])
     double *temperatures_background = malloc(5*NO_OF_SCALARS*sizeof(double));
     double *wind_background = malloc(NO_OF_VECTORS*sizeof(double));
     double *tke = malloc(NO_OF_SCALARS*sizeof(double));
+    double *t_soil = malloc(NO_OF_SOIL_LAYERS*NO_OF_SCALARS_H*sizeof(double));
     
     // Reading the background state.
 	printf("Reading background state ...\n");
     int ncid;
     if ((retval = nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
-    int densities_background_id, temperatures_background_id, wind_background_id, tke_avail, tke_id;
+    int densities_background_id, temperatures_background_id, wind_background_id, tke_avail, tke_id, t_soil_avail, t_soil_id;
     if ((retval = nc_inq_varid(ncid, "densities", &densities_background_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "temperatures", &temperatures_background_id)))
@@ -164,6 +165,18 @@ int main(int argc, char *argv[])
     {
     	printf("TKE not found in background state file.\n");
     }
+    t_soil_avail = 0;
+    if (nc_inq_varid(ncid, "t_soil", &t_soil_id) == 0)
+    {
+    	t_soil_avail = 1;
+		if ((retval = nc_inq_varid(ncid, "t_soil", &t_soil_id)))
+		    NCERR(retval);
+		printf("Soil temperature found in background state file.\n");
+    }
+    else
+    {
+    	printf("Soil temperature not found in background state file.\n");
+    }
     if ((retval = nc_get_var_double(ncid, densities_background_id, &densities_background[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, temperatures_background_id, &temperatures_background[0])))
@@ -173,6 +186,11 @@ int main(int argc, char *argv[])
     if (tke_avail == 1)
     {
 		if ((retval = nc_get_var_double(ncid, tke_id, &tke[0])))
+		    NCERR(retval);
+    }
+    if (t_soil_avail == 1)
+    {
+		if ((retval = nc_get_var_double(ncid, t_soil_id, &t_soil[0])))
 		    NCERR(retval);
     }
     if ((retval = nc_close(ncid)))
@@ -650,7 +668,8 @@ int main(int argc, char *argv[])
     
     printf("Output file: %s\n", output_file);
     printf("Writing result to output file ...\n");
-    int densities_dimid, temperatures_dimid, scalar_dimid, vector_dimid, scalar_h_dimid, single_double_dimid, densities_id, temperatures_id, wind_id, sst_id;
+    int densities_dimid, temperatures_dimid, scalar_dimid, vector_dimid, scalar_h_dimid, single_double_dimid,
+    densities_id, temperatures_id, wind_id, sst_id, soil_dimid;
     if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "densities_index", 6*NO_OF_SCALARS, &densities_dimid)))
@@ -660,6 +679,8 @@ int main(int argc, char *argv[])
     if ((retval = nc_def_dim(ncid, "vector_index", NO_OF_VECTORS, &vector_dimid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "scalar_index", NO_OF_SCALARS, &scalar_dimid)))
+        NCERR(retval);
+    if ((retval = nc_def_dim(ncid, "soil_index", NO_OF_SOIL_LAYERS*NO_OF_SCALARS_H, &soil_dimid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "scalar_h_index", NO_OF_SCALARS_H, &scalar_h_dimid)))
         NCERR(retval);
@@ -688,6 +709,13 @@ int main(int argc, char *argv[])
 		if ((retval = nc_put_att_text(ncid, tke_id, "units", strlen("J/kg"), "J/kg")))
 		    NCERR(retval);
     }
+    if (t_soil_avail == 1)
+    {
+		if ((retval = nc_def_var(ncid, "t_soil", NC_DOUBLE, 1, &soil_dimid, &t_soil_id)))
+		    NCERR(retval);
+		if ((retval = nc_put_att_text(ncid, t_soil_id, "units", strlen("K"), "K")))
+		    NCERR(retval);
+    }
     if ((retval = nc_enddef(ncid)))
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, densities_id, &densities[0])))
@@ -703,6 +731,11 @@ int main(int argc, char *argv[])
 		if ((retval = nc_put_var_double(ncid, tke_id, &tke[0])))
 		    NCERR(retval);
     }
+    if (t_soil_avail == 1)
+    {
+		if ((retval = nc_put_var_double(ncid, t_soil_id, &t_soil[0])))
+		    NCERR(retval);
+    }
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
     printf("Result successfully written.\n");
@@ -713,6 +746,7 @@ int main(int argc, char *argv[])
 	free(wind);
 	free(sst);
 	free(tke);
+	free(t_soil);
 	
 	// that's it
     return 0;
