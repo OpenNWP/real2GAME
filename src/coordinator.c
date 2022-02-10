@@ -158,6 +158,11 @@ int main(int argc, char *argv[])
     	tke_avail = 1;
 		if ((retval = nc_inq_varid(ncid, "tke", &tke_id)))
 		    NCERR(retval);
+		printf("TKE found in background state file.\n");
+    }
+    else
+    {
+    	printf("TKE not found in background state file.\n");
     }
     if ((retval = nc_get_var_double(ncid, densities_background_id, &densities_background[0])))
         NCERR(retval);
