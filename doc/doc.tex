@@ -32,17 +32,9 @@
 \chapter{Introduction}
 \label{sec:introduction}
 
-\texttt{GAME-DA} provides \textit{data assimilation (DA)} funcitonality for the \texttt{GAME} model. The theoretical derivations are presented in \cite{kompendium}. This documentation contains the technical details of the implementations of the data assimilation algorithms. Three different methods of DA are implemented in GAME-DA:
-%
-\begin{itemize}
-\item optimum interplation (OI)
-\item three-dimensional variational data assimilation (3D-Var)
-\item four-dimensional variational data assimilation (4D-Var)
-\end{itemize}
-%
-Depending on the resolution and the type and amount of observations, certain methods are more suitable than others.
+\texttt{GAME-DA} provides \textit{data assimilation (DA)} funcitonality for the \texttt{GAME} model. The theoretical derivations are presented in \cite{kompendium}. This documentation contains the technical details of the implementations of the data assimilation algorithms. GAME-DA uses optimum interpolation (OI). As an option, a simple spatial interpolation can also be used.
 
-In any of the three cases, the basic workflow is as follows:
+The basic workflow is as follows:
 %
 \begin{enumerate}
 \item Downloading the observations. This is done by the bash scripts residing in the directory \texttt{obs\_collector}.
@@ -87,23 +79,6 @@ x_i &= x_{B, i} + \sum_{j = 1}^N\left[\overleftrightarrow{B}\overleftrightarrow{
 \label{sec:inclusion_of_moisture}
 
 So far, moisture is taken into account in a separate assimilation process for efficiency.
-
-\chapter{3D-Var}
-\label{chap:3d-var}
-
-\section{Technicalities}
-\label{sec:technicalities_3d-var}
-
-The observations used come from a time window $\left[-\frac{T}{2}, \frac{T}{2}\right]$ around the analysis time and are all taken to be valid at the analysis time. $T = 3$ h is a typical value..
-
-\chapter{4D-Var}
-\label{chap:4d-var}
-%
-
-\section{Technicalities}
-\label{sec:technicalities_4d-var}
-
-The observations used come from a time window $\left[-\frac{T}{2}, \frac{T}{2}\right]$ around the analysis time and are taken to be valid at individual time steps $n\Delta t$. $T = 6$ h and $\Delta t = 15$ min are typical values.
 
 \appendix
 
