@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# This source file is part of GAME-DA, which is released under the MIT license.
-# Github repository: https://github.com/OpenNWP/GAME-DA
+# This source file is part of real2GAME, which is released under the MIT license.
+# Github repository: https://github.com/OpenNWP/real2GAME
 
 analysis_year=${BASH_ARGV[3]}
 analysis_month=${BASH_ARGV[2]}
