@@ -1,16 +1,6 @@
-# GAME-DA
+# real2GAME
 
-Data assimilation for [GAME](https://github.com/OpenNWP/GAME).
-
-## Documents
-
-### Scientific derivation
-
-The scientific derivations of the assimilation techniques can be found in my textbook on theoretical meteorology (in German): [Kompendium Theoretische Meteorologie](https://raw.githubusercontent.com/MHBalsmeier/kompendium/master/kompendium.pdf).
-
-### Documentation
-
-The documentation of the code can be found in the subdirectory doc.
+The utilities in this repository create initial conditions for [GAME](https://github.com/OpenNWP/GAME) as well as initial and boundary conitions for [L-GAME](https://github.com/OpenNWP/L-GAME).
 
 ## Building
 
@@ -27,6 +17,6 @@ The documentation of the code can be found in the subdirectory doc.
 
 ### Download and installation
 
-	git clone https://github.com/OpenNWP/GAME-DA.git
-	cd GAME-DA
-	./build.sh
+	git clone https://github.com/OpenNWP/real2GAME.git
+	cd real2GAME
+	./compile_all.sh
