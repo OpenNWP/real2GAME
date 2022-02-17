@@ -22,7 +22,7 @@ echo "analysis year: "$analysis_year
 echo "Analysis month: "$analysis_month
 echo "Analysis day: "$analysis_day
 echo "Analysis hour: "$analysis_hour
-$real2game_root_dir/build/game-da $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $real2game_root_dir
+$real2game_root_dir/build/real2game $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $real2game_root_dir
 if [ $? -ne 0 ]
 then
 echo -e ${RED}Data assimilation failed.$NC
