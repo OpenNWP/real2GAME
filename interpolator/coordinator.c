@@ -9,7 +9,7 @@ This file coordinates the data assimilation process.
 
 #include <stdlib.h>
 #include "enum.h"
-#include "game-da.h"
+#include "interpolator.h"
 #include <stdio.h>
 #include <string.h>
 #include <math.h>

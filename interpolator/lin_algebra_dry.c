@@ -9,7 +9,7 @@ linear algebra functions for the dry assimilation process
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "game-da.h"
+#include "interpolator.h"
 
 int permute_lines_dry(double [][NO_OF_CHOSEN_OBSERVATIONS_DRY], int, int);
 

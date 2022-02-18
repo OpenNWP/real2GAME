@@ -9,12 +9,12 @@ set(version ${version_major}.${version_minor}.${version_patch})
 project(game-da VERSION ${version})
 enable_language(Fortran)
 add_executable(
-real2game src/coordinator.c
-src/oi.c
-src/lin_algebra_dry.c
-src/lin_algebra_moist.c
-src/lin_algebra_wind.c
-src/lin_algebra.f90)
+real2game interpolator/coordinator.c
+interpolator/oi.c
+interpolator/lin_algebra_dry.c
+interpolator/lin_algebra_moist.c
+interpolator/lin_algebra_wind.c
+interpolator/lin_algebra.f90)
 find_package(OpenMP)
 SET(CMAKE_C_FLAGS "${OpenMP_C_FLAGS} -O2 -Wall")
 SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -Wall -Wno-c-binding-type -Wno-unused-dummy-argument")

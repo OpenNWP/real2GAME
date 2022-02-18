@@ -7,7 +7,7 @@ Github repository: https://github.com/OpenNWP/real2GAME
 optimum interpolation
 */
 
-#include "game-da.h"
+#include "interpolator.h"
 #include "enum.h"
 #include <stdlib.h>
 #include <stdio.h>
