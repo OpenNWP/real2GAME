@@ -48,8 +48,8 @@ int main(int argc, char *argv[])
     ORO_ID = strtod(argv[6], NULL);
     char BACKGROUND_STATE_FILE[strlen(argv[7]) + 1];
     strcpy(BACKGROUND_STATE_FILE, argv[7]);
-    char game_da_root_dir[strlen(argv[8]) + 1];
-    strcpy(game_da_root_dir, argv[8]);
+    char real2game_root_dir[strlen(argv[8]) + 1];
+    strcpy(real2game_root_dir, argv[8]);
 	printf("Background state file: %s\n", BACKGROUND_STATE_FILE);
     
     // Allocating memory for the grid properties.
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
     
     char OBSERVATIONS_FILE_PRE[200];
-    sprintf(OBSERVATIONS_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", game_da_root_dir, year_string, month_string, day_string, hour_string);
+    sprintf(OBSERVATIONS_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", real2game_root_dir, year_string, month_string, day_string, hour_string);
     char OBSERVATIONS_FILE[strlen(OBSERVATIONS_FILE_PRE) + 1];
     strcpy(OBSERVATIONS_FILE, OBSERVATIONS_FILE_PRE);
 	printf("Observations file: %s\n", OBSERVATIONS_FILE);

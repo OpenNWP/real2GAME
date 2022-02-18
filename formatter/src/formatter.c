@@ -33,8 +33,8 @@ int main(int argc, char *argv[])
     strcpy(day_string, argv[3]);
     char hour_string[strlen(argv[4]) + 1];
     strcpy(hour_string, argv[4]);
-    char game_da_root_dir[strlen(argv[5]) + 1];
-    strcpy(game_da_root_dir, argv[5]);
+    char real2game_root_dir[strlen(argv[5]) + 1];
+    strcpy(real2game_root_dir, argv[5]);
 	
 	// Properties of the input model's grid.
 	double *latitudes_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 	
 	// latitudes of the grid
 	char LAT_OBS_FILE_PRE[200];
-    sprintf(LAT_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string);
+    sprintf(LAT_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
 	char LAT_OBS_FILE[strlen(LAT_OBS_FILE_PRE) + 1];
 	strcpy(LAT_OBS_FILE, LAT_OBS_FILE_PRE);
     
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     
     // longitudes of the grid
 	char LON_OBS_FILE_PRE[200];
-    sprintf(LON_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string);
+    sprintf(LON_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
 	char LON_OBS_FILE[strlen(LON_OBS_FILE_PRE) + 1];
 	strcpy(LON_OBS_FILE, LON_OBS_FILE_PRE);
     
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 	{
 		// vertical position of the current layer
 		char Z_OBS_FILE_PRE[200];
-		sprintf(Z_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_%d_HHL.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		sprintf(Z_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_%d_HHL.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
 		char Z_OBS_FILE[strlen(Z_OBS_FILE_PRE) + 1];
 		strcpy(Z_OBS_FILE, Z_OBS_FILE_PRE);
 		
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 	   	// reading the temperature
 		char TEMPERATURE_FILE_PRE[200];
 		sprintf(TEMPERATURE_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_T.grib2",
-		game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		real2game_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
 		char TEMPERATURE_FILE[strlen(TEMPERATURE_FILE_PRE) + 1];
 		strcpy(TEMPERATURE_FILE, TEMPERATURE_FILE_PRE);
 		
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 	   	// reading the specific humidity
 		char SPEC_HUM_FILE_PRE[200];
 		sprintf(SPEC_HUM_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_QV.grib2",
-		game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		real2game_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
 		char SPEC_HUM_FILE[strlen(SPEC_HUM_FILE_PRE) + 1];
 		strcpy(SPEC_HUM_FILE, SPEC_HUM_FILE_PRE);
 		
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 	   	// reading the u wind
 		char U_WIND_FILE_PRE[200];
 		sprintf(U_WIND_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_U.grib2",
-		game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		real2game_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
 		char U_WIND_FILE[strlen(U_WIND_FILE_PRE) + 1];
 		strcpy(U_WIND_FILE, U_WIND_FILE_PRE);
 		
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 	   	// reading the v wind
 		char V_WIND_FILE_PRE[200];
 		sprintf(V_WIND_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_V.grib2",
-		game_da_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
+		real2game_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
 		char V_WIND_FILE[strlen(V_WIND_FILE_PRE) + 1];
 		strcpy(V_WIND_FILE, V_WIND_FILE_PRE);
 		
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 	// reading the surface height
 	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	char SFC_OBS_FILE_PRE[200];
-	sprintf(SFC_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string);
+	sprintf(SFC_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
 	char SFC_OBS_FILE[strlen(SFC_OBS_FILE_PRE) + 1];
 	strcpy(SFC_OBS_FILE, SFC_OBS_FILE_PRE);
 	
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
 	double *pressure_one_layer = malloc(NO_OF_POINTS_PER_LAYER_OBS*sizeof(double));
 	
 	char SFC_PRES_FILE_PRE[200];
-	sprintf(SFC_PRES_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", game_da_root_dir, year_string, month_string, day_string, hour_string);
+	sprintf(SFC_PRES_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
 	char SFC_PRES_FILE[strlen(SFC_PRES_FILE_PRE) + 1];
 	strcpy(SFC_PRES_FILE, SFC_PRES_FILE_PRE);
 	
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
 	double *sst = malloc(NO_OF_SST_POINTS*sizeof(double));
 	
 	char SST_FILE_PRE[200];
-	sprintf(SST_FILE_PRE , "%s/input/rtgssthr_grb_0.5.grib2", game_da_root_dir);
+	sprintf(SST_FILE_PRE , "%s/input/rtgssthr_grb_0.5.grib2", real2game_root_dir);
 	char SST_FILE[strlen(SST_FILE_PRE) + 1];
 	strcpy(SST_FILE, SST_FILE_PRE);
 	
@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
     
     // Writing the observations to a netcdf file.
     char OUTPUT_FILE_PRE[200];
-    sprintf(OUTPUT_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", game_da_root_dir, year_string, month_string, day_string, hour_string);
+    sprintf(OUTPUT_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", real2game_root_dir, year_string, month_string, day_string, hour_string);
 	char OUTPUT_FILE[strlen(OUTPUT_FILE_PRE) + 1];
 	strcpy(OUTPUT_FILE, OUTPUT_FILE_PRE);
     
