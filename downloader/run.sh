@@ -9,5 +9,5 @@ analysis_month=${BASH_ARGV[2]}
 analysis_day=${BASH_ARGV[1]}
 analysis_hour=${BASH_ARGV[0]}
 
-source $real2game_root_dir/obs_collector/dl_dwd.sh
-source $real2game_root_dir/obs_collector/dl_sst.sh
+source $real2game_root_dir/downloader/dl_dwd.sh
+source $real2game_root_dir/downloader/dl_sst.sh
