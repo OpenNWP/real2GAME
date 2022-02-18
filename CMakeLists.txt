@@ -13,8 +13,7 @@ real2game interpolator/coordinator.c
 interpolator/oi.c
 interpolator/lin_algebra_dry.c
 interpolator/lin_algebra_moist.c
-interpolator/lin_algebra_wind.c
-interpolator/lin_algebra.f90)
+interpolator/lin_algebra_wind.c)
 find_package(OpenMP)
 SET(CMAKE_C_FLAGS "${OpenMP_C_FLAGS} -O2 -Wall")
 SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -Wall -Wno-c-binding-type -Wno-unused-dummy-argument")
