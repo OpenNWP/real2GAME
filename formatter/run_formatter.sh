@@ -14,5 +14,5 @@ if [ $? -ne 0 ]
 then
 echo -e ${RED}Formatter failed.$NC
 else
-echo "Observations formatted for the data assimilation successfully."
+echo "Data formatted for the interpolation successfully."
 fi
