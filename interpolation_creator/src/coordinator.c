@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 	// Properties of the input model's grid.
 	// latitudes of the grid
 	char LAT_OBS_FILE_PRE[200];
-    sprintf(LAT_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
+    sprintf(LAT_OBS_FILE_PRE , "%s/interpolation_creator/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
 	char LAT_OBS_FILE[strlen(LAT_OBS_FILE_PRE) + 1];
 	strcpy(LAT_OBS_FILE, LAT_OBS_FILE_PRE);
     
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     
     // longitudes of the grid
 	char LON_OBS_FILE_PRE[200];
-    sprintf(LON_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
+    sprintf(LON_OBS_FILE_PRE , "%s/interpolation_creator/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
 	char LON_OBS_FILE[strlen(LON_OBS_FILE_PRE) + 1];
 	strcpy(LON_OBS_FILE, LON_OBS_FILE_PRE);
     
