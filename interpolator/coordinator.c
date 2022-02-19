@@ -256,8 +256,6 @@ int main(int argc, char *argv[])
 	
 	printf("Starting the dry interpolation ...\n");
 	
-	free(z_surf_in);
-	free(p_surf_in);
 	// dry data interpolation is finished at this point
     
     // These are the arrays for the result of the interpolation process.
@@ -292,11 +290,16 @@ int main(int argc, char *argv[])
     {
     	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
     	{
-    		pressure_lowest_layer_out[i] += interpolation_weights_scalar[i][j]*p_surf_in[interpolation_indices_scalar[i][j]]
-    		*exp(-(z_coords_game[i] - z_coords_input_model[interpolation_indices_scalar[i][j]][NO_OF_LEVELS_INPUT - 1])/SCALE_HEIGHT);
+    		pressure_lowest_layer_out[i]
+    		// horizontal component of the interpolation
+    		+= interpolation_weights_scalar[i][j]*p_surf_in[interpolation_indices_scalar[i][j]]
+    		// vertical component of the interpolation according to the barometric height formula
+    		*exp(-(z_coords_game[i] - z_surf_in[interpolation_indices_scalar[i][j]])/SCALE_HEIGHT);
     	}
     }
     
+	free(z_surf_in);
+	free(p_surf_in);
 	free(interpolation_indices_scalar);
 	free(interpolation_weights_scalar);
     
@@ -326,6 +329,7 @@ int main(int argc, char *argv[])
     }
     free(pressure_lowest_layer_out);
 	free(gravity_potential_game);
+	// the Exner pressure was only needed to integrate the hydrostatic equation
     free(exner);
     // end of the interpolation of the dry thermodynamic state
 	printf("Dry interpolation completed.\n");
@@ -363,6 +367,7 @@ int main(int argc, char *argv[])
 	
 	printf("Wind interpolation completed.\n");
 	
+	// the vector interpolation indices and weights are not needed any further
 	free(interpolation_indices_vector);
 	free(interpolation_weights_vector);
 	
