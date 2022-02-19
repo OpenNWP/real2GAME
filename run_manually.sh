@@ -6,7 +6,7 @@
 model_home_directory=/home/max/code/GAME
 orography_id=1
 background_file=/home/max/code/GAME/standard_oro1.nc
-real2game_root_dir=/home/max/code/real2GAME
+real2game_home_dir=/home/max/code/real2GAME
 omp_num_threads=1
 
 # END OF USUAL INPUT SECTION
@@ -44,12 +44,12 @@ echo "This is real2GAME."
 
 # executing the downloader ...
 echo "Starting to download initial data ..."
-$real2game_root_dir/downloader/run.sh $real2game_root_dir $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string
+$real2game_home_dir/downloader/run.sh $real2game_home_dir $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string
 echo "Collection of initial data completed."
 
 # reformatting
 echo "Reformatting the input data .."
-$real2game_root_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir
+$real2game_home_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_home_dir
 if [ $? -ne 0 ]
 then
 echo -e ${RED}Formatter failed.$NC
@@ -62,7 +62,7 @@ echo "analysis year: "$analysis_year
 echo "analysis month: "$analysis_month
 echo "analysis day: "$analysis_day
 echo "analysis hour: "$analysis_hour
-$real2game_root_dir/build/real2game $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $real2game_root_dir
+$real2game_home_dir/build/real2game $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $real2game_home_dir
 if [ $? -ne 0 ]
 then
 echo -e ${RED}real2GAME failed.$NC
