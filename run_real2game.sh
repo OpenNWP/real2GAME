@@ -19,9 +19,9 @@ export OMP_NUM_THREADS=$omp_num_threads # relevant only for OMP
 echo "This is real2GAME."
 echo "Starting the interpolation process ..."
 echo "analysis year: "$analysis_year
-echo "Analysis month: "$analysis_month
-echo "Analysis day: "$analysis_day
-echo "Analysis hour: "$analysis_hour
+echo "analysis month: "$analysis_month
+echo "analysis day: "$analysis_day
+echo "analysis hour: "$analysis_hour
 $real2game_root_dir/build/real2game $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $real2game_root_dir
 if [ $? -ne 0 ]
 then
