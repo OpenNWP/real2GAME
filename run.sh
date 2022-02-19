@@ -20,7 +20,7 @@ echo "This is real2GAME."
 
 # executing the downloader ...
 echo "Starting to download initial data ..."
-$real2game_home_dir/downloader/run.sh $real2game_home_dir $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string
+$real2game_root_dir/downloader/run.sh $real2game_root_dir $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string
 echo "Collection of initial data completed."
 
 # reformatting
