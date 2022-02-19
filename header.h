@@ -11,6 +11,8 @@ These things can be considered the config of the data assimilation:
 #define NO_OF_LEVELS_OBS 12
 // values smaller than two smooth the fields
 #define INTERPOL_EXP 2.001
+// number of points used for averaging
+#define NO_OF_AVG_POINTS 20
 
 /*
 These things should rarely need to be modified by the user:

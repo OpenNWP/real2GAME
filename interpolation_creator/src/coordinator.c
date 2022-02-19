@@ -11,8 +11,10 @@ This file prepares the horizontal interpolation from the foreign model to GAME.
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <geos95.h>
 #include "eccodes.h"
-#include "../../interpolator/enum.h"
+#include "../../header.h"
+#include "../../game_properties.h"
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
 #define ERRCODE 3
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(ERRCODE);}
@@ -64,7 +66,7 @@ int main(int argc, char *argv[])
     
     for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT_MODEL; ++i)
     {
-    	latitudes_model[i] = 2*M_PI*latitudes_model[i]/360;
+    	latitudes_model[i] = 2.0*M_PI*latitudes_model[i]/360.0;
     }
     
     // longitudes of the grid
@@ -85,7 +87,7 @@ int main(int argc, char *argv[])
     
     for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT_MODEL; ++i)
     {
-    	longitudes_model[i] = 2*M_PI*longitudes_model[i]/360;
+    	longitudes_model[i] = 2.0*M_PI*longitudes_model[i]/360.0;
     }
     
     
@@ -126,47 +128,109 @@ int main(int argc, char *argv[])
 	printf("Grid file of GAME read.\n");
 	
 	// writing the result to a NetCDF file
-	
-	free(latitudes_model);
-	free(longitudes_model);
-    free(latitudes_game);
-    free(longitudes_game);
-    free(latitudes_game_wind);
-    free(longitudes_game_wind);
     
 	int (*interpolation_indices_scalar)[NO_OF_AVG_POINTS] = calloc(1, sizeof(int[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
 	double (*interpolation_weights_scalar)[NO_OF_AVG_POINTS] = calloc(1, sizeof(double[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
 	int (*interpolation_indices_vector)[NO_OF_AVG_POINTS] = calloc(1, sizeof(int[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
 	double (*interpolation_weights_vector)[NO_OF_AVG_POINTS] = calloc(1, sizeof(double[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
 	
+	// executing the actual interpolation
+	printf("Calculating interpolation indices and weights ...\n");
+	
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_SCALARS_H; ++i)
+	{
+    	double *distance_vector = malloc(NO_OF_POINTS_PER_LAYER_INPUT_MODEL*sizeof(double));
+    	for (int j = 0; j < NO_OF_POINTS_PER_LAYER_INPUT_MODEL; ++j)
+    	{
+    		distance_vector[j] = calculate_distance_h(latitudes_game[i], longitudes_game[i], latitudes_model[j], longitudes_model[j], 1.0);
+    	}
+    	double sum_of_weights = 0.0;
+    	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+    	{
+    		interpolation_indices_scalar[i][j] = find_min_index(distance_vector, NO_OF_POINTS_PER_LAYER_INPUT_MODEL);
+    		interpolation_weights_scalar[i][j] = 1.0/(pow(distance_vector[interpolation_indices_scalar[i][j]], INTERPOL_EXP));
+    		distance_vector[interpolation_indices_scalar[i][j]] = 2.0*M_PI;
+    		sum_of_weights += interpolation_weights_scalar[i][j];
+    	}
+    	free(distance_vector);
+    	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+    	{
+    		interpolation_weights_scalar[i][j] = interpolation_weights_scalar[i][j]/sum_of_weights;
+    	}
+	}
+	
+	#pragma omp parallel for
+	for (int i = 0; i < NO_OF_VECTORS_H; ++i)
+	{
+    	double *distance_vector = malloc(NO_OF_POINTS_PER_LAYER_INPUT_MODEL*sizeof(double));
+    	for (int j = 0; j < NO_OF_POINTS_PER_LAYER_INPUT_MODEL; ++j)
+    	{
+    		distance_vector[j] =  calculate_distance_h(latitudes_game_wind[i], longitudes_game_wind[i], latitudes_model[j], longitudes_model[j], 1.0);
+    	}
+    	double sum_of_weights = 0.0;
+    	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+    	{
+    		interpolation_indices_vector[i][j] = find_min_index(distance_vector, NO_OF_POINTS_PER_LAYER_INPUT_MODEL);
+    		interpolation_weights_vector[i][j] = 1.0/(pow(distance_vector[interpolation_indices_vector[i][j]], INTERPOL_EXP));
+    		distance_vector[interpolation_indices_vector[i][j]] = 2.0*M_PI;
+    		sum_of_weights += interpolation_weights_vector[i][j];
+    	}
+    	free(distance_vector);
+    	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+    	{
+    		interpolation_weights_vector[i][j] = interpolation_weights_vector[i][j]/sum_of_weights;
+    	}
+	}
+	printf("Calculating interpolation indices and weights finished.\n");
+	
+	// freeing memory we do not need further
+	free(latitudes_model);
+	free(longitudes_model);
+    free(latitudes_game);
+    free(longitudes_game);
+    free(latitudes_game_wind);
+    free(longitudes_game_wind);
+	
 	char output_file_pre[200];
-	sprintf(output_file_pre, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, NO_OF_LAYERS, oro_id);
+	sprintf(output_file_pre, "%s/interpolation_files/icon-global2game%d.nc", real2game_root_dir, RES_ID);
     char output_file[strlen(output_file_pre) + 1];
     strcpy(output_file, output_file_pre);
-    printf("Starting to write to output file ... ");
-	int interpolation_indices_vector_id, interpolation_weights_vector_id, interpolation_indices_vector_id, interpolation_weights_vector;
+    printf("Starting to write to output file ...\n");
+	int interpolation_indices_scalar_id, interpolation_weights_scalar_id, interpolation_indices_vector_id, interpolation_weights_vector_id,
+	scalar_dimid, vector_dimid, avg_dimid;
+	int dim_vector[2];
     if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "interpolation_indices_vector", NC_INT, 1, &scalar_h_dimid, &interpolation_indices_vector_id)))
-        ERR(retval);
-    if ((retval = nc_def_var(ncid, "interpolation_weights_vector", NC_INT, 1, &vector_h_dimid, &interpolation_weights_vector_id)))
-        ERR(retval);
-	if ((retval = nc_def_var(ncid, "interpolation_indices_vector", NC_DOUBLE, 1, &scalar_h_dimid, &interpolation_indices_vector_id)))
-	  	ERR(retval);
-	if ((retval = nc_def_var(ncid, "interpolation_weights_vector", NC_DOUBLE, 1, &scalar_h_dimid, &interpolation_weights_vector)))
-	  	ERR(retval);
+    if ((retval = nc_def_dim(ncid, "scalar_index", NO_OF_SCALARS_H, &scalar_dimid)))
+        NCERR(retval);
+    if ((retval = nc_def_dim(ncid, "vector_index", NO_OF_VECTORS_H, &vector_dimid)))
+        NCERR(retval);
+    if ((retval = nc_def_dim(ncid, "interpol_index", NO_OF_AVG_POINTS, &avg_dimid)))
+        NCERR(retval);
+    dim_vector[0] = scalar_dimid;
+    dim_vector[1] = avg_dimid;
+    if ((retval = nc_def_var(ncid, "interpolation_indices_scalar", NC_INT, 2, dim_vector, &interpolation_indices_scalar_id)))
+        NCERR(retval);
+    if ((retval = nc_def_var(ncid, "interpolation_weights_scalar", NC_DOUBLE, 2, dim_vector, &interpolation_weights_scalar_id)))
+        NCERR(retval);
+    dim_vector[0] = vector_dimid;
+	if ((retval = nc_def_var(ncid, "interpolation_indices_vector", NC_INT, 2, dim_vector, &interpolation_indices_vector_id)))
+	  	NCERR(retval);
+	if ((retval = nc_def_var(ncid, "interpolation_weights_vector", NC_DOUBLE, 2, dim_vector, &interpolation_weights_vector_id)))
+	  	NCERR(retval);
     if ((retval = nc_enddef(ncid)))
-        ERR(retval);
-    if ((retval = nc_put_var_double(ncid, interpolation_indices_scalar_id, &interpolation_indices_scalar[0][0])))
-        ERR(retval);
+        NCERR(retval);
+    if ((retval = nc_put_var_int(ncid, interpolation_indices_scalar_id, &interpolation_indices_scalar[0][0])))
+        NCERR(retval);
     if ((retval = nc_put_var_double(ncid, interpolation_weights_scalar_id, &interpolation_weights_scalar[0][0])))
-        ERR(retval);
+        NCERR(retval);
 	if ((retval = nc_put_var_int(ncid, interpolation_indices_vector_id, &interpolation_indices_vector[0][0])))
-	  	ERR(retval);
-	if ((retval = nc_put_var_int(ncid, interpolation_weights_vector, &interpolation_weights_vector[0][0])))
-	  	ERR(retval);
+	  	NCERR(retval);
+	if ((retval = nc_put_var_double(ncid, interpolation_weights_vector_id, &interpolation_weights_vector[0][0])))
+	  	NCERR(retval);
     if ((retval = nc_close(ncid)))
-        ERR(retval);
+        NCERR(retval);
     printf("Finished.\n");
 	
 	free(interpolation_indices_scalar);
