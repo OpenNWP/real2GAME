@@ -6,8 +6,8 @@ The utilities in this repository create initial conditions for [GAME](https://gi
 
 real2GAME incorporates different tool
 
-* The interpolator executes the main task: it interpolates the data from another model to the grid of GAME or L-GAME-
-* The formatter needs to be executed before the interpolater. It brings the data from the foreign model into a standardized format.
+* The interpolator executes the main task: it interpolates the data from another model to the grid of GAME or L-GAME.
+* The formatter needs to be executed before the interpolator. It brings the data from the foreign model into a standardized format.
 * The downloader needs to be executed before the formatter. It downloads the data from the server of the foreign model.
 * The interpolation creator prepares the interpolation indices and weights to increase the performance.
 
@@ -16,13 +16,8 @@ real2GAME incorporates different tool
 ### Dependencies
 
 * [GAME](https://github.com/OpenNWP/GAME)
-* netcdf library (Ubuntu: `sudo apt-get install libnetcdf-dev`)
 * bzip2 (Ubuntu: `sudo apt-get install bzip2`)
 * basic calculator (Ubuntu: `sudo apt-get install bc`)
-
-#### For developing
-
-* Valgrind (Ubuntu: `sudo apt-get install valgrind`, for doing checks)
 
 ### Download and installation
 
