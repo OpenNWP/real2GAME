@@ -319,6 +319,8 @@ int main(int argc, char *argv[])
     		spec_hum_out[i] += interpolation_weights_scalar[i][j]*(closest_value + delta_z*gradient);
     	}
     }
+    free(spec_hum_in);
+    free(temperature_in);
     
     // surface pressure interpolation
     double *pressure_lowest_layer_out = calloc(1, NO_OF_SCALARS_H*sizeof(double));
@@ -334,7 +336,7 @@ int main(int argc, char *argv[])
     		*exp(-(z_coords_game[i] - z_surf_in[interpolation_indices_scalar[i][j]])/SCALE_HEIGHT);
     	}
     }
-    
+    free(z_coords_game);
 	free(z_surf_in);
 	free(p_surf_in);
 	free(interpolation_indices_scalar);
@@ -442,14 +444,15 @@ int main(int argc, char *argv[])
     	// projection onto the local normal
 		wind_out[vector_index] = u_local*cos(directions[h_index]) + v_local*sin(directions[h_index]);
     }
-	// the directions of the normal vectors are not needed any further
+    free(u_wind_in);
+    free(v_wind_in);
+    free(z_coords_input_model);
 	free(directions);
-	
-	printf("Wind interpolation completed.\n");
-	
-	// the vector interpolation indices and weights are not needed any further
+	free(z_coords_game_wind);
 	free(interpolation_indices_vector);
 	free(interpolation_weights_vector);
+	
+	printf("Wind interpolation completed.\n");
 	
 	/*
 	INTERPOLATION OF THE SST
@@ -511,7 +514,6 @@ int main(int argc, char *argv[])
 		temperatures_out[4*NO_OF_SCALARS + i] = temperature_out[i];
     }
     free(temperature_out);
-    free(temperatures_out);
     free(density_dry_out);
 	free(spec_hum_out);
 	free(densities_background);
