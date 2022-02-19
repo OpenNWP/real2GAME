@@ -3,15 +3,15 @@
 # This source file is part of real2GAME, which is released under the MIT license.
 # Github repository: https://github.com/OpenNWP/real2GAME
 
-analysis_year=${BASH_ARGV[4]}
-analysis_month=${BASH_ARGV[3]}
-analysis_day=${BASH_ARGV[2]}
-analysis_hour=${BASH_ARGV[1]}
-model_home_directory=${BASH_ARGV[0]}
-orography_id=${BASH_ARGV[5]}
-background_file=${BASH_ARGV[6]}
-real2game_root_dir=${BASH_ARGV[7]}
-omp_num_threads=${BASH_ARGV[8]}
+analysis_year=2022
+analysis_month=02
+analysis_day=20
+analysis_hour=0
+model_home_directory=/home/max/code/GAME
+orography_id=1
+background_file=/home/max/code/GAME/standard_oro1.nc
+real2game_root_dir=/home/max/code/real2GAME
+omp_num_threads=2
 
 # analysis hour in a special format
 analysis_hour_extended_string=$analysis_hour
