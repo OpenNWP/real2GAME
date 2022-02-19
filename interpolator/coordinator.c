@@ -177,9 +177,9 @@ int main(int argc, char *argv[])
     
     // reading the analysis of the other model
 	printf("Reading input ...\n");
+    int sp_id, z_surf_id, z_coords_id, t_in_id, spec_hum_id, u_id, v_id, lat_sst_id, lon_sst_id, sst_id;
     if ((retval = nc_open(input_file, NC_NOWRITE, &ncid)))
         NCERR(retval);
-    int sp_id, z_surf_id, z_coords_id, t_in_id, spec_hum_id, u_id, v_id, lat_sst_id, lon_sst_id, sst_id;
     // Defining the variables.
     if ((retval = nc_inq_varid(ncid, "z_surface", &z_surf_id)))
         NCERR(retval);
@@ -224,6 +224,40 @@ int main(int argc, char *argv[])
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
 	printf("Input read.\n");
+	
+	// memory alloction for the interpolation indices and weights
+	int (*interpolation_indices_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(int[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
+	double (*interpolation_weights_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(double[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
+	int (*interpolation_indices_vector)[NO_OF_AVG_POINTS] = malloc(sizeof(int[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
+	double (*interpolation_weights_vector)[NO_OF_AVG_POINTS] = malloc(sizeof(double[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
+	
+	printf("Reading the interpolation indices and weights.\n");
+	char interpol_file_pre[200];
+	sprintf(interpol_file_pre, "%s/interpolation_files/icon-global2game%d.nc", real2game_root_dir, RES_ID);
+    char interpol_file[strlen(interpol_file_pre) + 1];
+    strcpy(interpol_file, interpol_file_pre);
+	int interpolation_indices_scalar_id, interpolation_weights_scalar_id, interpolation_indices_vector_id, interpolation_weights_vector_id;
+    if ((retval = nc_open(interpol_file, NC_NOWRITE, &ncid)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "interpolation_indices_scalar", &interpolation_indices_scalar_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "interpolation_weights_scalar", &interpolation_weights_scalar_id)))
+        NCERR(retval);
+	if ((retval = nc_inq_varid(ncid, "interpolation_indices_vector", &interpolation_indices_vector_id)))
+	  	NCERR(retval);
+	if ((retval = nc_inq_varid(ncid, "interpolation_weights_vector", &interpolation_weights_vector_id)))
+	  	NCERR(retval);
+    if ((retval = nc_get_var_int(ncid, interpolation_indices_scalar_id, &interpolation_indices_scalar[0][0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, interpolation_weights_scalar_id, &interpolation_weights_scalar[0][0])))
+        NCERR(retval);
+	if ((retval = nc_get_var_int(ncid, interpolation_indices_vector_id, &interpolation_indices_vector[0][0])))
+	  	NCERR(retval);
+	if ((retval = nc_get_var_double(ncid, interpolation_weights_vector_id, &interpolation_weights_vector[0][0])))
+	  	NCERR(retval);
+    if ((retval = nc_close(ncid)))
+        NCERR(retval);
+    printf("Interpolation indices and weights read.\n");
 	
 	// Begin of the actual interpolation.
     
@@ -294,6 +328,12 @@ int main(int argc, char *argv[])
 	
 	
 	printf("Wind interpolation completed.\n");
+	
+	// the interpolation indices and weights are not needed any further
+	free(interpolation_indices_scalar);
+	free(interpolation_weights_scalar);
+	free(interpolation_indices_vector);
+	free(interpolation_weights_vector);
 	
 	/*
 	INTERPOLATION OF THE SST
@@ -385,7 +425,7 @@ int main(int argc, char *argv[])
     printf("Output file: %s\n", output_file);
     printf("Writing result to output file ...\n");
     int densities_dimid, temperatures_dimid, scalar_dimid, vector_dimid, scalar_h_dimid, single_double_dimid,
-    densities_id, temperatures_id, wind_id, sst_id, soil_dimid;
+    densities_id, temperatures_id, wind_id, soil_dimid;
     if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "densities_index", 6*NO_OF_SCALARS, &densities_dimid)))

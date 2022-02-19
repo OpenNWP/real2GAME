@@ -233,6 +233,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     printf("Finished.\n");
 	
+	// freeing the memory
 	free(interpolation_indices_scalar);
 	free(interpolation_weights_scalar);
 	free(interpolation_indices_vector);
