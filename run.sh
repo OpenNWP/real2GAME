@@ -13,10 +13,34 @@ background_file=${BASH_ARGV[6]}
 real2game_root_dir=${BASH_ARGV[7]}
 omp_num_threads=${BASH_ARGV[8]}
 
+# analysis hour in a special format
+analysis_hour_extended_string=$analysis_hour
+if [ $analysis_hour -lt 10 ]
+then
+analysis_hour_extended_string="0$analysis_hour"
+fi
+
 # parallelization
 export OMP_NUM_THREADS=$omp_num_threads # relevant only for OMP
 
+
 echo "This is real2GAME."
+
+# executing the downloader ...
+echo "Starting to download initial data ..."
+$real2game_home_dir/downloader/run.sh $real2game_home_dir $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string
+echo "Collection of initial data completed."
+
+# reformatting
+echo "Reformatting the input data .."
+$real2game_root_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir
+if [ $? -ne 0 ]
+then
+echo -e ${RED}Formatter failed.$NC
+else
+echo "Data formatted for the interpolation successfully."
+fi
+
 echo "Starting the interpolation process ..."
 echo "analysis year: "$analysis_year
 echo "analysis month: "$analysis_month
@@ -29,3 +53,7 @@ echo -e ${RED}real2GAME failed.$NC
 else
 echo "Model input file created sucessfully."
 fi
+
+
+
+
