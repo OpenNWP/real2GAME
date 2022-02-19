@@ -168,10 +168,10 @@ int main(int argc, char *argv[])
     sprintf(input_file_pre, "%s/input/obs_%s%s%s%s.nc", real2game_root_dir, year_string, month_string, day_string, hour_string);
     char input_file[strlen(input_file_pre) + 1];
     strcpy(input_file, input_file_pre);
-	printf("Observations file: %s\n", input_file);
+	printf("Input file: %s\n", input_file);
     
-    // Reading the observations.
-	printf("Reading observations ...\n");
+    // reading the analysis of the other model
+	printf("Reading input ...\n");
     if ((retval = nc_open(input_file, NC_NOWRITE, &ncid)))
         NCERR(retval);
     int z_coords_id, t_in_id, spec_hum_id, u_id, v_id;
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
-	printf("Observations read.\n");
+	printf("Input read.\n");
 	
 	// Begin of the actual interpolation.
     
