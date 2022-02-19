@@ -4,7 +4,7 @@ Github repository: https://github.com/OpenNWP/real2GAME
 */
 
 /*
-This file coordinates the data assimilation process.
+This file coordinates the data interpolation process.
 */
 
 #include <stdlib.h>
@@ -253,14 +253,14 @@ int main(int argc, char *argv[])
     	NCERR(retval);
 	printf("Observations read.\n");
 	
-	// Begin of the actual assimilation.
+	// Begin of the actual interpolation.
     
     /*
-    DRY THERMODYNAMIC STATE ASSIMILATION
-    ------------------------------------
+    DRY THERMODYNAMIC STATE INTERPOLATION
+    -------------------------------------
     */
 	
-	printf("Starting the dry assimilation ...\n");
+	printf("Starting the dry interpolation ...\n");
     
 	// setting up the observations operator
 	double *interpolated_model_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
@@ -359,9 +359,9 @@ int main(int argc, char *argv[])
 	free(background_dry);
 	free(observations_vector_dry);
 	
-	// data assimilation is finished at this point
+	// data interpolation is finished at this point
     
-    // These are the arrays for the result of the assimilation process.
+    // These are the arrays for the result of the interpolation process.
     double *density_dry = malloc(NO_OF_SCALARS*sizeof(double));
     double *wind = malloc(NO_OF_VECTORS*sizeof(double));
     double *exner = malloc(NO_OF_SCALARS*sizeof(double));
@@ -391,15 +391,15 @@ int main(int argc, char *argv[])
     }
 	free(gravity_potential_model);
     free(exner);
-    // end of the assimilation of the dry thermodynamic state
-	printf("Dry assimilation completed.\n");
+    // end of the interpolation of the dry thermodynamic state
+	printf("Dry interpolation completed.\n");
     
     /*
-    MOISTURE ASSIMILATION
-    ---------------------
+    MOISTURE INTERPOLATION
+    ----------------------
     */
     
-	printf("Starting the moist assimilation ...\n");
+	printf("Starting the moist interpolation ...\n");
 	
 	// setting up the background error covariance matrix (only the diagonal)
 	double (*bg_error_cov_moist)[7] = calloc(1, sizeof(double[NO_OF_MODEL_DOFS_MOIST][7]));
@@ -435,7 +435,7 @@ int main(int argc, char *argv[])
 	
 	// writing the background state into a single vector
     double *background_moist = malloc(NO_OF_MODEL_DOFS_MOIST*sizeof(double));
-    // the data assimilation is being calculated with the specific humidity for pragmatic reasons
+    // the data interpolation is being calculated with the specific humidity for pragmatic reasons
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_MODEL_DOFS_MOIST; ++i)
 	{
@@ -493,14 +493,14 @@ int main(int argc, char *argv[])
 	free(bg_error_cov_moist);
 	free(interpolated_model_moist);
 	free(observations_vector_moist);
-	printf("Moist assimilation completed.\n");
+	printf("Moist interpolation completed.\n");
 	
 	/*
-	WIND ASSIMILATION
-	-----------------
+	WIND INTERPOLATION
+	------------------
 	*/
 	
-	printf("Starting the wind assimilation ...\n");
+	printf("Starting the wind interpolation ...\n");
 	// writing the background state into a single vector
 	double *background_wind = malloc(NO_OF_H_VECTORS*sizeof(double));
     #pragma omp parallel for private(layer_index, h_index)
@@ -576,7 +576,7 @@ int main(int argc, char *argv[])
 	free(background_wind);
 	free(observations_vector_wind);
 	
-	printf("Wind assimilation completed.\n");
+	printf("Wind interpolation completed.\n");
 	
 	/*
 	INTERPOLATION OF THE SST
@@ -643,7 +643,7 @@ int main(int argc, char *argv[])
 	free(model_vector_moist);
 	free(densities_background);
     
-    // writing the result of the wind data assimilation to the resulting wind field
+    // writing the result of the wind data interpolation to the resulting wind field
     #pragma omp parallel for private(layer_index, h_index)
     for (int i = 0; i < NO_OF_VECTORS; ++i)
     {
