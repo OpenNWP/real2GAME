@@ -277,18 +277,21 @@ int main(int argc, char *argv[])
     		for (int k = 0; k < NO_OF_LEVELS_INPUT; ++k)
     		{
     			vector_to_minimize[k] = fabs(z_coords_game[i]
-    			- z_coords_input_model[interpolation_indices_scalar[i][j]][k]);
+    			- z_coords_input_model[interpolation_indices_scalar[h_index][j]][k]);
     		}
+    		
     		// closest vertical index
     		closest_index = find_min_index(vector_to_minimize, NO_OF_LEVELS_INPUT);
+    		
     		// value at the closest vertical index
-    		closest_value = temperature_in[interpolation_indices_scalar[i][j]][closest_index];
+    		closest_value = temperature_in[interpolation_indices_scalar[h_index][j]][closest_index];
     		
     		other_index = closest_index - 1;
-    		if (z_coords_game[i] < z_coords_input_model[interpolation_indices_scalar[i][j]][closest_index])
+    		if (z_coords_game[i] < z_coords_input_model[interpolation_indices_scalar[h_index][j]][closest_index])
     		{
     			other_index = closest_index + 1;
     		}
+    		
     		// avoiding array excess
     		if (other_index == NO_OF_LEVELS_INPUT)
     		{
@@ -296,27 +299,27 @@ int main(int argc, char *argv[])
     		}
     		
     		// the value at the second point used for vertical interpolation
-    		other_value = temperature_in[interpolation_indices_scalar[i][j]][other_index];
+    		other_value = temperature_in[interpolation_indices_scalar[h_index][j]][other_index];
     		
     		// computing the vertical gradient of u in the input model
     		df = closest_value - other_value;
-    		dz = z_coords_input_model[interpolation_indices_scalar[i][j]][closest_index] - z_coords_input_model[interpolation_indices_scalar[i][j]][other_index];
+    		dz = z_coords_input_model[interpolation_indices_scalar[h_index][j]][closest_index] - z_coords_input_model[interpolation_indices_scalar[h_index][j]][other_index];
     		gradient = df/dz;
     		
-    		delta_z = z_coords_game[i] - z_coords_input_model[interpolation_indices_scalar[i][j]][closest_index];
+    		delta_z = z_coords_game[i] - z_coords_input_model[interpolation_indices_scalar[h_index][j]][closest_index];
     		
     		// vertical interpolation of the temperature
-    		temperature_out[i] += interpolation_weights_scalar[i][j]*(closest_value + delta_z*gradient);
+    		temperature_out[i] += interpolation_weights_scalar[h_index][j]*(closest_value + delta_z*gradient);
     		
     		// vertical interpolation of the specific humidity
-    		closest_value = spec_hum_in[interpolation_indices_scalar[i][j]][closest_index];
-    		other_value = spec_hum_in[interpolation_indices_scalar[i][j]][other_index];
+    		closest_value = spec_hum_in[interpolation_indices_scalar[h_index][j]][closest_index];
+    		other_value = spec_hum_in[interpolation_indices_scalar[h_index][j]][other_index];
     		// computing the vertical gradient of the specific humidity in the input model
     		df = closest_value - other_value;
     		gradient = df/dz;
     		
     		// specific humidity
-    		spec_hum_out[i] += interpolation_weights_scalar[i][j]*(closest_value + delta_z*gradient);
+    		spec_hum_out[i] += interpolation_weights_scalar[h_index][j]*(closest_value + delta_z*gradient);
     	}
     }
     free(spec_hum_in);
@@ -401,15 +404,15 @@ int main(int argc, char *argv[])
     		for (int k = 0; k < NO_OF_LEVELS_INPUT; ++k)
     		{
     			vector_to_minimize[k] = fabs(z_coords_game_wind[vector_index]
-    			- z_coords_input_model[interpolation_indices_vector[i][j]][k]);
+    			- z_coords_input_model[interpolation_indices_vector[h_index][j]][k]);
     		}
     		// closest vertical index
     		closest_index = find_min_index(vector_to_minimize, NO_OF_LEVELS_INPUT);
     		// value at the closest vertical index
-    		closest_value = u_wind_in[interpolation_indices_vector[i][j]][closest_index];
+    		closest_value = u_wind_in[interpolation_indices_vector[h_index][j]][closest_index];
     		
     		other_index = closest_index - 1;
-    		if (z_coords_game_wind[vector_index] < z_coords_input_model[interpolation_indices_vector[i][j]][closest_index])
+    		if (z_coords_game_wind[vector_index] < z_coords_input_model[interpolation_indices_vector[h_index][j]][closest_index])
     		{
     			other_index = closest_index + 1;
     		}
@@ -420,25 +423,25 @@ int main(int argc, char *argv[])
     		}
     		
     		// the value at the second point used for vertical interpolation
-    		other_value = u_wind_in[interpolation_indices_vector[i][j]][other_index];
+    		other_value = u_wind_in[interpolation_indices_vector[h_index][j]][other_index];
     		
     		// computing the vertical gradient of u in the input model
     		df = closest_value - other_value;
-    		dz = z_coords_input_model[interpolation_indices_vector[i][j]][closest_index] - z_coords_input_model[interpolation_indices_vector[i][j]][other_index];
+    		dz = z_coords_input_model[interpolation_indices_vector[h_index][j]][closest_index] - z_coords_input_model[interpolation_indices_vector[h_index][j]][other_index];
     		gradient = df/dz;
     		
-    		delta_z = z_coords_game_wind[vector_index] - z_coords_input_model[interpolation_indices_vector[i][j]][closest_index];
+    		delta_z = z_coords_game_wind[vector_index] - z_coords_input_model[interpolation_indices_vector[h_index][j]][closest_index];
     		
-    		u_local += interpolation_weights_vector[i][j]*(closest_value + gradient*delta_z);
+    		u_local += interpolation_weights_vector[h_index][j]*(closest_value + gradient*delta_z);
     		
     		// vertical interpolation of v
-    		closest_value = v_wind_in[interpolation_indices_vector[i][j]][closest_index];
-    		other_value = v_wind_in[interpolation_indices_vector[i][j]][other_index];
+    		closest_value = v_wind_in[interpolation_indices_vector[h_index][j]][closest_index];
+    		other_value = v_wind_in[interpolation_indices_vector[h_index][j]][other_index];
     		// computing the vertical gradient of v in the input model
     		df = closest_value - other_value;
     		gradient = df/dz;
     		
-    		v_local += interpolation_weights_vector[i][j]*(closest_value + gradient*delta_z);
+    		v_local += interpolation_weights_vector[h_index][j]*(closest_value + gradient*delta_z);
     	}
     	
     	// projection onto the local normal

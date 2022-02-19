@@ -7,7 +7,7 @@ model_home_directory=/home/max/code/GAME
 orography_id=1
 background_file=/home/max/code/GAME/standard_oro1.nc
 real2game_root_dir=/home/max/code/real2GAME
-omp_num_threads=2
+omp_num_threads=1
 
 # END OF USUAL INPUT SECTION
 

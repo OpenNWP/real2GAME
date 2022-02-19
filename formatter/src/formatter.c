@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     strcpy(real2game_root_dir, argv[5]);
     
 	// Allocating the memory for the final result.
-	double *z_height_amsl_single_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *z_height_amsl_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	
 	// single-layer arrays from grib
 	double *temperature_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 		if (err != 0)
 			ECCERR(err);
 		NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
-		if ((retval = codes_get_double_array(handle, "values", &z_height_amsl_single_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
+		if ((retval = codes_get_double_array(handle, "values", &z_height_amsl_one_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
 		fclose(ecc_file);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 		#pragma omp parallel for
 		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
 		{
-			z_height_amsl[i][level_index] = z_height_amsl_single_layer[i];
+			z_height_amsl[i][level_index] = z_height_amsl_one_layer[i];
 		}
 		
 	   	// reading the temperature
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 		}
 		
 	}
-	free(z_height_amsl_single_layer);
+	free(z_height_amsl_one_layer);
 	free(temperature_one_layer);
 	free(spec_hum_one_layer);
 	free(u_one_layer);
@@ -274,15 +274,13 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "sst_index", NO_OF_SST_POINTS, &sst_dimid)))
         NCERR(retval);
-    // Defining the variables."interpol_index", NO_OF_AVG_POINTS, &avg_dimid)))
-        NCERR(retval);
     dim_vector[0] = h_dimid;
     dim_vector[1] = v_dimid;
-    if ((retval = nc_def_var(NC_DOUBLE, "z_surface", NC_DOUBLE, 1, &h_dimid, &z_surf_id)))
+    if ((retval = nc_def_var(ncid, "z_surface", NC_DOUBLE, 1, &h_dimid, &z_surf_id)))
         NCERR(retval);
-    if ((retval = nc_def_var(NC_DOUBLE, "pressure_surface", NC_DOUBLE, 1, &h_dimid, &sp_id)))
+    if ((retval = nc_def_var(ncid, "pressure_surface", NC_DOUBLE, 1, &h_dimid, &sp_id)))
         NCERR(retval);
-    if ((retval = nc_def_var(NC_DOUBLE, "z_height", NC_DOUBLE, 2, dim_vector, &z_id)))
+    if ((retval = nc_def_var(ncid, "z_height", NC_DOUBLE, 2, dim_vector, &z_id)))
         NCERR(retval);
     if ((retval = nc_def_var(ncid, "temperature", NC_DOUBLE, 2, dim_vector, &t_id)))
         NCERR(retval);
