@@ -6,7 +6,7 @@
 model_home_directory=/home/max/code/GAME
 orography_id=1
 background_file=/home/max/code/GAME/standard_oro1.nc
-real2game_home_dir=/home/max/code/real2GAME
+real2game_root_dir=/home/max/code/real2GAME
 omp_num_threads=2
 
 # END OF USUAL INPUT SECTION
@@ -44,7 +44,7 @@ echo "This is real2GAME."
 
 # executing the downloader ...
 echo "Starting to download initial data ..."
-$real2game_home_dir/downloader/run.sh $real2game_home_dir $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string
+$real2game_root_dir/downloader/run.sh $real2game_root_dir $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string
 echo "Collection of initial data completed."
 
 # reformatting
