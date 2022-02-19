@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
     		// horizontal component of the interpolation
     		+= interpolation_weights_scalar[i][j]*p_surf_in[interpolation_indices_scalar[i][j]]
     		// vertical component of the interpolation according to the barometric height formula
-    		*exp(-(z_coords_game[i] - z_surf_in[interpolation_indices_scalar[i][j]])/SCALE_HEIGHT);
+    		*exp(-(z_coords_game[NO_OF_SCALARS - NO_OF_SCALARS_H + i] - z_surf_in[interpolation_indices_scalar[i][j]])/SCALE_HEIGHT);
     	}
     }
     free(z_coords_game);
