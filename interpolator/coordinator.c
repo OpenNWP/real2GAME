@@ -51,10 +51,6 @@ int main(int argc, char *argv[])
     double *directions = malloc(NO_OF_VECTORS_H*sizeof(double));
     double *z_coords_game_wind = malloc(NO_OF_VECTORS*sizeof(double));
     double *gravity_potential_game = malloc(NO_OF_SCALARS*sizeof(double));
-    double *normal_distance = malloc(NO_OF_VECTORS*sizeof(double));
-    int *from_index = malloc(NO_OF_VECTORS_H*sizeof(int));
-    int *to_index = malloc(NO_OF_VECTORS_H*sizeof(int));
-    int *adjacent_vector_indices_h = malloc(6*NO_OF_SCALARS_H*sizeof(int));
     // Reading the grid properties.
     int ncid_grid, retval;
     char GEO_PROP_FILE_PRE[200];
@@ -77,10 +73,6 @@ int main(int argc, char *argv[])
     if ((retval = nc_inq_varid(ncid_grid, "z_vector", &z_coords_game_wind_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid_grid, "gravity_potential", &gravity_potential_game_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "adjacent_vector_indices_h", &adjacent_vector_indices_h_id)))
-        NCERR(retval);
-    if ((retval = nc_get_var_int(ncid_grid, adjacent_vector_indices_h_id, &adjacent_vector_indices_h[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid_grid, latitudes_game_id, &latitudes_game[0])))
         NCERR(retval);
@@ -167,28 +159,28 @@ int main(int argc, char *argv[])
 	printf("Background state read.\n");	
 	
 	// Allocating the memory for the observations.
-	double *z_coords_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
+	double (*z_coords_input_model)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
+	double (*temperature_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
     
-    char OBSERVATIONS_FILE_PRE[200];
-    sprintf(OBSERVATIONS_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", real2game_root_dir, year_string, month_string, day_string, hour_string);
-    char OBSERVATIONS_FILE[strlen(OBSERVATIONS_FILE_PRE) + 1];
-    strcpy(OBSERVATIONS_FILE, OBSERVATIONS_FILE_PRE);
-	printf("Observations file: %s\n", OBSERVATIONS_FILE);
+    char input_file_pre[200];
+    sprintf(input_file_pre, "%s/input/obs_%s%s%s%s.nc", real2game_root_dir, year_string, month_string, day_string, hour_string);
+    char input_file[strlen(input_file_pre) + 1];
+    strcpy(input_file, input_file_pre);
+	printf("Observations file: %s\n", input_file);
     
     // Reading the observations.
 	printf("Reading observations ...\n");
-    if ((retval = nc_open(OBSERVATIONS_FILE, NC_NOWRITE, &ncid)))
+    if ((retval = nc_open(input_file, NC_NOWRITE, &ncid)))
         NCERR(retval);
-    int z_coords_id, obervations_id;
+    int z_coords_id, t_in_id;
     // Defining the variables.
-    if ((retval = nc_inq_varid(ncid, "z_coords_obs", &z_coords_id)))
+    if ((retval = nc_inq_varid(ncid, "z_height", &z_coords_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "observations_vector", &obervations_id)))
+    if ((retval = nc_inq_varid(ncid, "temperature", &t_in_id)))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, z_coords_id, &z_coords_obs[0])))
+    if ((retval = nc_get_var_double(ncid, z_coords_id, &z_coords_input_model[0][0])))
         NCERR(retval);  
-    if ((retval = nc_get_var_double(ncid, obervations_id, &observations_vector[0])))
+    if ((retval = nc_get_var_double(ncid, t_in_id, &temperature_in[0][0])))
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
@@ -206,9 +198,11 @@ int main(int argc, char *argv[])
 	// dry data interpolation is finished at this point
     
     // These are the arrays for the result of the interpolation process.
+    double *pressure_surface_out = malloc(NO_OF_SCALARS_H*sizeof(double));
     double *density_dry = malloc(NO_OF_SCALARS*sizeof(double));
     double *wind = malloc(NO_OF_VECTORS*sizeof(double));
     double *exner = malloc(NO_OF_SCALARS*sizeof(double));
+    double *temperature = malloc(NO_OF_SCALARS*sizeof(double));
     
     // density is determined out of the hydrostatic equation
     int layer_index, h_index;
@@ -217,21 +211,20 @@ int main(int argc, char *argv[])
     {
     	layer_index = i/NO_OF_SCALARS_H;
     	h_index = i - layer_index*NO_OF_SCALARS_H;
-    	// at the lowest layer the density is part of the model_vector_dry
     	if (layer_index == NO_OF_LAYERS - 1)
     	{
-        	density_dry[i] = model_vector_dry[NO_OF_SCALARS + h_index];
-        	exner[i] = pow((density_dry[i]*R_D*model_vector_dry[i])/P_0, R_D/C_D_P);
+        	density_dry[i] = pressure_surface_out[h_index]/(R_D*temperature[i]);
+        	exner[i] = pow((density_dry[i]*R_D*temperature[i])/P_0, R_D/C_D_P);
         }
         else
         {
 			// solving a quadratic equation for the Exner pressure
-			b = -0.5*exner[i + NO_OF_SCALARS_H]/model_vector_dry[i + NO_OF_SCALARS_H]
-			*(model_vector_dry[i] - model_vector_dry[i + NO_OF_SCALARS_H]
+			b = -0.5*exner[i + NO_OF_SCALARS_H]/temperature[i + NO_OF_SCALARS_H]
+			*(temperature[i] - temperature[i + NO_OF_SCALARS_H]
 			+ 2.0/C_D_P*(gravity_potential_game[i] - gravity_potential_game[i + NO_OF_SCALARS_H]));
-			c = pow(exner[i + NO_OF_SCALARS_H], 2.0)*model_vector_dry[i]/model_vector_dry[i + NO_OF_SCALARS_H];
+			c = pow(exner[i + NO_OF_SCALARS_H], 2.0)*temperature[i]/temperature[i + NO_OF_SCALARS_H];
 			exner[i] = b + pow((pow(b, 2.0) + c), 0.5);
-        	density_dry[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*model_vector_dry[i]);
+        	density_dry[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*temperature[i]);
         }
     }
 	free(gravity_potential_game);
@@ -266,7 +259,7 @@ int main(int argc, char *argv[])
 	------------------------
 	*/
 	printf("Interpolating the SST to the model grid ...\n");
-	double *sst = malloc(NO_OF_SCALARS_H*sizeof(double));
+	double *sst_out = malloc(NO_OF_SCALARS_H*sizeof(double));
 	int min_index;
 	#pragma omp parallel for private(min_index)
 	for (int i = 0; i < NO_OF_SCALARS_H; ++i)
@@ -277,7 +270,7 @@ int main(int argc, char *argv[])
     		distance_vector[j] = calculate_distance_h(latitudes_sst[j], longitudes_sst[j], latitudes_game[i], longitudes_game[i], 1);
     	}
 		min_index = find_min_index(distance_vector, NO_OF_SST_POINTS);
-		sst[i] = observations_vector[min_index];
+		sst_out[i] = sst_in[min_index];
 		free(distance_vector);
 	}
 	free(latitudes_sst);
@@ -314,13 +307,13 @@ int main(int argc, char *argv[])
 		}
 		// setting the temperatures of the result
 		// assuming an LTE (local thermodynamic equilibrium)
-		temperatures[i] = model_vector_dry[i];
-		temperatures[NO_OF_SCALARS + i] = model_vector_dry[i];
-		temperatures[2*NO_OF_SCALARS + i] = model_vector_dry[i];
-		temperatures[3*NO_OF_SCALARS + i] = model_vector_dry[i];
-		temperatures[4*NO_OF_SCALARS + i] = model_vector_dry[i];
+		temperatures[i] = temperature[i];
+		temperatures[NO_OF_SCALARS + i] = temperature[i];
+		temperatures[2*NO_OF_SCALARS + i] = temperature[i];
+		temperatures[3*NO_OF_SCALARS + i] = temperature[i];
+		temperatures[4*NO_OF_SCALARS + i] = temperature[i];
     }
-    free(model_vector_dry);
+    free(temperature);
     free(density_dry);
 	free(model_vector_moist);
 	free(densities_background);
@@ -337,10 +330,10 @@ int main(int argc, char *argv[])
     	}
     	else
     	{
-    		wind[i] = model_vector_wind[layer_index*NO_OF_VECTORS_H + h_index - NO_OF_SCALARS_H];
+    		wind[i] = wind_h_out[layer_index*NO_OF_VECTORS_H + h_index - NO_OF_SCALARS_H];
     	}
     }
-    free(model_vector_wind);
+    free(abs_humidity_game);
     free(wind_background);
     
     /*
@@ -406,7 +399,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, wind_id, &wind[0])))
         NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, sst_id, &sst[0])))
+    if ((retval = nc_put_var_double(ncid, sst_id, &sst_out[0])))
         NCERR(retval);
     if (tke_avail == 1)
     {
@@ -426,7 +419,7 @@ int main(int argc, char *argv[])
 	free(densities);
 	free(temperatures);
 	free(wind);
-	free(sst);
+	free(sst_out);
 	free(tke);
 	free(t_soil);
 	
