@@ -503,7 +503,7 @@ int main(int argc, char *argv[])
 		densities[2*NO_OF_SCALARS + i] = densities_background[2*NO_OF_SCALARS + i];
 		densities[3*NO_OF_SCALARS + i] = densities_background[3*NO_OF_SCALARS + i];
 		densities[4*NO_OF_SCALARS + i] = density_dry_out[i];
-		densities[5*NO_OF_SCALARS + i] = spec_hum_out[i]/(1 - spec_hum_out[i])*density_dry_out[i];
+		densities[5*NO_OF_SCALARS + i] = spec_hum_out[i]/(1.0 - spec_hum_out[i])*density_dry_out[i];
 		if (densities[5*NO_OF_SCALARS + i] < 0)
 		{
 			densities[5*NO_OF_SCALARS + i] = 0;
