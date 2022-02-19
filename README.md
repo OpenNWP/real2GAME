@@ -19,4 +19,5 @@ The utilities in this repository create initial conditions for [GAME](https://gi
 
 	git clone https://github.com/OpenNWP/real2GAME.git
 	cd real2GAME
+	./create_directories.sh
 	./compile.sh
