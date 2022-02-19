@@ -50,7 +50,6 @@ int main(int argc, char *argv[])
     sprintf(LAT_OBS_FILE_PRE , "%s/interpolation_creator/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
 	char LAT_OBS_FILE[strlen(LAT_OBS_FILE_PRE) + 1];
 	strcpy(LAT_OBS_FILE, LAT_OBS_FILE_PRE);
-    
 	FILE *ECC_FILE;
 	ECC_FILE = fopen(LAT_OBS_FILE, "r");
 	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
@@ -93,14 +92,14 @@ int main(int argc, char *argv[])
     // reading the horizontal coordinates of the grid of GAME
     double *latitudes_game = malloc(NO_OF_SCALARS_H*sizeof(double));
     double *longitudes_game = malloc(NO_OF_SCALARS_H*sizeof(double));
-    double *latitudes_game_wind = malloc(NO_OF_SCALARS_H*sizeof(double));
-    double *longitudes_game_wind = malloc(NO_OF_SCALARS_H*sizeof(double));
+    double *latitudes_game_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
+    double *longitudes_game_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
     char GEO_PROP_FILE_PRE[200];
     sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, NO_OF_LAYERS, ORO_ID);
     char GEO_PROP_FILE[strlen(GEO_PROP_FILE_PRE) + 1];
     strcpy(GEO_PROP_FILE, GEO_PROP_FILE_PRE);
 	printf("Grid file: %s\n", GEO_PROP_FILE);
-	printf("Reading grid file ...\n");
+	printf("Reading grid file of GAME ...\n");
 	int ncid_grid;
     if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
         NCERR(retval);
@@ -124,7 +123,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_close(ncid_grid)))
         NCERR(retval);
-	printf("Grid file read.\n");
+	printf("Grid file of GAME read.\n");
     
 	free(latitudes_model);
 	free(longitudes_model);

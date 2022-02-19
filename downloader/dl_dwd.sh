@@ -11,16 +11,6 @@ url=$url_base"/"$analysis_hour"/hsurf/"$filename
 wget --no-verbose --directory-prefix=$real2game_root_dir/input $url
 bzip2 -d $real2game_root_dir/input/$filename
 
-# horizontal coordinates of the cells
-filename="icon_global_icosahedral_time-invariant_"$analysis_year$analysis_month$analysis_day$analysis_hour"_CLON.grib2.bz2"
-url=$url_base"/"$analysis_hour"/clon/"$filename
-wget --no-verbose --directory-prefix=$real2game_root_dir/input $url
-bzip2 -d $real2game_root_dir/input/$filename
-filename="icon_global_icosahedral_time-invariant_"$analysis_year$analysis_month$analysis_day$analysis_hour"_CLAT.grib2.bz2"
-url=$url_base"/"$analysis_hour"/clat/"$filename
-wget --no-verbose --directory-prefix=$real2game_root_dir/input $url
-bzip2 -d $real2game_root_dir/input/$filename
-
 # model level heights
 for level in ${levels_vector[@]}
 do
