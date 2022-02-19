@@ -163,6 +163,11 @@ int main(int argc, char *argv[])
 	double (*spec_hum_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*u_wind_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*v_wind_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
+	double *latitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
+	double *longitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
+	double *sst_in = malloc(NO_OF_SST_POINTS*sizeof(double));
+	double *z_surf_in = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *p_surf_in = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
     
     char input_file_pre[200];
     sprintf(input_file_pre, "%s/input/obs_%s%s%s%s.nc", real2game_root_dir, year_string, month_string, day_string, hour_string);
@@ -174,8 +179,12 @@ int main(int argc, char *argv[])
 	printf("Reading input ...\n");
     if ((retval = nc_open(input_file, NC_NOWRITE, &ncid)))
         NCERR(retval);
-    int z_coords_id, t_in_id, spec_hum_id, u_id, v_id;
+    int sp_id, z_surf_id, z_coords_id, t_in_id, spec_hum_id, u_id, v_id, lat_sst_id, lon_sst_id, sst_id;
     // Defining the variables.
+    if ((retval = nc_inq_varid(ncid, "z_surface", &z_surf_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "pressure_surface", &sp_id)))
+        NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "z_height", &z_coords_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "temperature", &t_in_id)))
@@ -186,6 +195,16 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "v_wind", &v_id)))
         NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "lat_sst", &lat_sst_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "lon_sst", &lon_sst_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "sst", &sst_id)))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, z_surf_id, &p_surf_in[0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, sp_id, &z_surf_in[0])))
+        NCERR(retval);
     if ((retval = nc_get_var_double(ncid, z_coords_id, &z_coords_input_model[0][0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, t_in_id, &temperature_in[0][0])))
@@ -195,6 +214,12 @@ int main(int argc, char *argv[])
     if ((retval = nc_get_var_double(ncid, u_id, &u_wind_in[0][0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, v_id, &v_wind_in[0][0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, lat_sst_id, &latitudes_sst[0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, lon_sst_id, &longitudes_sst[0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, sst_id, &sst_in[0])))
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
@@ -209,6 +234,8 @@ int main(int argc, char *argv[])
 	
 	printf("Starting the dry interpolation ...\n");
 	
+	free(z_surf_in);
+	free(p_surf_in);
 	// dry data interpolation is finished at this point
     
     // These are the arrays for the result of the interpolation process.
@@ -289,9 +316,9 @@ int main(int argc, char *argv[])
 	}
 	free(latitudes_sst);
 	free(longitudes_sst);
+	free(sst_in);
 	free(latitudes_game);
 	free(longitudes_game);
-	free(sst_in);
 	
 	printf("Interpolation of the SST completed.\n");
 

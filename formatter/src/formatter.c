@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
 	char OUTPUT_FILE[strlen(OUTPUT_FILE_PRE) + 1];
 	strcpy(OUTPUT_FILE, OUTPUT_FILE_PRE);
     
-    int ncid, h_dimid, v_dimid, sst_dimid, t_id, spec_hum_id, sp_id, z_id, z_surf_id, u_id, v_id, lat_sst_id, lon_sst_id, sst_id;
+    int ncid, h_dimid, v_dimid, z_surf_id, sp_id, sst_dimid, t_id, spec_hum_id, z_id, u_id, v_id, lat_sst_id, lon_sst_id, sst_id;
     int dim_vector[2];
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
@@ -278,9 +278,9 @@ int main(int argc, char *argv[])
         NCERR(retval);
     dim_vector[0] = h_dimid;
     dim_vector[1] = v_dimid;
-    if ((retval = nc_def_var(NC_DOUBLE, "pressure_surface", NC_DOUBLE, 1, &h_dimid, &sp_id)))
-        NCERR(retval);
     if ((retval = nc_def_var(NC_DOUBLE, "z_surface", NC_DOUBLE, 1, &h_dimid, &z_surf_id)))
+        NCERR(retval);
+    if ((retval = nc_def_var(NC_DOUBLE, "pressure_surface", NC_DOUBLE, 1, &h_dimid, &sp_id)))
         NCERR(retval);
     if ((retval = nc_def_var(NC_DOUBLE, "z_height", NC_DOUBLE, 2, dim_vector, &z_id)))
         NCERR(retval);
@@ -301,11 +301,11 @@ int main(int argc, char *argv[])
     if ((retval = nc_enddef(ncid)))
         NCERR(retval);
     // Setting the variables.
+	if ((retval = nc_put_var_double(ncid, z_surf_id, &surface_height[0])))
+	  	NCERR(retval);
 	if ((retval = nc_put_var_double(ncid, sp_id, &pressure_surface[0])))
 	  	NCERR(retval);
 	if ((retval = nc_put_var_double(ncid, z_id, &z_height_amsl[0][0])))
-	  	NCERR(retval);
-	if ((retval = nc_put_var_double(ncid, z_surf_id, &surface_height[0])))
 	  	NCERR(retval);
 	if ((retval = nc_put_var_double(ncid, t_id, &temperature[0][0])))
 	  	NCERR(retval);
