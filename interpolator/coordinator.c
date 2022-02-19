@@ -254,32 +254,69 @@ int main(int argc, char *argv[])
     ----------------------------------
     */
 	
-	printf("Starting the dry interpolation ...\n");
-	
-	// dry data interpolation is finished at this point
+	printf("Starting the interpolation of scalar quantities ...\n");
     
     // These are the arrays for the result of the interpolation process.
     double *temperature_out = calloc(1, NO_OF_SCALARS*sizeof(double));
 	double *spec_hum_out = calloc(1, NO_OF_SCALARS*sizeof(double));
 	
     int layer_index, h_index, closest_index, other_index;
-    double closest_weight, other_weight;
-    #pragma omp parallel for private(layer_index, h_index, closest_index, other_index, closest_weight, other_weight)
+    double closest_value, other_value, df, dz, gradient, delta_z;
+    #pragma omp parallel for private(layer_index, h_index, closest_value, other_value, df, dz, gradient, delta_z)
     for (int i = 0; i < NO_OF_SCALARS; ++i)
     {
     	layer_index = i/NO_OF_SCALARS_H;
     	h_index = i - layer_index*NO_OF_SCALARS_H;
+    	
+    	// loop over all points over which the averaging is executed
     	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
     	{
-    		// computing vertical interpolation indices and weights
+    		// computing linear vertical interpolation
+    		// vertical distance vector
+    		double vector_to_minimize[NO_OF_LEVELS_INPUT];
+    		for (int k = 0; k < NO_OF_LEVELS_INPUT; ++k)
+    		{
+    			vector_to_minimize[k] = fabs(z_coords_game[i]
+    			- z_coords_input_model[interpolation_indices_scalar[i][j]][k]);
+    		}
+    		// closest vertical index
+    		closest_index = find_min_index(vector_to_minimize, NO_OF_LEVELS_INPUT);
+    		// value at the closest vertical index
+    		closest_value = temperature_in[interpolation_indices_scalar[i][j]][closest_index];
     		
+    		other_index = closest_index - 1;
+    		if (z_coords_game[i] < z_coords_input_model[interpolation_indices_scalar[i][j]][closest_index])
+    		{
+    			other_index = closest_index + 1;
+    		}
+    		// avoiding array excess
+    		if (other_index == NO_OF_LEVELS_INPUT)
+    		{
+    			other_index = closest_index - 1;
+    		}
     		
-    		// temperature
-    		temperature_out[i] += interpolation_weights_scalar[i][j]
-    		*(closest_weight*temperature_in[interpolation_indices_scalar[i][j]][closest_index] + other_weight*temperature_in[interpolation_indices_scalar[i][j]][other_index]);
+    		// the value at the second point used for vertical interpolation
+    		other_value = temperature_in[interpolation_indices_scalar[i][j]][other_index];
+    		
+    		// computing the vertical gradient of u in the input model
+    		df = closest_value - other_value;
+    		dz = z_coords_input_model[interpolation_indices_scalar[i][j]][closest_index] - z_coords_input_model[interpolation_indices_scalar[i][j]][other_index];
+    		gradient = df/dz;
+    		
+    		delta_z = z_coords_game[i] - z_coords_input_model[interpolation_indices_scalar[i][j]][closest_index];
+    		
+    		// vertical interpolation of the temperature
+    		temperature_out[i] += interpolation_weights_scalar[i][j]*(closest_value + delta_z*gradient);
+    		
+    		// vertical interpolation of the specific humidity
+    		closest_value = spec_hum_in[interpolation_indices_scalar[i][j]][closest_index];
+    		other_value = spec_hum_in[interpolation_indices_scalar[i][j]][other_index];
+    		// computing the vertical gradient of the specific humidity in the input model
+    		df = closest_value - other_value;
+    		gradient = df/dz;
+    		
     		// specific humidity
-    		spec_hum_out[i] += interpolation_weights_scalar[i][j]
-    		*(closest_weight*spec_hum_in[interpolation_indices_scalar[i][j]][closest_index] + other_weight*spec_hum_in[interpolation_indices_scalar[i][j]][other_index]);
+    		spec_hum_out[i] += interpolation_weights_scalar[i][j]*(closest_value + delta_z*gradient);
     	}
     }
     
@@ -332,7 +369,7 @@ int main(int argc, char *argv[])
 	// the Exner pressure was only needed to integrate the hydrostatic equation
     free(exner);
     // end of the interpolation of the dry thermodynamic state
-	printf("Dry interpolation completed.\n");
+	printf("Interpolation of scalar quantities completed.\n");
 	
 	/*
 	WIND INTERPOLATION
@@ -341,26 +378,69 @@ int main(int argc, char *argv[])
 	
 	printf("Starting the wind interpolation ...\n");
     double *wind_out = calloc(1, NO_OF_VECTORS*sizeof(double));
+    int vector_index;
     double u_local, v_local;
-    # pragma omp parallel for private(h_index, layer_index, closest_index, other_index, closest_weight, other_weight, u_local, v_local)
+    // loop over all horizontal vector points
+    # pragma omp parallel for private(h_index, layer_index, vector_index, closest_index, other_index, closest_value, other_value, df, dz, gradient, delta_z, u_local, v_local)
     for (int i = 0; i < NO_OF_H_VECTORS; ++i)
     {
     	layer_index = i/NO_OF_VECTORS_H;
     	h_index = i - layer_index*NO_OF_VECTORS_H;
+   		vector_index = NO_OF_SCALARS_H + layer_index*NO_OF_VECTORS_PER_LAYER + h_index;
+   		
    		u_local = 0.0;
    		v_local = 0.0;
+   		// loop over all horizontal points that are used for averaging
     	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
     	{
-    		// computing vertical interpolation indices and weights
+    		// computing linear vertical interpolation
+    		// vertical distance vector
+    		double vector_to_minimize[NO_OF_LEVELS_INPUT];
+    		for (int k = 0; k < NO_OF_LEVELS_INPUT; ++k)
+    		{
+    			vector_to_minimize[k] = fabs(z_coords_game_wind[vector_index]
+    			- z_coords_input_model[interpolation_indices_vector[i][j]][k]);
+    		}
+    		// closest vertical index
+    		closest_index = find_min_index(vector_to_minimize, NO_OF_LEVELS_INPUT);
+    		// value at the closest vertical index
+    		closest_value = u_wind_in[interpolation_indices_vector[i][j]][closest_index];
     		
+    		other_index = closest_index - 1;
+    		if (z_coords_game_wind[vector_index] < z_coords_input_model[interpolation_indices_vector[i][j]][closest_index])
+    		{
+    			other_index = closest_index + 1;
+    		}
+    		// avoiding array excess
+    		if (other_index == NO_OF_LEVELS_INPUT)
+    		{
+    			other_index = closest_index - 1;
+    		}
     		
-    		u_local += interpolation_weights_vector[i][j]*
-    		(closest_weight*u_wind_in[interpolation_indices_vector[i][j]][closest_index] + other_weight*u_wind_in[interpolation_indices_vector[i][j]][other_index]);
-    		v_local += interpolation_weights_vector[i][j]*
-    		(closest_weight*v_wind_in[interpolation_indices_vector[i][j]][closest_index] + other_weight*v_wind_in[interpolation_indices_vector[i][j]][other_index]);
+    		// the value at the second point used for vertical interpolation
+    		other_value = u_wind_in[interpolation_indices_vector[i][j]][other_index];
+    		
+    		// computing the vertical gradient of u in the input model
+    		df = closest_value - other_value;
+    		dz = z_coords_input_model[interpolation_indices_vector[i][j]][closest_index] - z_coords_input_model[interpolation_indices_vector[i][j]][other_index];
+    		gradient = df/dz;
+    		
+    		delta_z = z_coords_game_wind[vector_index] - z_coords_input_model[interpolation_indices_vector[i][j]][closest_index];
+    		
+    		u_local += interpolation_weights_vector[i][j]*(closest_value + gradient*delta_z);
+    		
+    		// vertical interpolation of v
+    		closest_value = v_wind_in[interpolation_indices_vector[i][j]][closest_index];
+    		other_value = v_wind_in[interpolation_indices_vector[i][j]][other_index];
+    		// computing the vertical gradient of v in the input model
+    		df = closest_value - other_value;
+    		gradient = df/dz;
+    		
+    		v_local += interpolation_weights_vector[i][j]*(closest_value + gradient*delta_z);
     	}
+    	
     	// projection onto the local normal
-		wind_out[NO_OF_SCALARS_H + layer_index*NO_OF_VECTORS_PER_LAYER + h_index] = u_local*cos(directions[h_index]) + v_local*sin(directions[h_index]);
+		wind_out[vector_index] = u_local*cos(directions[h_index]) + v_local*sin(directions[h_index]);
     }
 	// the directions of the normal vectors are not needed any further
 	free(directions);
