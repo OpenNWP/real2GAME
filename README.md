@@ -6,7 +6,7 @@ The utilities in this repository create initial conditions for [GAME](https://gi
 
 ### Dependencies
 
-* [geos95](https://github.com/OpenNWP/geos95)
+* [GAME](https://github.com/OpenNWP/GAME)
 * netcdf library (Ubuntu: `sudo apt-get install libnetcdf-dev`)
 * bzip2 (Ubuntu: `sudo apt-get install bzip2`)
 * basic calculator (Ubuntu: `sudo apt-get install bc`)
