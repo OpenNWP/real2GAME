@@ -20,10 +20,10 @@ This file coordinates the data interpolation process.
 #define SCALE_HEIGHT 8000.0
 #define P_0 100000
 #define R_D 287.057811
+#define C_D_P 1005.0
 
 int main(int argc, char *argv[])
 {
-	double C_D_P = 1005.0;
     char year_string[strlen(argv[1]) + 1];
     strcpy(year_string, argv[1]);
     char month_string[strlen(argv[2]) + 1];
@@ -43,14 +43,14 @@ int main(int argc, char *argv[])
 	printf("Background state file: %s\n", BACKGROUND_STATE_FILE);
     
     // Allocating memory for the grid properties.
-    double *latitudes_model = malloc(NO_OF_SCALARS_H*sizeof(double));
-    double *longitudes_model = malloc(NO_OF_SCALARS_H*sizeof(double));
-    double *z_coords_model = malloc(NO_OF_SCALARS*sizeof(double));
-    double *latitudes_model_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
-    double *longitudes_model_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
+    double *latitudes_game = malloc(NO_OF_SCALARS_H*sizeof(double));
+    double *longitudes_game = malloc(NO_OF_SCALARS_H*sizeof(double));
+    double *z_coords_game = malloc(NO_OF_SCALARS*sizeof(double));
+    double *latitudes_game_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
+    double *longitudes_game_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
     double *directions = malloc(NO_OF_VECTORS_H*sizeof(double));
-    double *z_coords_model_wind = malloc(NO_OF_VECTORS*sizeof(double));
-    double *gravity_potential_model = malloc(NO_OF_SCALARS*sizeof(double));
+    double *z_coords_game_wind = malloc(NO_OF_VECTORS*sizeof(double));
+    double *gravity_potential_game = malloc(NO_OF_SCALARS*sizeof(double));
     double *normal_distance = malloc(NO_OF_VECTORS*sizeof(double));
     int *from_index = malloc(NO_OF_VECTORS_H*sizeof(int));
     int *to_index = malloc(NO_OF_VECTORS_H*sizeof(int));
@@ -65,55 +65,34 @@ int main(int argc, char *argv[])
 	printf("Reading grid file ...\n");
     if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
         NCERR(retval);
-    int latitudes_model_id, latitudes_model_wind_id, longitudes_model_id, longitudes_model_wind_id, z_coords_model_id,
-    z_coords_model_wind_id, gravity_potential_model_id, normal_distance_id, from_index_id, to_index_id, adjacent_vector_indices_h_id, directions_id;
-    if ((retval = nc_inq_varid(ncid_grid, "latitude_scalar", &latitudes_model_id)))
+    int latitudes_game_id, longitudes_game_id, z_coords_game_id, z_coords_game_wind_id, gravity_potential_game_id, adjacent_vector_indices_h_id, directions_id;
+    if ((retval = nc_inq_varid(ncid_grid, "latitude_scalar", &latitudes_game_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "longitude_scalar", &longitudes_model_id)))
+    if ((retval = nc_inq_varid(ncid_grid, "longitude_scalar", &longitudes_game_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "z_scalar", &z_coords_model_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "latitude_vector", &latitudes_model_wind_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "longitude_vector", &longitudes_model_wind_id)))
+    if ((retval = nc_inq_varid(ncid_grid, "z_scalar", &z_coords_game_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid_grid, "direction", &directions_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "z_vector", &z_coords_model_wind_id)))
+    if ((retval = nc_inq_varid(ncid_grid, "z_vector", &z_coords_game_wind_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "gravity_potential", &gravity_potential_model_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "normal_distance", &normal_distance_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "from_index", &from_index_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "to_index", &to_index_id)))
+    if ((retval = nc_inq_varid(ncid_grid, "gravity_potential", &gravity_potential_game_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid_grid, "adjacent_vector_indices_h", &adjacent_vector_indices_h_id)))
         NCERR(retval);
-    if ((retval = nc_get_var_int(ncid_grid, from_index_id, &from_index[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_int(ncid_grid, to_index_id, &to_index[0])))
-        NCERR(retval);
     if ((retval = nc_get_var_int(ncid_grid, adjacent_vector_indices_h_id, &adjacent_vector_indices_h[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, latitudes_model_id, &latitudes_model[0])))
+    if ((retval = nc_get_var_double(ncid_grid, latitudes_game_id, &latitudes_game[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, longitudes_model_id, &longitudes_model[0])))
+    if ((retval = nc_get_var_double(ncid_grid, longitudes_game_id, &longitudes_game[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, z_coords_model_id, &z_coords_model[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, latitudes_model_wind_id, &latitudes_model_wind[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, longitudes_model_wind_id, &longitudes_model_wind[0])))
+    if ((retval = nc_get_var_double(ncid_grid, z_coords_game_id, &z_coords_game[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid_grid, directions_id, &directions[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, z_coords_model_wind_id, &z_coords_model_wind[0])))
+    if ((retval = nc_get_var_double(ncid_grid, z_coords_game_wind_id, &z_coords_game_wind[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, gravity_potential_model_id, &gravity_potential_model[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, normal_distance_id, &normal_distance[0])))
+    if ((retval = nc_get_var_double(ncid_grid, gravity_potential_game_id, &gravity_potential_game[0])))
         NCERR(retval);
     if ((retval = nc_close(ncid_grid)))
         NCERR(retval);
@@ -185,29 +164,9 @@ int main(int argc, char *argv[])
     }
     if ((retval = nc_close(ncid)))
         NCERR(retval);
-	printf("Background state read.\n");
-
-	// saving the relevant part of the background state in one array
-	double *background_dry = malloc(NO_OF_MODEL_DOFS_DRY*sizeof(double));
-    #pragma omp parallel for
-	for (int i = 0; i < NO_OF_MODEL_DOFS_DRY; ++i)
-	{
-		// temperature of the gas phase of the background state
-		if (i < NO_OF_SCALARS)
-		{
-			background_dry[i] = temperatures_background[4*NO_OF_SCALARS + i];
-		}
-		// dry air density in the lowest layer of the background state
-		else
-		{
-			background_dry[i] = densities_background[4*NO_OF_SCALARS + i - NO_OF_SCALARS_H];
-		}
-	}
-    free(temperatures_background);	
+	printf("Background state read.\n");	
 	
 	// Allocating the memory for the observations.
-	double *latitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
-	double *longitude_vector_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	double *z_coords_obs = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
 	double *observations_vector = malloc(NO_OF_CHOSEN_OBSERVATIONS*sizeof(double));
     
@@ -221,19 +180,11 @@ int main(int argc, char *argv[])
 	printf("Reading observations ...\n");
     if ((retval = nc_open(OBSERVATIONS_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
-    int latitude_obs_id, longitude_obs_id, z_coords_id, obervations_id;
+    int z_coords_id, obervations_id;
     // Defining the variables.
-    if ((retval = nc_inq_varid(ncid, "latitude_vector", &latitude_obs_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "longitude_vector", &longitude_obs_id)))
-        NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "z_coords_obs", &z_coords_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "observations_vector", &obervations_id)))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, latitude_obs_id, &latitude_vector_obs[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, longitude_obs_id, &longitude_vector_obs[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, z_coords_id, &z_coords_obs[0])))
         NCERR(retval);  
@@ -251,14 +202,8 @@ int main(int argc, char *argv[])
     */
 	
 	printf("Starting the dry interpolation ...\n");
-    
-	// setting up the observations operator
-	double *interpolated_model_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
-    
-    free(z_coords_model);
 	
-	
-	// data interpolation is finished at this point
+	// dry data interpolation is finished at this point
     
     // These are the arrays for the result of the interpolation process.
     double *density_dry = malloc(NO_OF_SCALARS*sizeof(double));
@@ -266,6 +211,7 @@ int main(int argc, char *argv[])
     double *exner = malloc(NO_OF_SCALARS*sizeof(double));
     
     // density is determined out of the hydrostatic equation
+    int layer_index, h_index;
     double b, c;
     for (int i = NO_OF_SCALARS - 1; i >= 0; --i)
     {
@@ -282,13 +228,13 @@ int main(int argc, char *argv[])
 			// solving a quadratic equation for the Exner pressure
 			b = -0.5*exner[i + NO_OF_SCALARS_H]/model_vector_dry[i + NO_OF_SCALARS_H]
 			*(model_vector_dry[i] - model_vector_dry[i + NO_OF_SCALARS_H]
-			+ 2.0/C_D_P*(gravity_potential_model[i] - gravity_potential_model[i + NO_OF_SCALARS_H]));
+			+ 2.0/C_D_P*(gravity_potential_game[i] - gravity_potential_game[i + NO_OF_SCALARS_H]));
 			c = pow(exner[i + NO_OF_SCALARS_H], 2.0)*model_vector_dry[i]/model_vector_dry[i + NO_OF_SCALARS_H];
 			exner[i] = b + pow((pow(b, 2.0) + c), 0.5);
         	density_dry[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*model_vector_dry[i]);
         }
     }
-	free(gravity_potential_model);
+	free(gravity_potential_game);
     free(exner);
     // end of the interpolation of the dry thermodynamic state
 	printf("Dry interpolation completed.\n");
@@ -328,16 +274,17 @@ int main(int argc, char *argv[])
     	double *distance_vector = malloc(NO_OF_SST_POINTS*sizeof(double));
     	for (int j = 0; j < NO_OF_SST_POINTS; ++j)
     	{
-    		distance_vector[j] = calculate_distance_h(latitude_vector_obs[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + j],
-    		longitude_vector_obs[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + j], latitudes_model[i], longitudes_model[i], 1);
+    		distance_vector[j] = calculate_distance_h(latitudes_sst[j], longitudes_sst[j], latitudes_game[i], longitudes_game[i], 1);
     	}
 		min_index = find_min_index(distance_vector, NO_OF_SST_POINTS);
-		sst[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + min_index];
+		sst[i] = observations_vector[min_index];
 		free(distance_vector);
 	}
-	free(latitude_vector_obs);
-	free(longitude_vector_obs);
-	free(observations_vector);
+	free(latitudes_sst);
+	free(longitudes_sst);
+	free(latitudes_game);
+	free(longitudes_game);
+	free(sst_in);
 	
 	printf("Interpolation of the SST completed.\n");
 
