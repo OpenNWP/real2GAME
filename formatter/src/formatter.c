@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_def_var(ncid, "temperature", NC_DOUBLE, 2, dim_vector, &t_id)))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "spec_hunidity", NC_DOUBLE, 2, dim_vector, &spec_hum_id)))
+    if ((retval = nc_def_var(ncid, "spec_humidity", NC_DOUBLE, 2, dim_vector, &spec_hum_id)))
         NCERR(retval);
 	if ((retval = nc_def_var(ncid, "u_wind", NC_DOUBLE, 2, dim_vector, &u_id)))
 	  	NCERR(retval);

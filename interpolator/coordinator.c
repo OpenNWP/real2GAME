@@ -16,7 +16,6 @@ This file coordinates the data interpolation process.
 #include <netcdf.h>
 #include <geos95.h>
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
-#define EPSILON 1e-4
 #define SCALE_HEIGHT 8000.0
 #define P_0 100000
 #define R_D 287.057811
@@ -158,9 +157,12 @@ int main(int argc, char *argv[])
         NCERR(retval);
 	printf("Background state read.\n");	
 	
-	// Allocating the memory for the observations.
+	// allocating the memory for the analysis of the other model
 	double (*z_coords_input_model)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*temperature_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
+	double (*spec_hum_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
+	double (*u_wind_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
+	double (*v_wind_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
     
     char input_file_pre[200];
     sprintf(input_file_pre, "%s/input/obs_%s%s%s%s.nc", real2game_root_dir, year_string, month_string, day_string, hour_string);
@@ -172,15 +174,27 @@ int main(int argc, char *argv[])
 	printf("Reading observations ...\n");
     if ((retval = nc_open(input_file, NC_NOWRITE, &ncid)))
         NCERR(retval);
-    int z_coords_id, t_in_id;
+    int z_coords_id, t_in_id, spec_hum_id, u_id, v_id;
     // Defining the variables.
     if ((retval = nc_inq_varid(ncid, "z_height", &z_coords_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "temperature", &t_in_id)))
         NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "spec_humidity", &spec_hum_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "u_wind", &u_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "v_wind", &v_id)))
+        NCERR(retval);
     if ((retval = nc_get_var_double(ncid, z_coords_id, &z_coords_input_model[0][0])))
-        NCERR(retval);  
+        NCERR(retval);
     if ((retval = nc_get_var_double(ncid, t_in_id, &temperature_in[0][0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, spec_hum_id, &spec_hum_in[0][0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, u_id, &u_wind_in[0][0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, v_id, &v_wind_in[0][0])))
         NCERR(retval);
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
@@ -200,7 +214,7 @@ int main(int argc, char *argv[])
     // These are the arrays for the result of the interpolation process.
     double *pressure_surface_out = malloc(NO_OF_SCALARS_H*sizeof(double));
     double *density_dry = malloc(NO_OF_SCALARS*sizeof(double));
-    double *wind = malloc(NO_OF_VECTORS*sizeof(double));
+    double *wind_out = malloc(NO_OF_VECTORS*sizeof(double));
     double *exner = malloc(NO_OF_SCALARS*sizeof(double));
     double *temperature = malloc(NO_OF_SCALARS*sizeof(double));
     
@@ -289,7 +303,7 @@ int main(int argc, char *argv[])
 	// individual condensate temperatures are for higher resolutions, not yet implemented
 	// clouds and precipitation are set equal to the background state
 	double *densities = malloc(6*NO_OF_SCALARS*sizeof(double));
-	double *temperatures = malloc(5*NO_OF_SCALARS*sizeof(double));
+	double *temperatures_out = malloc(5*NO_OF_SCALARS*sizeof(double));
     #pragma omp parallel for
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
@@ -307,11 +321,11 @@ int main(int argc, char *argv[])
 		}
 		// setting the temperatures of the result
 		// assuming an LTE (local thermodynamic equilibrium)
-		temperatures[i] = temperature[i];
-		temperatures[NO_OF_SCALARS + i] = temperature[i];
-		temperatures[2*NO_OF_SCALARS + i] = temperature[i];
-		temperatures[3*NO_OF_SCALARS + i] = temperature[i];
-		temperatures[4*NO_OF_SCALARS + i] = temperature[i];
+		temperatures_out[i] = temperature[i];
+		temperatures_out[NO_OF_SCALARS + i] = temperature_out[i];
+		temperatures_out[2*NO_OF_SCALARS + i] = temperature_out[i];
+		temperatures_out[3*NO_OF_SCALARS + i] = temperature_out[i];
+		temperatures_out[4*NO_OF_SCALARS + i] = temperature_out[i];
     }
     free(temperature);
     free(density_dry);
@@ -326,18 +340,18 @@ int main(int argc, char *argv[])
     	h_index = i - layer_index*NO_OF_VECTORS_PER_LAYER;
     	if (h_index < NO_OF_SCALARS_H)
     	{
-    		wind[i] = wind_background[i];
+    		wind_out[i] = wind_background[i];
     	}
     	else
     	{
-    		wind[i] = wind_h_out[layer_index*NO_OF_VECTORS_H + h_index - NO_OF_SCALARS_H];
+    		wind_out[i] = wind_h_out[layer_index*NO_OF_VECTORS_H + h_index - NO_OF_SCALARS_H];
     	}
     }
     free(abs_humidity_game);
     free(wind_background);
     
     /*
-    writing the result to a netcdf file
+    writing the result to a NetCDF file
     -----------------------------------
     */
     
@@ -395,9 +409,9 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, densities_id, &densities[0])))
         NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, temperatures_id, &temperatures[0])))
+    if ((retval = nc_put_var_double(ncid, temperatures_id, &temperatures_out[0])))
         NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, wind_id, &wind[0])))
+    if ((retval = nc_put_var_double(ncid, wind_id, &wind_out[0])))
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, sst_id, &sst_out[0])))
         NCERR(retval);
@@ -417,8 +431,8 @@ int main(int argc, char *argv[])
     
     // freeing the stil occupied memory
 	free(densities);
-	free(temperatures);
-	free(wind);
+	free(temperatures_out);
+	free(wind_out);
 	free(sst_out);
 	free(tke);
 	free(t_soil);
