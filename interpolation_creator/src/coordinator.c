@@ -35,8 +35,8 @@ int main(int argc, char *argv[])
     strcpy(real2game_root_dir, argv[5]);
     char model_home_dir[strlen(argv[6]) + 1];
     strcpy(model_home_dir, argv[6]);
-	int ORO_ID;
-    ORO_ID = strtod(argv[7], NULL);
+	int oro_id;
+    oro_id = strtod(argv[7], NULL);
     
 	double *latitudes_model = malloc(NO_OF_POINTS_PER_LAYER_INPUT_MODEL*sizeof(double));
 	double *longitudes_model = malloc(NO_OF_POINTS_PER_LAYER_INPUT_MODEL*sizeof(double));
@@ -95,47 +95,91 @@ int main(int argc, char *argv[])
     double *latitudes_game_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
     double *longitudes_game_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
     char GEO_PROP_FILE_PRE[200];
-    sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, NO_OF_LAYERS, ORO_ID);
+    sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, NO_OF_LAYERS, oro_id);
     char GEO_PROP_FILE[strlen(GEO_PROP_FILE_PRE) + 1];
     strcpy(GEO_PROP_FILE, GEO_PROP_FILE_PRE);
 	printf("Grid file: %s\n", GEO_PROP_FILE);
 	printf("Reading grid file of GAME ...\n");
-	int ncid_grid;
-    if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
+	int ncid;
+    if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid)))
         NCERR(retval);
     
     int latitudes_game_id, latitudes_game_wind_id, longitudes_game_id, longitudes_game_wind_id;
-    if ((retval = nc_inq_varid(ncid_grid, "latitude_scalar", &latitudes_game_id)))
+    if ((retval = nc_inq_varid(ncid, "latitude_scalar", &latitudes_game_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "longitude_scalar", &longitudes_game_id)))
+    if ((retval = nc_inq_varid(ncid, "longitude_scalar", &longitudes_game_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "latitude_vector", &latitudes_game_wind_id)))
+    if ((retval = nc_inq_varid(ncid, "latitude_vector", &latitudes_game_wind_id)))
         NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "longitude_vector", &longitudes_game_wind_id)))
+    if ((retval = nc_inq_varid(ncid, "longitude_vector", &longitudes_game_wind_id)))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, latitudes_game_id, &latitudes_game[0])))
+    if ((retval = nc_get_var_double(ncid, latitudes_game_id, &latitudes_game[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, longitudes_game_id, &longitudes_game[0])))
+    if ((retval = nc_get_var_double(ncid, longitudes_game_id, &longitudes_game[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, latitudes_game_wind_id, &latitudes_game_wind[0])))
+    if ((retval = nc_get_var_double(ncid, latitudes_game_wind_id, &latitudes_game_wind[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, longitudes_game_wind_id, &longitudes_game_wind[0])))
+    if ((retval = nc_get_var_double(ncid, longitudes_game_wind_id, &longitudes_game_wind[0])))
         NCERR(retval);
-    if ((retval = nc_close(ncid_grid)))
+    if ((retval = nc_close(ncid)))
         NCERR(retval);
 	printf("Grid file of GAME read.\n");
 	
 	// writing the result to a NetCDF file
 	
-    
 	free(latitudes_model);
 	free(longitudes_model);
     free(latitudes_game);
     free(longitudes_game);
     free(latitudes_game_wind);
     free(longitudes_game_wind);
+    
+	int (*interpolation_indices_scalar)[NO_OF_AVG_POINTS] = calloc(1, sizeof(int[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
+	double (*interpolation_weights_scalar)[NO_OF_AVG_POINTS] = calloc(1, sizeof(double[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
+	int (*interpolation_indices_vector)[NO_OF_AVG_POINTS] = calloc(1, sizeof(int[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
+	double (*interpolation_weights_vector)[NO_OF_AVG_POINTS] = calloc(1, sizeof(double[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
+	
+	char output_file_pre[200];
+	sprintf(output_file_pre, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, NO_OF_LAYERS, oro_id);
+    char output_file[strlen(output_file_pre) + 1];
+    strcpy(output_file, output_file_pre);
+    printf("Starting to write to output file ... ");
+	int interpolation_indices_vector_id, interpolation_weights_vector_id, interpolation_indices_vector_id, interpolation_weights_vector;
+    if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
+        NCERR(retval);
+    if ((retval = nc_def_var(ncid, "interpolation_indices_vector", NC_INT, 1, &scalar_h_dimid, &interpolation_indices_vector_id)))
+        ERR(retval);
+    if ((retval = nc_def_var(ncid, "interpolation_weights_vector", NC_INT, 1, &vector_h_dimid, &interpolation_weights_vector_id)))
+        ERR(retval);
+	if ((retval = nc_def_var(ncid, "interpolation_indices_vector", NC_DOUBLE, 1, &scalar_h_dimid, &interpolation_indices_vector_id)))
+	  	ERR(retval);
+	if ((retval = nc_def_var(ncid, "interpolation_weights_vector", NC_DOUBLE, 1, &scalar_h_dimid, &interpolation_weights_vector)))
+	  	ERR(retval);
+    if ((retval = nc_enddef(ncid)))
+        ERR(retval);
+    if ((retval = nc_put_var_double(ncid, interpolation_indices_scalar_id, &interpolation_indices_scalar[0][0])))
+        ERR(retval);
+    if ((retval = nc_put_var_double(ncid, interpolation_weights_scalar_id, &interpolation_weights_scalar[0][0])))
+        ERR(retval);
+	if ((retval = nc_put_var_int(ncid, interpolation_indices_vector_id, &interpolation_indices_vector[0][0])))
+	  	ERR(retval);
+	if ((retval = nc_put_var_int(ncid, interpolation_weights_vector, &interpolation_weights_vector[0][0])))
+	  	ERR(retval);
+    if ((retval = nc_close(ncid)))
+        ERR(retval);
+    printf("Finished.\n");
+	
+	free(interpolation_indices_scalar);
+	free(interpolation_weights_scalar);
+	free(interpolation_indices_vector);
+	free(interpolation_weights_vector);
 	
 	return 0;
 }
+
+
+
+
+
 
 

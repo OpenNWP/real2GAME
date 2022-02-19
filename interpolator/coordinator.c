@@ -8,8 +8,8 @@ This file coordinates the data interpolation process.
 */
 
 #include <stdlib.h>
-#include "enum.h"
-#include "interpolator.h"
+#include "../game_properties.h"
+#include "../header.h"
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
