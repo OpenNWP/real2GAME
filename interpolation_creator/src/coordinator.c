@@ -124,6 +124,9 @@ int main(int argc, char *argv[])
     if ((retval = nc_close(ncid_grid)))
         NCERR(retval);
 	printf("Grid file of GAME read.\n");
+	
+	// writing the result to a NetCDF file
+	
     
 	free(latitudes_model);
 	free(longitudes_model);
