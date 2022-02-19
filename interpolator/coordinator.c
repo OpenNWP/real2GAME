@@ -23,12 +23,6 @@ This file coordinates the data interpolation process.
 
 int main(int argc, char *argv[])
 {
-	if (fmod(NO_OF_REL_MODEL_DOFS_PER_OBS, 2) == 1)
-	{
-		printf("NO_OF_REL_MODEL_DOFS_PER_OBS must be even.\n");
-		printf("Aborting.\n");
-		exit(1);
-	}
 	double C_D_P = 1005.0;
     char year_string[strlen(argv[1]) + 1];
     strcpy(year_string, argv[1]);
@@ -262,14 +256,6 @@ int main(int argc, char *argv[])
 	double *interpolated_model_dry = malloc(NO_OF_CHOSEN_OBSERVATIONS_DRY*sizeof(double));
     
     free(z_coords_model);
-    
-    // setting up the background error covariance matrix (only the diagonal)
-    double (*bg_error_cov_dry)[7] = calloc(1, sizeof(double[NO_OF_MODEL_DOFS_DRY][7]));
-	
-	/*
-	Calling the optimum interpolation
-	---------------------------------
-	*/
 	
 	
 	// data interpolation is finished at this point
@@ -296,9 +282,9 @@ int main(int argc, char *argv[])
 			// solving a quadratic equation for the Exner pressure
 			b = -0.5*exner[i + NO_OF_SCALARS_H]/model_vector_dry[i + NO_OF_SCALARS_H]
 			*(model_vector_dry[i] - model_vector_dry[i + NO_OF_SCALARS_H]
-			+ 2/C_D_P*(gravity_potential_model[i] - gravity_potential_model[i + NO_OF_SCALARS_H]));
-			c = pow(exner[i + NO_OF_SCALARS_H], 2)*model_vector_dry[i]/model_vector_dry[i + NO_OF_SCALARS_H];
-			exner[i] = b + pow((pow(b, 2) + c), 0.5);
+			+ 2.0/C_D_P*(gravity_potential_model[i] - gravity_potential_model[i + NO_OF_SCALARS_H]));
+			c = pow(exner[i + NO_OF_SCALARS_H], 2.0)*model_vector_dry[i]/model_vector_dry[i + NO_OF_SCALARS_H];
+			exner[i] = b + pow((pow(b, 2.0) + c), 0.5);
         	density_dry[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*model_vector_dry[i]);
         }
     }

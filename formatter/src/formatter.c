@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	levels_vector[8] = 67;
 	levels_vector[9] = 75;
 	levels_vector[10] = 83;
-	levels_vector[11] = 91;
+	levels_vector[11] = 90;
 	
 	// shell arguments
     char year_string[strlen(argv[1]) + 1];
@@ -41,29 +41,31 @@ int main(int argc, char *argv[])
     strcpy(hour_string, argv[4]);
     char real2game_root_dir[strlen(argv[5]) + 1];
     strcpy(real2game_root_dir, argv[5]);
-	
-	double *latitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
-	double *longitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
-    
-	int retval, err;
-	codes_handle *handle = NULL;
     
 	// Allocating the memory for the final result.
-	double *z_coords_amsl = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *z_height_amsl_single_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	
+	// single-layer arrays from grib
 	double *temperature_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *spec_hum_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	double *u_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	double *v_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
-	double *spec_hum_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	
+	// 2D-arrays for NetCDF
 	double (*temperature)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*spec_hum)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*u_wind)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*v_wind)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
+	double (*z_height_amsl)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
+	
+	// grib stuff
+	FILE *ecc_file;
+	size_t NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T;
+	int retval, err;
+	codes_handle *handle = NULL;
 	
 	// reading the data from the free atmosphere
-	double *z_height_amsl = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
-	// loop over all relevant level in the free atmosphere
+	// loop over all relevant levels in the free atmosphere
 	for (int level_index = 0; level_index < NO_OF_LEVELS_INPUT; ++level_index)
 	{
 		// vertical position of the current layer
@@ -73,15 +75,21 @@ int main(int argc, char *argv[])
 		char Z_OBS_FILE[strlen(Z_OBS_FILE_PRE) + 1];
 		strcpy(Z_OBS_FILE, Z_OBS_FILE_PRE);
 		
-		ECC_FILE = fopen(Z_OBS_FILE, "r");
-		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		ecc_file = fopen(Z_OBS_FILE, "r");
+		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
 		NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
-		if ((retval = codes_get_double_array(handle, "values", &z_height_amsl[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
+		if ((retval = codes_get_double_array(handle, "values", &z_height_amsl_single_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
-		fclose(ECC_FILE);
+		fclose(ecc_file);
+		
+		#pragma omp parallel for
+		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
+		{
+			z_height_amsl[i][level_index] = z_height_amsl_single_layer[i];
+		}
 		
 	   	// reading the temperature
 		char TEMPERATURE_FILE_PRE[200];
@@ -90,15 +98,21 @@ int main(int argc, char *argv[])
 		char TEMPERATURE_FILE[strlen(TEMPERATURE_FILE_PRE) + 1];
 		strcpy(TEMPERATURE_FILE, TEMPERATURE_FILE_PRE);
 		
-		ECC_FILE = fopen(TEMPERATURE_FILE, "r");
-		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		ecc_file = fopen(TEMPERATURE_FILE, "r");
+		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
 		NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
 		if ((retval = codes_get_double_array(handle, "values", &temperature_one_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
-		fclose(ECC_FILE);
+		fclose(ecc_file);
+		
+		#pragma omp parallel for
+		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
+		{
+			temperature[i][level_index] = temperature_one_layer[i];
+		}
 		
 	   	// reading the specific humidity
 		char SPEC_HUM_FILE_PRE[200];
@@ -107,15 +121,21 @@ int main(int argc, char *argv[])
 		char SPEC_HUM_FILE[strlen(SPEC_HUM_FILE_PRE) + 1];
 		strcpy(SPEC_HUM_FILE, SPEC_HUM_FILE_PRE);
 		
-		ECC_FILE = fopen(SPEC_HUM_FILE, "r");
-		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		ecc_file = fopen(SPEC_HUM_FILE, "r");
+		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
 		NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
 		if ((retval = codes_get_double_array(handle, "values", &spec_hum_one_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
-		fclose(ECC_FILE);
+		fclose(ecc_file);
+		
+		#pragma omp parallel for
+		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
+		{
+			spec_hum[i][level_index] = spec_hum_one_layer[i];
+		}
 		
 	   	// reading the u wind
 		char U_WIND_FILE_PRE[200];
@@ -124,15 +144,21 @@ int main(int argc, char *argv[])
 		char U_WIND_FILE[strlen(U_WIND_FILE_PRE) + 1];
 		strcpy(U_WIND_FILE, U_WIND_FILE_PRE);
 		
-		ECC_FILE = fopen(U_WIND_FILE, "r");
-		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		ecc_file = fopen(U_WIND_FILE, "r");
+		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
 		NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
 		if ((retval = codes_get_double_array(handle, "values", &u_one_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
-		fclose(ECC_FILE);
+		fclose(ecc_file);
+		
+		#pragma omp parallel for
+		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
+		{
+			u_wind[i][level_index] = u_one_layer[i];
+		}
 		
 	   	// reading the v wind
 		char V_WIND_FILE_PRE[200];
@@ -141,37 +167,28 @@ int main(int argc, char *argv[])
 		char V_WIND_FILE[strlen(V_WIND_FILE_PRE) + 1];
 		strcpy(V_WIND_FILE, V_WIND_FILE_PRE);
 		
-		ECC_FILE = fopen(V_WIND_FILE, "r");
-		handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+		ecc_file = fopen(V_WIND_FILE, "r");
+		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
 		NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
 		if ((retval = codes_get_double_array(handle, "values", &v_one_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
-		fclose(ECC_FILE);
+		fclose(ecc_file);
 		
-		// formatting the observations
 		#pragma omp parallel for
 		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
 		{
-			;
+			v_wind[i][level_index] = v_one_layer[i];
 		}
-		#pragma omp parallel for
-		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
-		{
-			// u wind
-			z_coords_amsl[i] = z_height_amsl[chosen_indices_wind[i]];
-			
-			// v wind
-			z_coords_amsl[i] = z_height_amsl[chosen_indices_wind[i]];
-		}
+		
 	}
-	free(z_height_amsl);
+	free(z_height_amsl_single_layer);
 	free(temperature_one_layer);
+	free(spec_hum_one_layer);
 	free(u_one_layer);
 	free(v_one_layer);
-	free(chosen_indices_wind);
 	
 	// reading the surface height
 	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
@@ -180,17 +197,16 @@ int main(int argc, char *argv[])
 	char SFC_OBS_FILE[strlen(SFC_OBS_FILE_PRE) + 1];
 	strcpy(SFC_OBS_FILE, SFC_OBS_FILE_PRE);
 	
-	ECC_FILE = fopen(SFC_OBS_FILE, "r");
-	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+	ecc_file = fopen(SFC_OBS_FILE, "r");
+	handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
 	NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
 	if ((retval = codes_get_double_array(handle, "values", &surface_height[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
 		ECCERR(retval);
 	codes_handle_delete(handle);
-	fclose(ECC_FILE);
+	fclose(ecc_file);
 	
-	// surface pressure
 	// reading the surface presure
 	double *pressure_surface = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	
@@ -199,26 +215,19 @@ int main(int argc, char *argv[])
 	char SFC_PRES_FILE[strlen(SFC_PRES_FILE_PRE) + 1];
 	strcpy(SFC_PRES_FILE, SFC_PRES_FILE_PRE);
 	
-	ECC_FILE = fopen(SFC_PRES_FILE, "r");
-	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+	ecc_file = fopen(SFC_PRES_FILE, "r");
+	handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
 	NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
 	if ((retval = codes_get_double_array(handle, "values", &pressure_surface[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
 		ECCERR(retval);
 	codes_handle_delete(handle);
-	fclose(ECC_FILE);
+	fclose(ecc_file);
 	
-	// writing the surface pressure to the observations
-	#pragma omp parallel for
-	for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
-	{
-		z_coords_amsl[i] = surface_height[chosen_indices[i]];
-		observations_vector[i] = pressure_surface[chosen_indices[i]];
-	}
-	
-	// SST
 	// reading the SST
+	double *latitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
+	double *longitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
 	double *sst = malloc(NO_OF_SST_POINTS*sizeof(double));
 	
 	char SST_FILE_PRE[200];
@@ -226,8 +235,8 @@ int main(int argc, char *argv[])
 	char SST_FILE[strlen(SST_FILE_PRE) + 1];
 	strcpy(SST_FILE, SST_FILE_PRE);
 	
-	ECC_FILE = fopen(SST_FILE, "r");
-	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
+	ecc_file = fopen(SST_FILE, "r");
+	handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
 	size_t NO_OF_SST_POINTS_SIZE_T = (size_t) NO_OF_SST_POINTS;
@@ -238,22 +247,15 @@ int main(int argc, char *argv[])
 	if ((retval = codes_get_double_array(handle, "longitudes", &longitudes_sst[0], &NO_OF_SST_POINTS_SIZE_T)))
 		ECCERR(retval);
 	codes_handle_delete(handle);
-	fclose(ECC_FILE);
+	fclose(ecc_file);
 	
-	// writing the SST to the observations
+	// transforming the coordinates of the SST grid from degrees to radians
 	#pragma omp parallel for
 	for (int i = 0; i < NO_OF_SST_POINTS; ++i)
 	{
-		latitude_vector[i] = 2.0*M_PI*latitudes_sst[i]/360.0;
-		longitude_vector[i] = 2.0*M_PI*longitudes_sst[i]/360.0;
+		latitudes_sst[i] = 2.0*M_PI*latitudes_sst[i]/360.0;
+		longitudes_sst[i] = 2.0*M_PI*longitudes_sst[i]/360.0;
 	}
-	
-	// freeing the memory
-	free(latitudes_sst);
-	free(longitudes_sst);
-	free(surface_height);
-	free(pressure_surface);
-	free(spec_hum_one_layer);
     
     // Writing the observations to a netcdf file.
     char OUTPUT_FILE_PRE[200];
@@ -261,7 +263,7 @@ int main(int argc, char *argv[])
 	char OUTPUT_FILE[strlen(OUTPUT_FILE_PRE) + 1];
 	strcpy(OUTPUT_FILE, OUTPUT_FILE_PRE);
     
-    int ncid, h_dimid, v_dimid, sst_dimid, t_id, spec_hum_id, sp_id, u_id, v_id, sst_id;
+    int ncid, h_dimid, v_dimid, sst_dimid, t_id, spec_hum_id, sp_id, z_id, z_surf_id, u_id, v_id, lat_sst_id, lon_sst_id, sst_id;
     int dim_vector[2];
     if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
         NCERR(retval);
@@ -278,6 +280,10 @@ int main(int argc, char *argv[])
     dim_vector[1] = v_dimid;
     if ((retval = nc_def_var(NC_DOUBLE, "pressure_surface", NC_DOUBLE, 1, &h_dimid, &sp_id)))
         NCERR(retval);
+    if ((retval = nc_def_var(NC_DOUBLE, "z_surface", NC_DOUBLE, 1, &h_dimid, &z_surf_id)))
+        NCERR(retval);
+    if ((retval = nc_def_var(NC_DOUBLE, "z_height", NC_DOUBLE, 2, dim_vector, &z_id)))
+        NCERR(retval);
     if ((retval = nc_def_var(ncid, "temperature", NC_DOUBLE, 2, dim_vector, &t_id)))
         NCERR(retval);
     if ((retval = nc_def_var(ncid, "spec_hunidity", NC_DOUBLE, 2, dim_vector, &spec_hum_id)))
@@ -286,6 +292,10 @@ int main(int argc, char *argv[])
 	  	NCERR(retval);
 	if ((retval = nc_def_var(ncid, "v_wind", NC_DOUBLE, 2, dim_vector, &v_id)))
 	  	NCERR(retval);
+	if ((retval = nc_def_var(ncid, "lat_sst", NC_DOUBLE, 1, &sst_dimid, &lat_sst_id)))
+	  	NCERR(retval);
+	if ((retval = nc_def_var(ncid, "lon_sst", NC_DOUBLE, 1, &sst_dimid, &lon_sst_id)))
+	  	NCERR(retval);
 	if ((retval = nc_def_var(ncid, "sst", NC_DOUBLE, 1, &sst_dimid, &sst_id)))
 	  	NCERR(retval);
     if ((retval = nc_enddef(ncid)))
@@ -293,13 +303,21 @@ int main(int argc, char *argv[])
     // Setting the variables.
 	if ((retval = nc_put_var_double(ncid, sp_id, &pressure_surface[0])))
 	  	NCERR(retval);
+	if ((retval = nc_put_var_double(ncid, z_id, &z_height_amsl[0][0])))
+	  	NCERR(retval);
+	if ((retval = nc_put_var_double(ncid, z_surf_id, &surface_height[0])))
+	  	NCERR(retval);
 	if ((retval = nc_put_var_double(ncid, t_id, &temperature[0][0])))
 	  	NCERR(retval);
 	if ((retval = nc_put_var_double(ncid, spec_hum_id, &spec_hum[0][0])))
 	  	NCERR(retval);
 	if ((retval = nc_put_var_double(ncid, u_id, &u_wind[0][0])))
 	  	NCERR(retval);
-	if ((retval = nc_put_var_double(ncid, v_id, &w_ind[0][0])))
+	if ((retval = nc_put_var_double(ncid, v_id, &v_wind[0][0])))
+	  	NCERR(retval);
+	if ((retval = nc_put_var_double(ncid, lat_sst_id, &latitudes_sst[0])))
+	  	NCERR(retval);
+	if ((retval = nc_put_var_double(ncid, lon_sst_id, &longitudes_sst[0])))
 	  	NCERR(retval);
 	if ((retval = nc_put_var_double(ncid, sst_id, &sst[0])))
 	  	NCERR(retval);
@@ -307,14 +325,16 @@ int main(int argc, char *argv[])
     	NCERR(retval);
     
     // Freeing the memory.
+    free(z_height_amsl);
+    free(surface_height);
+	free(pressure_surface);
     free(u_wind);
     free(v_wind);
     free(temperature);
     free(spec_hum);
-	free(latitude_vector);
-	free(longitude_vector);
-	free(z_coords_amsl);
 	free(sst);
+	free(latitudes_sst);
+	free(longitudes_sst);
 
 	return 0;
 }
