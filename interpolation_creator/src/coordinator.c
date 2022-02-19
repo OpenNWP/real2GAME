@@ -129,10 +129,10 @@ int main(int argc, char *argv[])
 	
 	// writing the result to a NetCDF file
     
-	int (*interpolation_indices_scalar)[NO_OF_AVG_POINTS] = calloc(1, sizeof(int[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
-	double (*interpolation_weights_scalar)[NO_OF_AVG_POINTS] = calloc(1, sizeof(double[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
-	int (*interpolation_indices_vector)[NO_OF_AVG_POINTS] = calloc(1, sizeof(int[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
-	double (*interpolation_weights_vector)[NO_OF_AVG_POINTS] = calloc(1, sizeof(double[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
+	int (*interpolation_indices_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(int[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
+	double (*interpolation_weights_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(double[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
+	int (*interpolation_indices_vector)[NO_OF_AVG_POINTS] = malloc(sizeof(int[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
+	double (*interpolation_weights_vector)[NO_OF_AVG_POINTS] = malloc(sizeof(double[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
 	
 	// executing the actual interpolation
 	printf("Calculating interpolation indices and weights ...\n");
