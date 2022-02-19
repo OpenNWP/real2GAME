@@ -189,9 +189,9 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "sst", &sst_id)))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, z_surf_id, &p_surf_in[0])))
+    if ((retval = nc_get_var_double(ncid, z_surf_id, &z_surf_in[0])))
         NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, sp_id, &z_surf_in[0])))
+    if ((retval = nc_get_var_double(ncid, sp_id, &p_surf_in[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, z_coords_id, &z_coords_input_model[0][0])))
         NCERR(retval);
@@ -250,8 +250,8 @@ int main(int argc, char *argv[])
 	// Begin of the actual interpolation.
     
     /*
-    DRY THERMODYNAMIC STATE INTERPOLATION
-    -------------------------------------
+    INTERPOLATION OF SCALAR QUANTITIES
+    ----------------------------------
     */
 	
 	printf("Starting the dry interpolation ...\n");
@@ -261,14 +261,48 @@ int main(int argc, char *argv[])
 	// dry data interpolation is finished at this point
     
     // These are the arrays for the result of the interpolation process.
-    double *pressure_surface_out = malloc(NO_OF_SCALARS_H*sizeof(double));
-    double *density_dry = malloc(NO_OF_SCALARS*sizeof(double));
-    double *wind_out = malloc(NO_OF_VECTORS*sizeof(double));
-    double *exner = malloc(NO_OF_SCALARS*sizeof(double));
-    double *temperature_out = malloc(NO_OF_SCALARS*sizeof(double));
+    double *temperature_out = calloc(1, NO_OF_SCALARS*sizeof(double));
+	double *spec_hum_out = calloc(1, NO_OF_SCALARS*sizeof(double));
+	
+    int layer_index, h_index, closest_index, other_index;
+    double closest_weight, other_weight;
+    #pragma omp parallel for private(layer_index, h_index, closest_index, other_index, closest_weight, other_weight)
+    for (int i = 0; i < NO_OF_SCALARS; ++i)
+    {
+    	layer_index = i/NO_OF_SCALARS_H;
+    	h_index = i - layer_index*NO_OF_SCALARS_H;
+    	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+    	{
+    		// computing vertical interpolation indices and weights
+    		
+    		
+    		// temperature
+    		temperature_out[i] += interpolation_weights_scalar[i][j]
+    		*(closest_weight*temperature_in[interpolation_indices_scalar[i][j]][closest_index] + other_weight*temperature_in[interpolation_indices_scalar[i][j]][other_index]);
+    		// specific humidity
+    		spec_hum_out[i] += interpolation_weights_scalar[i][j]
+    		*(closest_weight*spec_hum_in[interpolation_indices_scalar[i][j]][closest_index] + other_weight*spec_hum_in[interpolation_indices_scalar[i][j]][other_index]);
+    	}
+    }
     
+    // surface pressure interpolation
+    double *pressure_lowest_layer_out = calloc(1, NO_OF_SCALARS_H*sizeof(double));
+    # pragma omp parallel for
+    for (int i = 0; i < NO_OF_SCALARS_H; ++i)
+    {
+    	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+    	{
+    		pressure_lowest_layer_out[i] += interpolation_weights_scalar[i][j]*p_surf_in[interpolation_indices_scalar[i][j]]
+    		*exp(-(z_coords_game[i] - z_coords_input_model[interpolation_indices_scalar[i][j]][NO_OF_LEVELS_INPUT - 1])/SCALE_HEIGHT);
+    	}
+    }
+    
+	free(interpolation_indices_scalar);
+	free(interpolation_weights_scalar);
+    
+    double *density_dry_out = malloc(NO_OF_SCALARS*sizeof(double));
+    double *exner = malloc(NO_OF_SCALARS*sizeof(double));
     // density is determined out of the hydrostatic equation
-    int layer_index, h_index;
     double b, c;
     for (int i = NO_OF_SCALARS - 1; i >= 0; --i)
     {
@@ -276,8 +310,8 @@ int main(int argc, char *argv[])
     	h_index = i - layer_index*NO_OF_SCALARS_H;
     	if (layer_index == NO_OF_LAYERS - 1)
     	{
-        	density_dry[i] = pressure_surface_out[h_index]/(R_D*temperature_out[i]);
-        	exner[i] = pow((density_dry[i]*R_D*temperature_out[i])/P_0, R_D/C_D_P);
+        	density_dry_out[i] = pressure_lowest_layer_out[h_index]/(R_D*temperature_out[i]);
+        	exner[i] = pow((density_dry_out[i]*R_D*temperature_out[i])/P_0, R_D/C_D_P);
         }
         else
         {
@@ -287,24 +321,14 @@ int main(int argc, char *argv[])
 			+ 2.0/C_D_P*(gravity_potential_game[i] - gravity_potential_game[i + NO_OF_SCALARS_H]));
 			c = pow(exner[i + NO_OF_SCALARS_H], 2.0)*temperature_out[i]/temperature_out[i + NO_OF_SCALARS_H];
 			exner[i] = b + pow((pow(b, 2.0) + c), 0.5);
-        	density_dry[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*temperature_out[i]);
+        	density_dry_out[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*temperature_out[i]);
         }
     }
+    free(pressure_lowest_layer_out);
 	free(gravity_potential_game);
     free(exner);
     // end of the interpolation of the dry thermodynamic state
 	printf("Dry interpolation completed.\n");
-    
-    /*
-    MOISTURE INTERPOLATION
-    ----------------------
-    */
-    
-	printf("Starting the moist interpolation ...\n");
-	
-	double *spec_hum_out = malloc(NO_OF_SCALARS*sizeof(double));
-	
-	printf("Moist interpolation completed.\n");
 	
 	/*
 	WIND INTERPOLATION
@@ -312,14 +336,33 @@ int main(int argc, char *argv[])
 	*/
 	
 	printf("Starting the wind interpolation ...\n");
-	
-	
+    double *wind_out = calloc(1, NO_OF_VECTORS*sizeof(double));
+    double u_local, v_local;
+    # pragma omp parallel for private(h_index, layer_index, closest_index, other_index, closest_weight, other_weight, u_local, v_local)
+    for (int i = 0; i < NO_OF_H_VECTORS; ++i)
+    {
+    	layer_index = i/NO_OF_VECTORS_H;
+    	h_index = i - layer_index*NO_OF_VECTORS_H;
+   		u_local = 0.0;
+   		v_local = 0.0;
+    	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+    	{
+    		// computing vertical interpolation indices and weights
+    		
+    		
+    		u_local += interpolation_weights_vector[i][j]*
+    		(closest_weight*u_wind_in[interpolation_indices_vector[i][j]][closest_index] + other_weight*u_wind_in[interpolation_indices_vector[i][j]][other_index]);
+    		v_local += interpolation_weights_vector[i][j]*
+    		(closest_weight*v_wind_in[interpolation_indices_vector[i][j]][closest_index] + other_weight*v_wind_in[interpolation_indices_vector[i][j]][other_index]);
+    	}
+    	// projection onto the local normal
+		wind_out[NO_OF_SCALARS_H + layer_index*NO_OF_VECTORS_PER_LAYER + h_index] = u_local*cos(directions[h_index]) + v_local*sin(directions[h_index]);
+    }
+	// the directions of the normal vectors are not needed any further
+	free(directions);
 	
 	printf("Wind interpolation completed.\n");
 	
-	// the interpolation indices and weights are not needed any further
-	free(interpolation_indices_scalar);
-	free(interpolation_weights_scalar);
 	free(interpolation_indices_vector);
 	free(interpolation_weights_vector);
 	
@@ -368,8 +411,8 @@ int main(int argc, char *argv[])
 		densities[NO_OF_SCALARS + i] = densities_background[NO_OF_SCALARS + i];
 		densities[2*NO_OF_SCALARS + i] = densities_background[2*NO_OF_SCALARS + i];
 		densities[3*NO_OF_SCALARS + i] = densities_background[3*NO_OF_SCALARS + i];
-		densities[4*NO_OF_SCALARS + i] = density_dry[i];
-		densities[5*NO_OF_SCALARS + i] = spec_hum_out[i]/(1 - spec_hum_out[i])*density_dry[i];
+		densities[4*NO_OF_SCALARS + i] = density_dry_out[i];
+		densities[5*NO_OF_SCALARS + i] = spec_hum_out[i]/(1 - spec_hum_out[i])*density_dry_out[i];
 		if (densities[5*NO_OF_SCALARS + i] < 0)
 		{
 			densities[5*NO_OF_SCALARS + i] = 0;
@@ -384,7 +427,7 @@ int main(int argc, char *argv[])
     }
     free(temperature_out);
     free(temperatures_out);
-    free(density_dry);
+    free(density_dry_out);
 	free(spec_hum_out);
 	free(densities_background);
     
