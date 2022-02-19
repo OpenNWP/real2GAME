@@ -598,8 +598,6 @@ int main(int argc, char *argv[])
 		sst[i] = observations_vector[NO_OF_CHOSEN_OBSERVATIONS - NO_OF_SST_POINTS + min_index];
 		free(distance_vector);
 	}
-    free(latitudes_model);
-    free(longitudes_model);
 	free(latitude_vector_obs);
 	free(longitude_vector_obs);
 	free(observations_vector);
