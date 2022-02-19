@@ -3,39 +3,15 @@
 # This source file is part of real2GAME, which is released under the MIT license.
 # Github repository: https://github.com/OpenNWP/real2GAME
 
-model_home_directory=/home/max/code/GAME
-orography_id=1
-background_file=/home/max/code/GAME/standard_oro1.nc
-real2game_home_dir=/home/max/code/real2GAME
-omp_num_threads=2
-
-# END OF USUAL INPUT SECTION
-
-# setting the time of the analysis
-analysis_delay_min=175
-cycle=(0 6 12 18) # the UTC times of the analyses
-now=$(date +%s)
-now=$(($now - $analysis_delay_min*60))
-analysis_year=$(date --utc -d @$now +%Y)
-analysis_month=$(date --utc -d @$now +%m)
-analysis_day=$(date --utc -d @$now +%d)
-now_hour=$(date --utc -d @$now +%k)
-# finding the correct analysis hour
-analysis_hour=${cycle[-1]}
-for i in $(seq 0 1 $((${#cycle[@]} - 2)))
-do
-if [ ${cycle[$i]} -le $now_hour ] && [ ${cycle[$(($i + 1))]} -gt $now_hour ]
-then
-analysis_hour=${cycle[$i]}
-fi
-done
-
-# analysis hour in a special format
-analysis_hour_extended_string=$analysis_hour
-if [ $analysis_hour -lt 10 ]
-then
-analysis_hour_extended_string="0$analysis_hour"
-fi
+analysis_year=${BASH_ARGV[4]}
+analysis_month=${BASH_ARGV[3]}
+analysis_day=${BASH_ARGV[2]}
+analysis_hour=${BASH_ARGV[1]}
+model_home_directory=${BASH_ARGV[0]}
+orography_id=${BASH_ARGV[5]}
+background_file=${BASH_ARGV[6]}
+real2game_root_dir=${BASH_ARGV[7]}
+omp_num_threads=${BASH_ARGV[8]}
 
 # parallelization
 export OMP_NUM_THREADS=$omp_num_threads # relevant only for OMP
