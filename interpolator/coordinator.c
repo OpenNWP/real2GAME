@@ -17,7 +17,7 @@ This file coordinates the data interpolation process.
 #include <geos95.h>
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
 #define SCALE_HEIGHT 8000.0
-#define P_0 100000
+#define P_0 100000.0
 #define R_D 287.057811
 #define C_D_P 1005.0
 
