@@ -3,6 +3,10 @@ This source file is part of real2GAME, which is released under the MIT license.
 Github repository: https://github.com/OpenNWP/real2GAME
 */
 
+/*
+This tool reads the output from other models / data assimilation systems and brings it into a standardized format.
+*/
+
 #include <netcdf.h>
 #include <stdio.h>
 #include <string.h>
@@ -58,7 +62,7 @@ int main(int argc, char *argv[])
 	
 	// grib stuff
 	FILE *ecc_file;
-	size_t NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T;
+	size_t no_of_points_per_layer_input_size_t;
 	int retval, err;
 	codes_handle *handle = NULL;
 	
@@ -67,18 +71,18 @@ int main(int argc, char *argv[])
 	for (int level_index = 0; level_index < NO_OF_LEVELS_INPUT; ++level_index)
 	{
 		// vertical position of the current layer
-		char Z_OBS_FILE_PRE[200];
-		sprintf(Z_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_%d_HHL.grib2",
+		char z_inpput_model_file_pre[200];
+		sprintf(z_inpput_model_file_pre , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_%d_HHL.grib2",
 		real2game_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
-		char Z_OBS_FILE[strlen(Z_OBS_FILE_PRE) + 1];
-		strcpy(Z_OBS_FILE, Z_OBS_FILE_PRE);
+		char z_inpput_model_file[strlen(z_inpput_model_file_pre) + 1];
+		strcpy(z_inpput_model_file, z_inpput_model_file_pre);
 		
-		ecc_file = fopen(Z_OBS_FILE, "r");
+		ecc_file = fopen(z_inpput_model_file, "r");
 		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
-		NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
-		if ((retval = codes_get_double_array(handle, "values", &z_height_amsl_one_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
+		no_of_points_per_layer_input_size_t = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
+		if ((retval = codes_get_double_array(handle, "values", &z_height_amsl_one_layer[0], &no_of_points_per_layer_input_size_t)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
 		fclose(ecc_file);
@@ -90,18 +94,17 @@ int main(int argc, char *argv[])
 		}
 		
 	   	// reading the temperature
-		char TEMPERATURE_FILE_PRE[200];
-		sprintf(TEMPERATURE_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_T.grib2",
+		char temperature_file_pre[200];
+		sprintf(temperature_file_pre , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_T.grib2",
 		real2game_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
-		char TEMPERATURE_FILE[strlen(TEMPERATURE_FILE_PRE) + 1];
-		strcpy(TEMPERATURE_FILE, TEMPERATURE_FILE_PRE);
+		char temperature_file[strlen(temperature_file_pre) + 1];
+		strcpy(temperature_file, temperature_file_pre);
 		
-		ecc_file = fopen(TEMPERATURE_FILE, "r");
+		ecc_file = fopen(temperature_file, "r");
 		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
-		NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
-		if ((retval = codes_get_double_array(handle, "values", &temperature_one_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
+		if ((retval = codes_get_double_array(handle, "values", &temperature_one_layer[0], &no_of_points_per_layer_input_size_t)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
 		fclose(ecc_file);
@@ -113,18 +116,17 @@ int main(int argc, char *argv[])
 		}
 		
 	   	// reading the specific humidity
-		char SPEC_HUM_FILE_PRE[200];
-		sprintf(SPEC_HUM_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_QV.grib2",
+		char spec_hum_file_pre[200];
+		sprintf(spec_hum_file_pre , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_QV.grib2",
 		real2game_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
-		char SPEC_HUM_FILE[strlen(SPEC_HUM_FILE_PRE) + 1];
-		strcpy(SPEC_HUM_FILE, SPEC_HUM_FILE_PRE);
+		char spec_hum_file[strlen(spec_hum_file_pre) + 1];
+		strcpy(spec_hum_file, spec_hum_file_pre);
 		
-		ecc_file = fopen(SPEC_HUM_FILE, "r");
+		ecc_file = fopen(spec_hum_file, "r");
 		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
-		NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
-		if ((retval = codes_get_double_array(handle, "values", &spec_hum_one_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
+		if ((retval = codes_get_double_array(handle, "values", &spec_hum_one_layer[0], &no_of_points_per_layer_input_size_t)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
 		fclose(ecc_file);
@@ -136,18 +138,17 @@ int main(int argc, char *argv[])
 		}
 		
 	   	// reading the u wind
-		char U_WIND_FILE_PRE[200];
-		sprintf(U_WIND_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_U.grib2",
+		char u_wind_file_pre[200];
+		sprintf(u_wind_file_pre , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_U.grib2",
 		real2game_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
-		char U_WIND_FILE[strlen(U_WIND_FILE_PRE) + 1];
-		strcpy(U_WIND_FILE, U_WIND_FILE_PRE);
+		char u_wind_file[strlen(u_wind_file_pre) + 1];
+		strcpy(u_wind_file, u_wind_file_pre);
 		
-		ecc_file = fopen(U_WIND_FILE, "r");
+		ecc_file = fopen(u_wind_file, "r");
 		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
-		NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
-		if ((retval = codes_get_double_array(handle, "values", &u_one_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
+		if ((retval = codes_get_double_array(handle, "values", &u_one_layer[0], &no_of_points_per_layer_input_size_t)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
 		fclose(ecc_file);
@@ -159,18 +160,17 @@ int main(int argc, char *argv[])
 		}
 		
 	   	// reading the v wind
-		char V_WIND_FILE_PRE[200];
-		sprintf(V_WIND_FILE_PRE , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_V.grib2",
+		char v_wind_file_pre[200];
+		sprintf(v_wind_file_pre , "%s/input/icon_global_icosahedral_model-level_%s%s%s%s_000_%d_V.grib2",
 		real2game_root_dir, year_string, month_string, day_string, hour_string, levels_vector[level_index]);
-		char V_WIND_FILE[strlen(V_WIND_FILE_PRE) + 1];
-		strcpy(V_WIND_FILE, V_WIND_FILE_PRE);
+		char v_wind_file[strlen(v_wind_file_pre) + 1];
+		strcpy(v_wind_file, v_wind_file_pre);
 		
-		ecc_file = fopen(V_WIND_FILE, "r");
+		ecc_file = fopen(v_wind_file, "r");
 		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 		if (err != 0)
 			ECCERR(err);
-		NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
-		if ((retval = codes_get_double_array(handle, "values", &v_one_layer[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
+		if ((retval = codes_get_double_array(handle, "values", &v_one_layer[0], &no_of_points_per_layer_input_size_t)))
 			ECCERR(retval);
 		codes_handle_delete(handle);
 		fclose(ecc_file);
@@ -190,17 +190,16 @@ int main(int argc, char *argv[])
 	
 	// reading the surface height
 	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
-	char SFC_OBS_FILE_PRE[200];
-	sprintf(SFC_OBS_FILE_PRE , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
-	char SFC_OBS_FILE[strlen(SFC_OBS_FILE_PRE) + 1];
-	strcpy(SFC_OBS_FILE, SFC_OBS_FILE_PRE);
+	char sfc_obs_file_pre[200];
+	sprintf(sfc_obs_file_pre , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
+	char sfc_obs_file[strlen(sfc_obs_file_pre) + 1];
+	strcpy(sfc_obs_file, sfc_obs_file_pre);
 	
-	ecc_file = fopen(SFC_OBS_FILE, "r");
+	ecc_file = fopen(sfc_obs_file, "r");
 	handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
-	NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
-	if ((retval = codes_get_double_array(handle, "values", &surface_height[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
+	if ((retval = codes_get_double_array(handle, "values", &surface_height[0], &no_of_points_per_layer_input_size_t)))
 		ECCERR(retval);
 	codes_handle_delete(handle);
 	fclose(ecc_file);
@@ -208,17 +207,16 @@ int main(int argc, char *argv[])
 	// reading the surface presure
 	double *pressure_surface = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	
-	char SFC_PRES_FILE_PRE[200];
-	sprintf(SFC_PRES_FILE_PRE , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
-	char SFC_PRES_FILE[strlen(SFC_PRES_FILE_PRE) + 1];
-	strcpy(SFC_PRES_FILE, SFC_PRES_FILE_PRE);
+	char sfc_pres_file_pre[200];
+	sprintf(sfc_pres_file_pre , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
+	char sfc_pres_file[strlen(sfc_pres_file_pre) + 1];
+	strcpy(sfc_pres_file, sfc_pres_file_pre);
 	
-	ecc_file = fopen(SFC_PRES_FILE, "r");
+	ecc_file = fopen(sfc_pres_file, "r");
 	handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
-	NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
-	if ((retval = codes_get_double_array(handle, "values", &pressure_surface[0], &NO_OF_POINTS_PER_LAYER_INPUT_SIZE_T)))
+	if ((retval = codes_get_double_array(handle, "values", &pressure_surface[0], &no_of_points_per_layer_input_size_t)))
 		ECCERR(retval);
 	codes_handle_delete(handle);
 	fclose(ecc_file);
@@ -228,21 +226,21 @@ int main(int argc, char *argv[])
 	double *longitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
 	double *sst = malloc(NO_OF_SST_POINTS*sizeof(double));
 	
-	char SST_FILE_PRE[200];
-	sprintf(SST_FILE_PRE , "%s/input/rtgssthr_grb_0.5.grib2", real2game_root_dir);
-	char SST_FILE[strlen(SST_FILE_PRE) + 1];
-	strcpy(SST_FILE, SST_FILE_PRE);
+	char sst_file_pre[200];
+	sprintf(sst_file_pre , "%s/input/rtgssthr_grb_0.5.grib2", real2game_root_dir);
+	char sst_file[strlen(sst_file_pre) + 1];
+	strcpy(sst_file, sst_file_pre);
 	
-	ecc_file = fopen(SST_FILE, "r");
+	ecc_file = fopen(sst_file, "r");
 	handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
-	size_t NO_OF_SST_POINTS_SIZE_T = (size_t) NO_OF_SST_POINTS;
-	if ((retval = codes_get_double_array(handle, "values", &sst[0], &NO_OF_SST_POINTS_SIZE_T)))
+	size_t no_of_sst_points_size_t = (size_t) NO_OF_SST_POINTS;
+	if ((retval = codes_get_double_array(handle, "values", &sst[0], &no_of_sst_points_size_t)))
 		ECCERR(retval);
-	if ((retval = codes_get_double_array(handle, "latitudes", &latitudes_sst[0], &NO_OF_SST_POINTS_SIZE_T)))
+	if ((retval = codes_get_double_array(handle, "latitudes", &latitudes_sst[0], &no_of_sst_points_size_t)))
 		ECCERR(retval);
-	if ((retval = codes_get_double_array(handle, "longitudes", &longitudes_sst[0], &NO_OF_SST_POINTS_SIZE_T)))
+	if ((retval = codes_get_double_array(handle, "longitudes", &longitudes_sst[0], &no_of_sst_points_size_t)))
 		ECCERR(retval);
 	codes_handle_delete(handle);
 	fclose(ecc_file);
@@ -256,14 +254,14 @@ int main(int argc, char *argv[])
 	}
     
     // Writing the observations to a netcdf file.
-    char OUTPUT_FILE_PRE[200];
-    sprintf(OUTPUT_FILE_PRE, "%s/input/obs_%s%s%s%s.nc", real2game_root_dir, year_string, month_string, day_string, hour_string);
-	char OUTPUT_FILE[strlen(OUTPUT_FILE_PRE) + 1];
-	strcpy(OUTPUT_FILE, OUTPUT_FILE_PRE);
+    char output_file_pre[200];
+    sprintf(output_file_pre, "%s/input/obs_%s%s%s%s.nc", real2game_root_dir, year_string, month_string, day_string, hour_string);
+	char output_file[strlen(output_file_pre) + 1];
+	strcpy(output_file, output_file_pre);
     
     int ncid, h_dimid, v_dimid, z_surf_id, sp_id, sst_dimid, t_id, spec_hum_id, z_id, u_id, v_id, lat_sst_id, lon_sst_id, sst_id;
     int dim_vector[2];
-    if ((retval = nc_create(OUTPUT_FILE, NC_CLOBBER, &ncid)))
+    if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
         NCERR(retval);
     // Defining the dimensions.
     if ((retval = nc_def_dim(ncid, "h_index", NO_OF_POINTS_PER_LAYER_INPUT, &h_dimid)))
@@ -320,7 +318,7 @@ int main(int argc, char *argv[])
     if ((retval = nc_close(ncid)))
     	NCERR(retval);
     
-    // Freeing the memory.
+    // freeing the memory
     free(z_height_amsl);
     free(surface_height);
 	free(pressure_surface);
