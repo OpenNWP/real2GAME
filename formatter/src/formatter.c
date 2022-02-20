@@ -41,22 +41,20 @@ int main(int argc, char *argv[])
     strcpy(hour_string, argv[4]);
     char real2game_root_dir[strlen(argv[5]) + 1];
     strcpy(real2game_root_dir, argv[5]);
-    
-	// Allocating the memory for the final result.
-	double *z_height_amsl_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	
 	// single-layer arrays from grib
+	double *z_height_amsl_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	double *temperature_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	double *spec_hum_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	double *u_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	double *v_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	
 	// 2D-arrays for NetCDF
+	double (*z_height_amsl)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*temperature)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*spec_hum)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*u_wind)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*v_wind)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
-	double (*z_height_amsl)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	
 	// grib stuff
 	FILE *ecc_file;
