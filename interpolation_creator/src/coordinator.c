@@ -40,8 +40,8 @@ int main(int argc, char *argv[])
 	int oro_id;
     oro_id = strtod(argv[7], NULL);
     
-	double *latitudes_model = malloc(NO_OF_POINTS_PER_LAYER_INPUT_MODEL*sizeof(double));
-	double *longitudes_model = malloc(NO_OF_POINTS_PER_LAYER_INPUT_MODEL*sizeof(double));
+	double *latitudes_input_model = malloc(NO_OF_POINTS_PER_LAYER_INPUT_MODEL*sizeof(double));
+	double *longitudes_input_model = malloc(NO_OF_POINTS_PER_LAYER_INPUT_MODEL*sizeof(double));
 	
 	int retval, err;
 	codes_handle *handle = NULL;
@@ -59,14 +59,16 @@ int main(int argc, char *argv[])
 		ECCERR(err);
 	size_t NO_OF_POINTS_PER_LAYER_INPUT_MODEL_SIZE_T;
 	NO_OF_POINTS_PER_LAYER_INPUT_MODEL_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT_MODEL;
-	if ((retval = codes_get_double_array(handle, "values", &latitudes_model[0], &NO_OF_POINTS_PER_LAYER_INPUT_MODEL_SIZE_T)))
+	if ((retval = codes_get_double_array(handle, "values", &latitudes_input_model[0], &NO_OF_POINTS_PER_LAYER_INPUT_MODEL_SIZE_T)))
 		ECCERR(retval);
 	codes_handle_delete(handle);
     fclose(ECC_FILE);
     
+    // transforming the latitude coordinates of the input model from degrees to radians
+    #pragma omp parallel for
     for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT_MODEL; ++i)
     {
-    	latitudes_model[i] = 2.0*M_PI*latitudes_model[i]/360.0;
+    	latitudes_input_model[i] = 2.0*M_PI*latitudes_input_model[i]/360.0;
     }
     
     // longitudes of the grid
@@ -80,14 +82,16 @@ int main(int argc, char *argv[])
 	if (err != 0)
 		ECCERR(err);
 	NO_OF_POINTS_PER_LAYER_INPUT_MODEL_SIZE_T = (size_t) NO_OF_POINTS_PER_LAYER_INPUT_MODEL;
-	if ((retval = codes_get_double_array(handle, "values", &longitudes_model[0], &NO_OF_POINTS_PER_LAYER_INPUT_MODEL_SIZE_T)))
+	if ((retval = codes_get_double_array(handle, "values", &longitudes_input_model[0], &NO_OF_POINTS_PER_LAYER_INPUT_MODEL_SIZE_T)))
 		ECCERR(retval);
 	codes_handle_delete(handle);
     fclose(ECC_FILE);
     
+    // transforming the longitude coordinates of the input model from degrees to radians
+    #pragma omp parallel for
     for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT_MODEL; ++i)
     {
-    	longitudes_model[i] = 2.0*M_PI*longitudes_model[i]/360.0;
+    	longitudes_input_model[i] = 2.0*M_PI*longitudes_input_model[i]/360.0;
     }
     
     
@@ -143,7 +147,7 @@ int main(int argc, char *argv[])
     	double *distance_vector = malloc(NO_OF_POINTS_PER_LAYER_INPUT_MODEL*sizeof(double));
     	for (int j = 0; j < NO_OF_POINTS_PER_LAYER_INPUT_MODEL; ++j)
     	{
-    		distance_vector[j] = calculate_distance_h(latitudes_game[i], longitudes_game[i], latitudes_model[j], longitudes_model[j], 1.0);
+    		distance_vector[j] = calculate_distance_h(latitudes_game[i], longitudes_game[i], latitudes_input_model[j], longitudes_input_model[j], 1.0);
     	}
     	double sum_of_weights = 0.0;
     	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
@@ -166,7 +170,7 @@ int main(int argc, char *argv[])
     	double *distance_vector = malloc(NO_OF_POINTS_PER_LAYER_INPUT_MODEL*sizeof(double));
     	for (int j = 0; j < NO_OF_POINTS_PER_LAYER_INPUT_MODEL; ++j)
     	{
-    		distance_vector[j] =  calculate_distance_h(latitudes_game_wind[i], longitudes_game_wind[i], latitudes_model[j], longitudes_model[j], 1.0);
+    		distance_vector[j] =  calculate_distance_h(latitudes_game_wind[i], longitudes_game_wind[i], latitudes_input_model[j], longitudes_input_model[j], 1.0);
     	}
     	double sum_of_weights = 0.0;
     	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
@@ -185,8 +189,8 @@ int main(int argc, char *argv[])
 	printf("Calculating interpolation indices and weights finished.\n");
 	
 	// freeing memory we do not need further
-	free(latitudes_model);
-	free(longitudes_model);
+	free(latitudes_input_model);
+	free(longitudes_input_model);
     free(latitudes_game);
     free(longitudes_game);
     free(latitudes_game_wind);
