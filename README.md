@@ -4,7 +4,7 @@ The utilities in this repository create initial conditions for [GAME](https://gi
 
 ## Code structure
 
-real2GAME incorporates different tool
+real2GAME incorporates different tools:
 
 * The interpolator executes the main task: it interpolates the data from another model to the grid of GAME or L-GAME.
 * The formatter needs to be executed before the interpolator. It brings the data from the foreign model into a standardized format.
