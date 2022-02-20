@@ -48,7 +48,7 @@ $real2game_home_dir/downloader/run.sh $real2game_home_dir $analysis_year $analys
 echo "Collection of initial data completed."
 
 # reformatting
-echo "Reformatting the input data .."
+echo "Reformatting the input data ..."
 $real2game_home_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_home_dir
 if [ $? -ne 0 ]
 then
