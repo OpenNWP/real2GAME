@@ -70,6 +70,7 @@ else
 echo "Model input file created sucessfully."
 fi
 
-
+# cleaning the input directory
+rm $real2game_home_dir/input/*
 
 
