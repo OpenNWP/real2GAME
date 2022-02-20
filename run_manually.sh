@@ -49,7 +49,7 @@ echo "Collection of initial data completed."
 
 # reformatting
 echo "Reformatting the input data ..."
-$real2game_home_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_home_dir
+$real2game_home_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string $real2game_home_dir
 if [ $? -ne 0 ]
 then
 echo -e ${RED}Formatter failed.$NC
@@ -62,7 +62,7 @@ echo "analysis year: "$analysis_year
 echo "analysis month: "$analysis_month
 echo "analysis day: "$analysis_day
 echo "analysis hour: "$analysis_hour
-$real2game_home_dir/build/real2game $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $real2game_home_dir
+$real2game_home_dir/build/real2game $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string $model_home_directory $orography_id $background_file $real2game_home_dir
 if [ $? -ne 0 ]
 then
 echo -e ${RED}real2GAME failed.$NC
