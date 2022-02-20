@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
 	printf("Grid file read.\n");
 	
+	// constructing the filename of the input file for GAME
     char output_file_pre[200];
     sprintf(output_file_pre, "%s/nwp_init/%s%s%s%s.nc", model_home_dir, year_string, month_string, day_string, hour_string);
     char output_file[strlen(output_file_pre) + 1];
@@ -151,12 +152,13 @@ int main(int argc, char *argv[])
 	double (*spec_hum_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*u_wind_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
 	double (*v_wind_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
+	double *z_surf_in = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *p_surf_in = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
 	double *latitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
 	double *longitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
 	double *sst_in = malloc(NO_OF_SST_POINTS*sizeof(double));
-	double *z_surf_in = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
-	double *p_surf_in = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
     
+    // determining the name of the input file
     char input_file_pre[200];
     sprintf(input_file_pre, "%s/input/obs_%s%s%s%s.nc", real2game_root_dir, year_string, month_string, day_string, hour_string);
     char input_file[strlen(input_file_pre) + 1];
@@ -169,10 +171,6 @@ int main(int argc, char *argv[])
     if ((retval = nc_open(input_file, NC_NOWRITE, &ncid)))
         NCERR(retval);
     // Defining the variables.
-    if ((retval = nc_inq_varid(ncid, "z_surface", &z_surf_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "pressure_surface", &sp_id)))
-        NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "z_height", &z_coords_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "temperature", &t_in_id)))
@@ -183,15 +181,15 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "v_wind", &v_id)))
         NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "z_surface", &z_surf_id)))
+        NCERR(retval);
+    if ((retval = nc_inq_varid(ncid, "pressure_surface", &sp_id)))
+        NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "lat_sst", &lat_sst_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "lon_sst", &lon_sst_id)))
         NCERR(retval);
     if ((retval = nc_inq_varid(ncid, "sst", &sst_id)))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, z_surf_id, &z_surf_in[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, sp_id, &p_surf_in[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, z_coords_id, &z_coords_input_model[0][0])))
         NCERR(retval);
@@ -202,6 +200,10 @@ int main(int argc, char *argv[])
     if ((retval = nc_get_var_double(ncid, u_id, &u_wind_in[0][0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, v_id, &v_wind_in[0][0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, z_surf_id, &z_surf_in[0])))
+        NCERR(retval);
+    if ((retval = nc_get_var_double(ncid, sp_id, &p_surf_in[0])))
         NCERR(retval);
     if ((retval = nc_get_var_double(ncid, lat_sst_id, &latitudes_sst[0])))
         NCERR(retval);
@@ -220,10 +222,14 @@ int main(int argc, char *argv[])
 	double (*interpolation_weights_vector)[NO_OF_AVG_POINTS] = malloc(sizeof(double[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
 	
 	printf("Reading the interpolation indices and weights.\n");
+	
+	// constructing the name of the interpolation indices and weights file
 	char interpol_file_pre[200];
 	sprintf(interpol_file_pre, "%s/interpolation_files/icon-global2game%d.nc", real2game_root_dir, RES_ID);
     char interpol_file[strlen(interpol_file_pre) + 1];
     strcpy(interpol_file, interpol_file_pre);
+	
+	// reading the interpolation file
 	int interpolation_indices_scalar_id, interpolation_weights_scalar_id, interpolation_indices_vector_id, interpolation_weights_vector_id;
     if ((retval = nc_open(interpol_file, NC_NOWRITE, &ncid)))
         NCERR(retval);
@@ -322,6 +328,7 @@ int main(int argc, char *argv[])
     		spec_hum_out[i] += interpolation_weights_scalar[h_index][j]*(closest_value + delta_z*gradient);
     	}
     }
+    // these array are now interpolated and not needed any further
     free(spec_hum_in);
     free(temperature_in);
     
@@ -342,12 +349,14 @@ int main(int argc, char *argv[])
     free(z_coords_game);
 	free(z_surf_in);
 	free(p_surf_in);
+	// no more interpolation of scalar quantities will be executed, this is why these interpolation indices and weights can be freed
 	free(interpolation_indices_scalar);
 	free(interpolation_weights_scalar);
     
-    double *density_dry_out = malloc(NO_OF_SCALARS*sizeof(double));
-    double *exner = malloc(NO_OF_SCALARS*sizeof(double));
     // density is determined out of the hydrostatic equation
+    double *density_dry_out = malloc(NO_OF_SCALARS*sizeof(double));
+    // the Exner pressure is just a temporarily needed helper variable here to integrate the hydrostatic equation
+    double *exner = malloc(NO_OF_SCALARS*sizeof(double));
     double b, c;
     for (int i = NO_OF_SCALARS - 1; i >= 0; --i)
     {
@@ -393,6 +402,7 @@ int main(int argc, char *argv[])
     	h_index = i - layer_index*NO_OF_VECTORS_H;
    		vector_index = NO_OF_SCALARS_H + layer_index*NO_OF_VECTORS_PER_LAYER + h_index;
    		
+   		// the u- and v-components of the wind at the grid point of GAME
    		u_local = 0.0;
    		v_local = 0.0;
    		// loop over all horizontal points that are used for averaging
@@ -444,7 +454,7 @@ int main(int argc, char *argv[])
     		v_local += interpolation_weights_vector[h_index][j]*(closest_value + gradient*delta_z);
     	}
     	
-    	// projection onto the local normal
+    	// projection onto the direction of the vector in GAME
 		wind_out[vector_index] = u_local*cos(directions[h_index]) + v_local*sin(directions[h_index]);
     }
     free(u_wind_in);
