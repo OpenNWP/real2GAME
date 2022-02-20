@@ -18,17 +18,28 @@ int main(int argc, char *argv[])
 	// defining the levels of the model we want to use
 	int levels_vector[NO_OF_LEVELS_INPUT];
 	levels_vector[0] = 1;
-	levels_vector[1] = 10;
-	levels_vector[2] = 19;
-	levels_vector[3] = 27;
-	levels_vector[4] = 35;
-	levels_vector[5] = 43;
-	levels_vector[6] = 51;
-	levels_vector[7] = 59;
-	levels_vector[8] = 67;
-	levels_vector[9] = 75;
-	levels_vector[10] = 83;
-	levels_vector[11] = 90;
+	levels_vector[1] = 5;
+	levels_vector[2] = 10;
+	levels_vector[3] = 15;
+	levels_vector[4] = 19;
+	levels_vector[5] = 23;
+	levels_vector[6] = 27;
+	levels_vector[7] = 31;
+	levels_vector[8] = 35;
+	levels_vector[9] = 39;
+	levels_vector[10] = 43;
+	levels_vector[11] = 47;
+	levels_vector[12] = 51;
+	levels_vector[13] = 55;
+	levels_vector[14] = 59;
+	levels_vector[15] = 63;
+	levels_vector[16] = 67;
+	levels_vector[17] = 71;
+	levels_vector[18] = 75;
+	levels_vector[19] = 79;
+	levels_vector[20] = 83;
+	levels_vector[21] = 87;
+	levels_vector[22] = 90;
 	
 	// shell arguments
     char year_string[strlen(argv[1]) + 1];
