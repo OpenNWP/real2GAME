@@ -57,6 +57,9 @@ else
 echo "Data formatted for the interpolation successfully."
 fi
 
+# cleaning the input directory
+rm $real2game_home_dir/input/*.grib2
+
 echo "Starting the interpolation process ..."
 echo "analysis year: "$analysis_year
 echo "analysis month: "$analysis_month
