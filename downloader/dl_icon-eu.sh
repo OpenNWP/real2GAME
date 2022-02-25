@@ -2,7 +2,7 @@
 
 # This downloads data from the European ICON model.
 
-url_base="https://opendata.dwd.de/weather/nwp/icon/grib"
+url_base="https://opendata.dwd.de/weather/nwp/icon-eu/grib"
 
 levels_vector=(1 10 19 27 35 43 51 59 67 75 83 90)
 
