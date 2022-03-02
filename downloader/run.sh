@@ -17,11 +17,6 @@ fi
 
 if [ $model_source_id -eq 1 ]
 then
-source $real2game_root_dir/downloader/dl_icon-eu.sh
-fi
-
-if [ $model_source_id -eq 2 ]
-then
 source $real2game_root_dir/downloader/dl_icon-d2.sh
 fi
 
