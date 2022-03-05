@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
 		printf("Calculating interpolation indices and weights ...\n");
 		
 		#pragma omp parallel for
-		for (int i = 0; i < nlat*nlon; ++i)
+		for (int i = 0; i < nlat; ++i)
 		{
 			for (int j = 0; j < nlon; ++j)
 			{
