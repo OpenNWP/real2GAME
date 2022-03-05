@@ -39,6 +39,14 @@ int main(int argc, char *argv[])
 	int model_source_id = strtod(argv[8], NULL);
 	int model_target_id = strtod(argv[9], NULL);
     
+    // sanity checks
+    if (model_source_id == 1 && model_target_id == 0)
+    {
+    	printf("You cannot initialize GAME with ICON-D2.\n");
+    	printf("Aborting.\n");
+    	exit(1);
+    }
+    
     int no_of_points_per_layer_input_model;
     if (model_source_id == 0)
     {
