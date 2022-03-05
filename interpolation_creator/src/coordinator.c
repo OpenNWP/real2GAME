@@ -173,8 +173,7 @@ int main(int argc, char *argv[])
 		    NCERR(retval);
 		printf("Grid file of GAME read.\n");
 		
-		// writing the result to a NetCDF file
-		
+		// allocating memory for the result arrays
 		int (*interpolation_indices_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(int[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
 		double (*interpolation_weights_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(double[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
 		int (*interpolation_indices_vector)[NO_OF_AVG_POINTS] = malloc(sizeof(int[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
@@ -238,6 +237,7 @@ int main(int argc, char *argv[])
 		free(latitudes_game_wind);
 		free(longitudes_game_wind);
 		
+		// writing the result to a NetCDF file
 		char output_file_pre[200];
 		sprintf(output_file_pre, "%s/interpolation_files/icon-global2game%d.nc", real2game_root_dir, RES_ID);
 		char output_file[strlen(output_file_pre) + 1];
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
     // L-GAME
     if (model_target_id == 1)
     {
-		// reading the horizontal coordinates of the grid of GAME
+		// reading the horizontal coordinates of the grid of L-GAME
 		double (*latitudes_lgame)[nlat] = malloc(sizeof(double[nlon][nlat]));
 		double (*longitudes_lgame)[nlat] = malloc(sizeof(double[nlon][nlat]));
 		double (*latitudes_lgame_wind_u)[nlat] = malloc(sizeof(double[nlon][nlat+1]));
@@ -336,8 +336,7 @@ int main(int argc, char *argv[])
 		    NCERR(retval);
 		printf("Grid file of L-GAME read.\n");
 		
-		// writing the result to a NetCDF file
-		
+		// allocating memory for the result arrays
 		int (*interpolation_indices_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(int[nlat*nlon][NO_OF_AVG_POINTS]));
 		double (*interpolation_weights_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(double[nlat*nlon][NO_OF_AVG_POINTS]));
 		int (*interpolation_indices_vector_u)[NO_OF_AVG_POINTS] = malloc(sizeof(int[nlat*(nlon+1)][NO_OF_AVG_POINTS]));
@@ -437,6 +436,7 @@ int main(int argc, char *argv[])
 		free(latitudes_lgame_wind_v);
 		free(longitudes_lgame_wind_v);
 		
+		// writing the result to a NetCDF file
 		char output_file_pre[200];
 		sprintf(output_file_pre, "%s/interpolation_files/icon-d22lgame_%s", real2game_root_dir, lgame_grid);
 		char output_file[strlen(output_file_pre) + 1];
