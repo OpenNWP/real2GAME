@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 	}
     if (model_source_id == 1)
     {
-		no_of_points_per_layer_input_model = 2949120;
+		no_of_points_per_layer_input_model = 542040;
 	}
 
 	double *latitudes_input_model = malloc(no_of_points_per_layer_input_model*sizeof(double));
@@ -288,10 +288,10 @@ int main(int argc, char *argv[])
     if (model_target_id == 1)
     {
 		// reading the horizontal coordinates of the grid of GAME
-		double *latitudes_game = malloc(NO_OF_SCALARS_H*sizeof(double));
-		double *longitudes_game = malloc(NO_OF_SCALARS_H*sizeof(double));
-		double *latitudes_game_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
-		double *longitudes_game_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
+		double *latitudes_lgame = malloc(NO_OF_SCALARS_H*sizeof(double));
+		double *longitudes_lgame = malloc(NO_OF_SCALARS_H*sizeof(double));
+		double *latitudes_lgame_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
+		double *longitudes_lgame_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
 		char GEO_PROP_FILE_PRE[200];
 		sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, NO_OF_LAYERS, oro_id);
 		char GEO_PROP_FILE[strlen(GEO_PROP_FILE_PRE) + 1];
@@ -302,22 +302,22 @@ int main(int argc, char *argv[])
 		if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid)))
 		    NCERR(retval);
 		
-		int latitudes_game_id, latitudes_game_wind_id, longitudes_game_id, longitudes_game_wind_id;
-		if ((retval = nc_inq_varid(ncid, "latitude_scalar", &latitudes_game_id)))
+		int latitudes_lgame_id, latitudes_lgame_wind_id, longitudes_lgame_id, longitudes_lgame_wind_id;
+		if ((retval = nc_inq_varid(ncid, "latitude_scalar", &latitudes_lgame_id)))
 		    NCERR(retval);
-		if ((retval = nc_inq_varid(ncid, "longitude_scalar", &longitudes_game_id)))
+		if ((retval = nc_inq_varid(ncid, "longitude_scalar", &longitudes_lgame_id)))
 		    NCERR(retval);
-		if ((retval = nc_inq_varid(ncid, "latitude_vector", &latitudes_game_wind_id)))
+		if ((retval = nc_inq_varid(ncid, "latitude_vector", &latitudes_lgame_wind_id)))
 		    NCERR(retval);
-		if ((retval = nc_inq_varid(ncid, "longitude_vector", &longitudes_game_wind_id)))
+		if ((retval = nc_inq_varid(ncid, "longitude_vector", &longitudes_lgame_wind_id)))
 		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, latitudes_game_id, &latitudes_game[0])))
+		if ((retval = nc_get_var_double(ncid, latitudes_lgame_id, &latitudes_lgame[0])))
 		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, longitudes_game_id, &longitudes_game[0])))
+		if ((retval = nc_get_var_double(ncid, longitudes_lgame_id, &longitudes_lgame[0])))
 		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, latitudes_game_wind_id, &latitudes_game_wind[0])))
+		if ((retval = nc_get_var_double(ncid, latitudes_lgame_wind_id, &latitudes_lgame_wind[0])))
 		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, longitudes_game_wind_id, &longitudes_game_wind[0])))
+		if ((retval = nc_get_var_double(ncid, longitudes_lgame_wind_id, &longitudes_lgame_wind[0])))
 		    NCERR(retval);
 		if ((retval = nc_close(ncid)))
 		    NCERR(retval);
@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
 			double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 			for (int j = 0; j < no_of_points_per_layer_input_model; ++j)
 			{
-				distance_vector[j] = calculate_distance_h(latitudes_game[i], longitudes_game[i], latitudes_input_model[j], longitudes_input_model[j], 1.0);
+				distance_vector[j] = calculate_distance_h(latitudes_lgame[i], longitudes_lgame[i], latitudes_input_model[j], longitudes_input_model[j], 1.0);
 			}
 			double sum_of_weights = 0.0;
 			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
 			double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 			for (int j = 0; j < no_of_points_per_layer_input_model; ++j)
 			{
-				distance_vector[j] =  calculate_distance_h(latitudes_game_wind[i], longitudes_game_wind[i], latitudes_input_model[j], longitudes_input_model[j], 1.0);
+				distance_vector[j] =  calculate_distance_h(latitudes_lgame_wind[i], longitudes_lgame_wind[i], latitudes_input_model[j], longitudes_input_model[j], 1.0);
 			}
 			double sum_of_weights = 0.0;
 			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
@@ -383,10 +383,10 @@ int main(int argc, char *argv[])
 		// freeing memory we do not need further
 		free(latitudes_input_model);
 		free(longitudes_input_model);
-		free(latitudes_game);
-		free(longitudes_game);
-		free(latitudes_game_wind);
-		free(longitudes_game_wind);
+		free(latitudes_lgame);
+		free(longitudes_lgame);
+		free(latitudes_lgame_wind);
+		free(longitudes_lgame_wind);
 		
 		char output_file_pre[200];
 		sprintf(output_file_pre, "%s/interpolation_files/icon-global2game%d.nc", real2game_root_dir, RES_ID);
