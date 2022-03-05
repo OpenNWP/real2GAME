@@ -5,6 +5,7 @@
 
 # global ICON grid data download
 if [ $model_source_id -eq 0 ]
+then
 
 # properties of the global ICON model
 analysis_delay_min=175
@@ -49,6 +50,7 @@ fi
 
 # ICON-D2 grid data download
 if [ $model_source_id -eq 1 ]
+then
 
 # properties of the ICON-D2 model
 analysis_delay_min=70
