@@ -65,21 +65,21 @@ int main(int argc, char *argv[])
 	
 	// Properties of the input model's grid.
 	// latitudes of the grid
-	char LAT_OBS_FILE_PRE[200];
+	char lat_obs_file_pre[200];
 	if (model_source_id == 0)
     {
-    	sprintf(LAT_OBS_FILE_PRE , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_clat.grib2",
+    	sprintf(lat_obs_file_pre , "%s/interpolation_creator/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2",
     	real2game_root_dir, year_string, month_string, day_string, hour_string);
 	}
 	if (model_source_id == 1)
     {
-    	sprintf(LAT_OBS_FILE_PRE , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_clat.grib2",
+    	sprintf(lat_obs_file_pre , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_clat.grib2",
     	real2game_root_dir, year_string, month_string, day_string, hour_string);
 	}
-	char LAT_OBS_FILE[strlen(LAT_OBS_FILE_PRE) + 1];
-	strcpy(LAT_OBS_FILE, LAT_OBS_FILE_PRE);
+	char lat_obs_file[strlen(lat_obs_file_pre) + 1];
+	strcpy(lat_obs_file, lat_obs_file_pre);
 	FILE *ECC_FILE;
-	ECC_FILE = fopen(LAT_OBS_FILE, "r");
+	ECC_FILE = fopen(lat_obs_file, "r");
 	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
@@ -98,21 +98,21 @@ int main(int argc, char *argv[])
     }
     
     // longitudes of the grid
-	char LON_OBS_FILE_PRE[200];
+	char lon_obs_file_pre[200];
 	if (model_source_id == 0)
     {
-    	sprintf(LAT_OBS_FILE_PRE , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_clon.grib2",
+    	sprintf(lon_obs_file_pre , "%s/interpolation_creator/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2",
     	real2game_root_dir, year_string, month_string, day_string, hour_string);
 	}
 	if (model_source_id == 1)
     {
-    	sprintf(LAT_OBS_FILE_PRE , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_clon.grib2",
+    	sprintf(lon_obs_file_pre , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_clon.grib2",
     	real2game_root_dir, year_string, month_string, day_string, hour_string);
 	}
-	char LON_OBS_FILE[strlen(LON_OBS_FILE_PRE) + 1];
-	strcpy(LON_OBS_FILE, LON_OBS_FILE_PRE);
+	char lon_obs_file[strlen(lon_obs_file_pre) + 1];
+	strcpy(lon_obs_file, lon_obs_file_pre);
     
-	ECC_FILE = fopen(LON_OBS_FILE, "r");
+	ECC_FILE = fopen(lon_obs_file, "r");
 	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
 	if (err != 0)
 		ECCERR(err);
