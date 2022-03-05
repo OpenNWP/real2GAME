@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	}
 	if (model_source_id == 1)
     {
-    	sprintf(lat_obs_file_pre , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_clat.grib2",
+    	sprintf(lat_obs_file_pre , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_000_0_clat.grib2",
     	real2game_root_dir, year_string, month_string, day_string, hour_string);
 	}
 	char lat_obs_file[strlen(lat_obs_file_pre) + 1];
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 	}
 	if (model_source_id == 1)
     {
-    	sprintf(lon_obs_file_pre , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_clon.grib2",
+    	sprintf(lon_obs_file_pre , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_000_0_clon.grib2",
     	real2game_root_dir, year_string, month_string, day_string, hour_string);
 	}
 	char lon_obs_file[strlen(lon_obs_file_pre) + 1];

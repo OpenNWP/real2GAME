@@ -80,11 +80,11 @@ fi
 
 echo "Downloading ICON grid data ..."
 # downloading horizontal coordinates of the cells
-filename="icon-d2_germany_icosahedral_time-invariant_"$analysis_year$analysis_month$analysis_day$analysis_hour"_clat.grib2.bz2"
+filename="icon-d2_germany_icosahedral_time-invariant_"$analysis_year$analysis_month$analysis_day$analysis_hour"_000_0_clat.grib2.bz2"
 url=$url_base"/"$analysis_hour"/clat/"$filename
 wget -q --directory-prefix=$real2game_root_dir/interpolation_creator $url
 bzip2 -d $real2game_root_dir/interpolation_creator/$filename
-filename="icon-d2_germany_icosahedral_time-invariant_"$analysis_year$analysis_month$analysis_day$analysis_hour"_clon.grib2.bz2"
+filename="icon-d2_germany_icosahedral_time-invariant_"$analysis_year$analysis_month$analysis_day$analysis_hour"_000_0_clon.grib2.bz2"
 url=$url_base"/"$analysis_hour"/clon/"$filename
 wget -q --directory-prefix=$real2game_root_dir/interpolation_creator $url
 bzip2 -d $real2game_root_dir/interpolation_creator/$filename
