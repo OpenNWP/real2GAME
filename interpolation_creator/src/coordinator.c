@@ -356,7 +356,7 @@ int main(int argc, char *argv[])
 				double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 				for (int k = 0; k < no_of_points_per_layer_input_model; ++k)
 				{
-					distance_vector[j] = calculate_distance_h(latitudes_lgame[i][j], longitudes_lgame[i][j], latitudes_input_model[k], longitudes_input_model[k], 1.0);
+					distance_vector[k] = calculate_distance_h(latitudes_lgame[i][j], longitudes_lgame[i][j], latitudes_input_model[k], longitudes_input_model[k], 1.0);
 				}
 				double sum_of_weights = 0.0;
 				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
 				double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 				for (int k = 0; k < no_of_points_per_layer_input_model; ++k)
 				{
-					distance_vector[j] = calculate_distance_h(latitudes_lgame_wind_u[i][j], longitudes_lgame_wind_u[i][j], latitudes_input_model[k], longitudes_input_model[k], 1.0);
+					distance_vector[k] = calculate_distance_h(latitudes_lgame_wind_u[i][j], longitudes_lgame_wind_u[i][j], latitudes_input_model[k], longitudes_input_model[k], 1.0);
 				}
 				double sum_of_weights = 0.0;
 				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
@@ -408,7 +408,7 @@ int main(int argc, char *argv[])
 				double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 				for (int k = 0; k < no_of_points_per_layer_input_model; ++k)
 				{
-					distance_vector[j] = calculate_distance_h(latitudes_lgame_wind_v[i][j], longitudes_lgame_wind_v[i][j], latitudes_input_model[k], longitudes_input_model[k], 1.0);
+					distance_vector[k] = calculate_distance_h(latitudes_lgame_wind_v[i][j], longitudes_lgame_wind_v[i][j], latitudes_input_model[k], longitudes_input_model[k], 1.0);
 				}
 				double sum_of_weights = 0.0;
 				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
