@@ -41,6 +41,8 @@ int main(int argc, char *argv[])
 	int nlat = strtod(argv[10], NULL);
 	int nlon = strtod(argv[11], NULL);
 	int interpol_exp = strtod(argv[12], NULL);
+    char lgame_grid[strlen(argv[13]) + 1];
+    strcpy(lgame_grid, argv[13]);
     
     // sanity checks
     if (model_source_id == 1 && model_target_id == 0)
@@ -293,7 +295,7 @@ int main(int argc, char *argv[])
 		double *latitudes_lgame_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
 		double *longitudes_lgame_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
 		char GEO_PROP_FILE_PRE[200];
-		sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, NO_OF_LAYERS, oro_id);
+		sprintf(GEO_PROP_FILE_PRE, "%s/grids/%s", model_home_dir, lgame_grid);
 		char GEO_PROP_FILE[strlen(GEO_PROP_FILE_PRE) + 1];
 		strcpy(GEO_PROP_FILE, GEO_PROP_FILE_PRE);
 		printf("Grid file: %s\n", GEO_PROP_FILE);
