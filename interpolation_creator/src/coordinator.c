@@ -38,6 +38,9 @@ int main(int argc, char *argv[])
 	int oro_id = strtod(argv[7], NULL);
 	int model_source_id = strtod(argv[8], NULL);
 	int model_target_id = strtod(argv[9], NULL);
+	int nlat = strtod(argv[10], NULL);
+	int nlon = strtod(argv[11], NULL);
+	int interpol_exp = strtod(argv[12], NULL);
     
     // sanity checks
     if (model_source_id == 1 && model_target_id == 0)
@@ -190,7 +193,7 @@ int main(int argc, char *argv[])
 			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
 			{
 				interpolation_indices_scalar[i][j] = find_min_index(distance_vector, no_of_points_per_layer_input_model);
-				interpolation_weights_scalar[i][j] = 1.0/(pow(distance_vector[interpolation_indices_scalar[i][j]], INTERPOL_EXP));
+				interpolation_weights_scalar[i][j] = 1.0/(pow(distance_vector[interpolation_indices_scalar[i][j]], interpol_exp));
 				distance_vector[interpolation_indices_scalar[i][j]] = 2.0*M_PI;
 				sum_of_weights += interpolation_weights_scalar[i][j];
 			}
@@ -213,7 +216,7 @@ int main(int argc, char *argv[])
 			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
 			{
 				interpolation_indices_vector[i][j] = find_min_index(distance_vector, no_of_points_per_layer_input_model);
-				interpolation_weights_vector[i][j] = 1.0/(pow(distance_vector[interpolation_indices_vector[i][j]], INTERPOL_EXP));
+				interpolation_weights_vector[i][j] = 1.0/(pow(distance_vector[interpolation_indices_vector[i][j]], interpol_exp));
 				distance_vector[interpolation_indices_vector[i][j]] = 2.0*M_PI;
 				sum_of_weights += interpolation_weights_vector[i][j];
 			}
@@ -342,7 +345,7 @@ int main(int argc, char *argv[])
 			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
 			{
 				interpolation_indices_scalar[i][j] = find_min_index(distance_vector, no_of_points_per_layer_input_model);
-				interpolation_weights_scalar[i][j] = 1.0/(pow(distance_vector[interpolation_indices_scalar[i][j]], INTERPOL_EXP));
+				interpolation_weights_scalar[i][j] = 1.0/(pow(distance_vector[interpolation_indices_scalar[i][j]], interpol_exp));
 				distance_vector[interpolation_indices_scalar[i][j]] = 2.0*M_PI;
 				sum_of_weights += interpolation_weights_scalar[i][j];
 			}
@@ -365,7 +368,7 @@ int main(int argc, char *argv[])
 			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
 			{
 				interpolation_indices_vector[i][j] = find_min_index(distance_vector, no_of_points_per_layer_input_model);
-				interpolation_weights_vector[i][j] = 1.0/(pow(distance_vector[interpolation_indices_vector[i][j]], INTERPOL_EXP));
+				interpolation_weights_vector[i][j] = 1.0/(pow(distance_vector[interpolation_indices_vector[i][j]], interpol_exp));
 				distance_vector[interpolation_indices_vector[i][j]] = 2.0*M_PI;
 				sum_of_weights += interpolation_weights_vector[i][j];
 			}
