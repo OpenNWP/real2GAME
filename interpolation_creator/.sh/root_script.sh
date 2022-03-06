@@ -3,6 +3,8 @@
 # This source file is part of real2GAME, which is released under the MIT license.
 # Github repository: https://github.com/OpenNWP/real2GAME
 
+# Firstly, we have to download the grid data.
+
 # global ICON grid data download
 if [ $model_source_id -eq 0 ]
 then
@@ -92,6 +94,7 @@ bzip2 -d $real2game_root_dir/interpolation_creator/$filename
 echo "ICON grid data downloaded."
 fi
 
+# Now we can excute the interpolation generator itself.
 ./interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_source_id $model_target_id $nlat $nlon $interpol_exp $lgame_grid
 
 # deleting the ICON grid data
