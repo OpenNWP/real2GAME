@@ -94,7 +94,7 @@ bzip2 -d $real2game_root_dir/interpolation_creator/$filename
 echo "ICON grid data downloaded."
 fi
 
-# Now we can excute the interpolation generator itself.
+# Now we can execute the interpolation creator itself.
 ./interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_source_id $model_target_id $nlat $nlon $interpol_exp $lgame_grid
 
 # deleting the ICON grid data
