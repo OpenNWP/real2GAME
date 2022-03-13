@@ -1,6 +1,6 @@
 # real2GAME
 
-The utilities in this repository create initial conditions for [GAME](https://github.com/OpenNWP/GAME) as well as initial and boundary conitions for [L-GAME](https://github.com/OpenNWP/L-GAME).
+The utilities in this repository create initial conditions for [GAME](https://github.com/OpenNWP/GAME) as well as initial and boundary conditions for [L-GAME](https://github.com/OpenNWP/L-GAME).
 
 ## Code structure
 
@@ -15,7 +15,6 @@ real2GAME incorporates different tools:
 
 ### Dependencies
 
-* [GAME](https://github.com/OpenNWP/GAME)
 * bzip2 (Ubuntu: `sudo apt-get install bzip2`)
 * basic calculator (Ubuntu: `sudo apt-get install bc`)
 
