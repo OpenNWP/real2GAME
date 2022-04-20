@@ -12,7 +12,6 @@ orography_id=${BASH_ARGV[5]}
 background_file=${BASH_ARGV[6]}
 real2game_home_dir=${BASH_ARGV[7]}
 omp_num_threads=${BASH_ARGV[8]}
-model_source_id=${BASH_ARGV[9]}
 
 # parallelization
 export OMP_NUM_THREADS=$omp_num_threads # relevant only for OMP
@@ -21,7 +20,7 @@ echo "This is real2GAME."
 
 # executing the downloader ...
 echo "Starting to download initial data ..."
-$real2game_home_dir/downloader/run.sh $model_source_id $real2game_home_dir $analysis_year $analysis_month $analysis_day $analysis_hour
+$real2game_home_dir/downloader/run.sh $real2game_home_dir $analysis_year $analysis_month $analysis_day $analysis_hour
 echo "Collection of initial data completed."
 
 # reformatting

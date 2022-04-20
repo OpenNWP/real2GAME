@@ -36,31 +36,15 @@ int main(int argc, char *argv[])
     char model_home_dir[strlen(argv[6]) + 1];
     strcpy(model_home_dir, argv[6]);
 	int oro_id = strtod(argv[7], NULL);
-	int model_source_id = strtod(argv[8], NULL);
-	int model_target_id = strtod(argv[9], NULL);
-	int nlat = strtod(argv[10], NULL);
-	int nlon = strtod(argv[11], NULL);
-	int interpol_exp = strtod(argv[12], NULL);
-    char lgame_grid[strlen(argv[13]) + 1];
-    strcpy(lgame_grid, argv[13]);
-    
-    // sanity checks
-    if (model_source_id == 1 && model_target_id == 0)
-    {
-    	printf("You cannot initialize GAME with ICON-D2.\n");
-    	printf("Aborting.\n");
-    	exit(1);
-    }
+	int model_target_id = strtod(argv[8], NULL);
+	int nlat = strtod(argv[9], NULL);
+	int nlon = strtod(argv[10], NULL);
+	int interpol_exp = strtod(argv[11], NULL);
+    char lgame_grid[strlen(argv[12]) + 1];
+    strcpy(lgame_grid, argv[12]);
     
     int no_of_points_per_layer_input_model;
-    if (model_source_id == 0)
-    {
-		no_of_points_per_layer_input_model = 2949120;
-	}
-    if (model_source_id == 1)
-    {
-		no_of_points_per_layer_input_model = 542040;
-	}
+	no_of_points_per_layer_input_model = 2949120;
 
 	double *latitudes_input_model = malloc(no_of_points_per_layer_input_model*sizeof(double));
 	double *longitudes_input_model = malloc(no_of_points_per_layer_input_model*sizeof(double));
@@ -71,16 +55,8 @@ int main(int argc, char *argv[])
 	// Properties of the input model's grid.
 	// latitudes of the grid
 	char lat_obs_file_pre[200];
-	if (model_source_id == 0)
-    {
-    	sprintf(lat_obs_file_pre , "%s/interpolation_creator/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2",
-    	real2game_root_dir, year_string, month_string, day_string, hour_string);
-	}
-	if (model_source_id == 1)
-    {
-    	sprintf(lat_obs_file_pre , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_000_0_clat.grib2",
-    	real2game_root_dir, year_string, month_string, day_string, hour_string);
-	}
+	sprintf(lat_obs_file_pre , "%s/interpolation_creator/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2",
+	real2game_root_dir, year_string, month_string, day_string, hour_string);
 	char lat_obs_file[strlen(lat_obs_file_pre) + 1];
 	strcpy(lat_obs_file, lat_obs_file_pre);
 	FILE *ECC_FILE;
@@ -104,16 +80,8 @@ int main(int argc, char *argv[])
     
     // longitudes of the grid
 	char lon_obs_file_pre[200];
-	if (model_source_id == 0)
-    {
-    	sprintf(lon_obs_file_pre , "%s/interpolation_creator/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2",
-    	real2game_root_dir, year_string, month_string, day_string, hour_string);
-	}
-	if (model_source_id == 1)
-    {
-    	sprintf(lon_obs_file_pre , "%s/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_%s%s%s%s_000_0_clon.grib2",
-    	real2game_root_dir, year_string, month_string, day_string, hour_string);
-	}
+	sprintf(lon_obs_file_pre , "%s/interpolation_creator/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2",
+	real2game_root_dir, year_string, month_string, day_string, hour_string);
 	char lon_obs_file[strlen(lon_obs_file_pre) + 1];
 	strcpy(lon_obs_file, lon_obs_file_pre);
     
