@@ -499,10 +499,8 @@ int main(int argc, char *argv[])
 	--------------------
 	*/
 	
-	// individual condensate temperatures are for higher resolutions, not yet implemented
 	// clouds and precipitation are set equal to the background state
 	double *densities = malloc(6*NO_OF_SCALARS*sizeof(double));
-	double *temperatures_out = malloc(5*NO_OF_SCALARS*sizeof(double));
     #pragma omp parallel for
 	for (int i = 0; i < NO_OF_SCALARS; ++i)
 	{
@@ -518,15 +516,7 @@ int main(int argc, char *argv[])
 		{
 			densities[5*NO_OF_SCALARS + i] = 0;
 		}
-		// setting the temperatures of the result
-		// assuming an LTE (local thermodynamic equilibrium)
-		temperatures_out[i] = temperature_out[i];
-		temperatures_out[NO_OF_SCALARS + i] = temperature_out[i];
-		temperatures_out[2*NO_OF_SCALARS + i] = temperature_out[i];
-		temperatures_out[3*NO_OF_SCALARS + i] = temperature_out[i];
-		temperatures_out[4*NO_OF_SCALARS + i] = temperature_out[i];
     }
-    free(temperature_out);
     free(density_dry_out);
 	free(spec_hum_out);
 	free(densities_background);
@@ -538,13 +528,11 @@ int main(int argc, char *argv[])
     
     printf("Output file: %s\n", output_file);
     printf("Writing result to output file ...\n");
-    int densities_dimid, temperatures_dimid, scalar_dimid, vector_dimid, scalar_h_dimid, single_double_dimid,
-    densities_id, temperatures_id, wind_id, soil_dimid;
+    int densities_dimid, scalar_dimid, vector_dimid, scalar_h_dimid, single_double_dimid,
+    densities_id, temperature_id, wind_id, soil_dimid;
     if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "densities_index", 6*NO_OF_SCALARS, &densities_dimid)))
-        NCERR(retval);
-    if ((retval = nc_def_dim(ncid, "temperatures_index", 5*NO_OF_SCALARS, &temperatures_dimid)))
         NCERR(retval);
     if ((retval = nc_def_dim(ncid, "vector_index", NO_OF_VECTORS, &vector_dimid)))
         NCERR(retval);
@@ -560,9 +548,9 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_put_att_text(ncid, densities_id, "units", strlen("kg/m^3"), "kg/m^3")))
         NCERR(retval);
-    if ((retval = nc_def_var(ncid, "temperatures", NC_DOUBLE, 1, &temperatures_dimid, &temperatures_id)))
+    if ((retval = nc_def_var(ncid, "temperature", NC_DOUBLE, 1, &scalar_dimid, &temperature_id)))
         NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, temperatures_id, "units", strlen("K"), "K")))
+    if ((retval = nc_put_att_text(ncid, temperature_id, "units", strlen("K"), "K")))
         NCERR(retval);
     if ((retval = nc_def_var(ncid, "wind", NC_DOUBLE, 1, &vector_dimid, &wind_id)))
         NCERR(retval);
@@ -590,7 +578,7 @@ int main(int argc, char *argv[])
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, densities_id, &densities[0])))
         NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, temperatures_id, &temperatures_out[0])))
+    if ((retval = nc_put_var_double(ncid, temperature_id, &temperature_out[0])))
         NCERR(retval);
     if ((retval = nc_put_var_double(ncid, wind_id, &wind_out[0])))
         NCERR(retval);
@@ -612,7 +600,7 @@ int main(int argc, char *argv[])
     
     // freeing the stil occupied memory
 	free(densities);
-	free(temperatures_out);
+	free(temperature_out);
 	free(wind_out);
 	free(sst_out);
 	free(tke);
