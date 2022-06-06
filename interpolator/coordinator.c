@@ -20,6 +20,9 @@ This file coordinates the data interpolation process.
 #define P_0 100000.0
 #define R_D 287.057811
 #define C_D_P 1005.0
+#define N_A (6.02214076e23)
+#define M_D (N_A*0.004810e-23)
+#define M_V (N_A*0.002991e-23)
 
 int main(int argc, char *argv[])
 {
@@ -354,7 +357,13 @@ int main(int argc, char *argv[])
 	free(interpolation_weights_scalar);
     
     // density is determined out of the hydrostatic equation
-    double *density_dry_out = malloc(NO_OF_SCALARS*sizeof(double));
+    double *density_moist_out = malloc(NO_OF_SCALARS*sizeof(double));
+    // firstly setting the virtual temperature
+    double *temperature_v = malloc(NO_OF_SCALARS*sizeof(double));
+    for (int i = 0; i < NO_OF_SCALARS; ++i)
+    {
+    	temperature_v[i] = temperature_out[i]*(1.0 + spec_hum_out[i]*(M_D/M_V - 1.0));
+    }
     // the Exner pressure is just a temporarily needed helper variable here to integrate the hydrostatic equation
     double *exner = malloc(NO_OF_SCALARS*sizeof(double));
     double b, c;
@@ -364,20 +373,21 @@ int main(int argc, char *argv[])
     	h_index = i - layer_index*NO_OF_SCALARS_H;
     	if (layer_index == NO_OF_LAYERS - 1)
     	{
-        	density_dry_out[i] = pressure_lowest_layer_out[h_index]/(R_D*temperature_out[i]);
-        	exner[i] = pow((density_dry_out[i]*R_D*temperature_out[i])/P_0, R_D/C_D_P);
+        	density_moist_out[i] = pressure_lowest_layer_out[h_index]/(R_D*temperature_v[i]);
+        	exner[i] = pow((density_moist_out[i]*R_D*temperature_v[i])/P_0, R_D/C_D_P);
         }
         else
         {
 			// solving a quadratic equation for the Exner pressure
-			b = -0.5*exner[i + NO_OF_SCALARS_H]/temperature_out[i + NO_OF_SCALARS_H]
-			*(temperature_out[i] - temperature_out[i + NO_OF_SCALARS_H]
+			b = -0.5*exner[i + NO_OF_SCALARS_H]/temperature_v[i + NO_OF_SCALARS_H]
+			*(temperature_v[i] - temperature_v[i + NO_OF_SCALARS_H]
 			+ 2.0/C_D_P*(gravity_potential_game[i] - gravity_potential_game[i + NO_OF_SCALARS_H]));
-			c = pow(exner[i + NO_OF_SCALARS_H], 2.0)*temperature_out[i]/temperature_out[i + NO_OF_SCALARS_H];
+			c = pow(exner[i + NO_OF_SCALARS_H], 2.0)*temperature_v[i]/temperature_v[i + NO_OF_SCALARS_H];
 			exner[i] = b + pow((pow(b, 2.0) + c), 0.5);
-        	density_dry_out[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*temperature_out[i]);
+        	density_moist_out[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*temperature_v[i]);
         }
     }
+    free(temperature_v);
     free(pressure_lowest_layer_out);
 	free(gravity_potential_game);
 	// the Exner pressure was only needed to integrate the hydrostatic equation
@@ -510,14 +520,14 @@ int main(int argc, char *argv[])
 		densities[NO_OF_SCALARS + i] = densities_background[NO_OF_SCALARS + i];
 		densities[2*NO_OF_SCALARS + i] = densities_background[2*NO_OF_SCALARS + i];
 		densities[3*NO_OF_SCALARS + i] = densities_background[3*NO_OF_SCALARS + i];
-		densities[4*NO_OF_SCALARS + i] = density_dry_out[i];
-		densities[5*NO_OF_SCALARS + i] = spec_hum_out[i]/(1.0 - spec_hum_out[i])*density_dry_out[i];
-		if (densities[5*NO_OF_SCALARS + i] < 0)
+		densities[4*NO_OF_SCALARS + i] = density_moist_out[i];
+		densities[5*NO_OF_SCALARS + i] = spec_hum_out[i]*density_moist_out[i];
+		if (densities[5*NO_OF_SCALARS + i] < 0.0)
 		{
-			densities[5*NO_OF_SCALARS + i] = 0;
+			densities[5*NO_OF_SCALARS + i] = 0.0;
 		}
     }
-    free(density_dry_out);
+    free(density_moist_out);
 	free(spec_hum_out);
 	free(densities_background);
     
