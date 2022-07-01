@@ -4,9 +4,10 @@
 
 now=$(date +%s)
 save_avail_time=$(bc <<< "$now - 1440*60")
+
 ana_day=$(date --utc -d @$save_avail_time +%Y%m%d)
 
-basic_url=https://ftp.ncep.noaa.gov/data/nccf/com/gfs/prod/sst.
+basic_url=https://nomads.ncep.noaa.gov/pub/data/nccf/com/nsst/prod/nsst.
 filename=rtgssthr_grb_0.5.grib2
 url=$basic_url$ana_day
 url=$url/$filename
