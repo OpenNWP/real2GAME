@@ -3,4 +3,4 @@
 # This source file is part of real2GAME, which is released under the MIT license.
 # Github repository: https://github.com/OpenNWP/real2GAME
 
-gcc -O2 src/* -fopenmp -lnetcdf -leccodes -lm -lgeos95 -Wall -o interpolation_creator
+gcc -O2 src/* -fopenmp -lnetcdf -leccodes -lm -Wall -o interpolation_creator

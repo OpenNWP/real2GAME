@@ -11,7 +11,6 @@ This file prepares the horizontal interpolation from the foreign model to GAME.
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <geos95.h>
 #include "eccodes.h"
 #include "../../header.h"
 #include "../../game_properties.h"

@@ -14,7 +14,6 @@ This file coordinates the data interpolation process.
 #include <string.h>
 #include <math.h>
 #include <netcdf.h>
-#include <geos95.h>
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
 #define SCALE_HEIGHT 8000.0
 #define P_0 100000.0
@@ -23,6 +22,33 @@ This file coordinates the data interpolation process.
 #define N_A (6.02214076e23)
 #define M_D (N_A*0.004810e-23)
 #define M_V (N_A*0.002991e-23)
+
+int find_min_index(double vector[], int vector_length)
+{
+	/*
+	This function returns the index where a vector has its minimum.
+	*/
+    int result = 0;
+    double current_min = vector[0];
+    for (int i = 1; i < vector_length; ++i)
+    {
+        if (vector[i] < current_min)
+        {
+            current_min = vector[i];
+            result = i;
+        }
+    }
+    return result;
+}
+
+double calculate_distance_h(double latitude_a, double longitude_a, double latitude_b, double longitude_b, double radius)
+{
+	/*
+	This function returns the geodetic distance of two points given their geographical coordinates.
+	*/
+    double dist = 2.0*radius*asin(sqrt(0.5 - 0.5*(cos(latitude_a)*cos(latitude_b)*cos(longitude_b - longitude_a) + sin(latitude_a)*sin(latitude_b))));
+    return dist;
+}
 
 int main(int argc, char *argv[])
 {

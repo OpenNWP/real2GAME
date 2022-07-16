@@ -33,7 +33,7 @@ done
 # analysis hour in a special format
 analysis_hour_extended_string=$analysis_hour
 if [ $analysis_hour -lt 10 ]
-then
+  then
 analysis_hour_extended_string="0$analysis_hour"
 fi
 
@@ -52,9 +52,9 @@ echo "Reformatting the input data ..."
 $real2game_home_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string $real2game_home_dir
 if [ $? -ne 0 ]
 then
-echo -e ${RED}Formatter failed.$NC
+  echo -e ${RED}Formatter failed.$NC
 else
-echo "Data formatted for the interpolation successfully."
+  echo "Data formatted for the interpolation successfully."
 fi
 
 # cleaning the input directory
@@ -68,12 +68,17 @@ echo "analysis hour: "$analysis_hour
 $real2game_home_dir/build/real2game $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string $model_home_directory $orography_id $background_file $real2game_home_dir
 if [ $? -ne 0 ]
 then
-echo -e ${RED}real2GAME failed.$NC
+  echo -e ${RED}real2GAME failed.$NC
 else
-echo "Model input file created sucessfully."
+  echo "Model input file created sucessfully."
 fi
 
 # cleaning the input directory
+
+
+
+
+
 rm $real2game_home_dir/input/*
 
 

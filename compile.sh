@@ -5,7 +5,7 @@
 
 if [ ! -d build ]
 then
-mkdir build
+  mkdir build
 fi
 
 cd build
@@ -18,7 +18,7 @@ cd ..
 cd formatter
 if [ ! -d build ]
 then
-mkdir build
+  mkdir build
 fi
 
 cd build
