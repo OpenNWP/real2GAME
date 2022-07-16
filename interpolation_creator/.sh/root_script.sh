@@ -20,15 +20,15 @@ now_hour=$(date --utc -d @$now +%k)
 analysis_hour=${cycle[-1]}
 for i in $(seq 0 1 $((${#cycle[@]} - 2)))
 do
-if [ ${cycle[$i]} -le $now_hour ] && [ ${cycle[$(($i + 1))]} -gt $now_hour ]
-then
-analysis_hour=${cycle[$i]}
-fi
+  if [ ${cycle[$i]} -le $now_hour ] && [ ${cycle[$(($i + 1))]} -gt $now_hour ]
+  then
+    analysis_hour=${cycle[$i]}
+  fi
 done
 
 if [ $analysis_hour -lt 10 ]
 then
-analysis_hour="0"$analysis_hour
+  analysis_hour="0"$analysis_hour
 fi
 
 echo "Downloading ICON grid data ..."
@@ -46,10 +46,15 @@ bzip2 -d $real2game_root_dir/interpolation_creator/$filename
 echo "ICON grid data downloaded."
 
 # Now we can execute the interpolation creator itself.
-./interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_target_id $nlat $nlon $interpol_exp $lgame_grid
+./build/interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_target_id $nlat $nlon $interpol_exp $lgame_grid
 
 # deleting the ICON grid data
 rm icon*
+
+
+
+
+
 
 
 

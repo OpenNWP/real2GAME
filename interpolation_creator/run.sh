@@ -11,6 +11,6 @@ nlon=35 # number of longitude points of the L-GAME grid
 interpol_exp=2.001 # interpolation exponent
 lgame_grid="grid.nc" # grid filename of L-GAME
 oro_id=1 # orography ID (relevant only for GAME)
-export OMP_NUM_THREADS=6 # number of threads used for OMP parallelization
+export OMP_NUM_THREADS=4 # number of threads used for OMP parallelization
 
 source .sh/root_script.sh

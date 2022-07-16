@@ -18,6 +18,33 @@ This file prepares the horizontal interpolation from the foreign model to GAME.
 #define ERRCODE 3
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(ERRCODE);}
 
+double calculate_distance_h(double latitude_a, double longitude_a, double latitude_b, double longitude_b, double radius)
+{
+	/*
+	This function returns the geodetic distance of two points given their geographical coordinates.
+	*/
+    double dist = 2.0*radius*asin(sqrt(0.5 - 0.5*(cos(latitude_a)*cos(latitude_b)*cos(longitude_b - longitude_a) + sin(latitude_a)*sin(latitude_b))));
+    return dist;
+}
+
+int find_min_index(double vector[], int vector_length)
+{
+	/*
+	This function returns the index where a vector has its minimum.
+	*/
+    int result = 0;
+    double current_min = vector[0];
+    for (int i = 1; i < vector_length; ++i)
+    {
+        if (vector[i] < current_min)
+        {
+            current_min = vector[i];
+            result = i;
+        }
+    }
+    return result;
+}
+
 int main(int argc, char *argv[])
 {
 	

@@ -8,11 +8,11 @@ set(version_patch 1)
 set(version ${version_major}.${version_minor}.${version_patch})
 project(real2GAME VERSION ${version})
 add_executable(
-formatter
-src/formatter.c)
+interpolation_creator
+src/coordinator.c)
 add_definitions(-Wall)
 find_package(OpenMP)
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
-target_link_libraries(formatter m netcdf eccodes)
+target_link_libraries(interpolation_creator m eccodes netcdf)
 enable_testing()
