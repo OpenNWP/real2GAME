@@ -23,24 +23,6 @@ This file coordinates the data interpolation process.
 #define M_D (N_A*0.004810e-23)
 #define M_V (N_A*0.002991e-23)
 
-int find_min_index(double vector[], int vector_length)
-{
-	/*
-	This function returns the index where a vector has its minimum.
-	*/
-    int result = 0;
-    double current_min = vector[0];
-    for (int i = 1; i < vector_length; ++i)
-    {
-        if (vector[i] < current_min)
-        {
-            current_min = vector[i];
-            result = i;
-        }
-    }
-    return result;
-}
-
 double calculate_distance_h(double latitude_a, double longitude_a, double latitude_b, double longitude_b, double radius)
 {
 	/*
@@ -295,6 +277,8 @@ int main(int argc, char *argv[])
     double *temperature_out = calloc(1, NO_OF_SCALARS*sizeof(double));
 	double *spec_hum_out = calloc(1, NO_OF_SCALARS*sizeof(double));
 	
+	int no_of_levels_input = NO_OF_LEVELS_INPUT;
+	
     int layer_index, h_index, closest_index, other_index;
     double closest_value, other_value, df, dz, gradient, delta_z;
     #pragma omp parallel for private(layer_index, h_index, closest_value, other_value, df, dz, gradient, delta_z)
@@ -316,7 +300,7 @@ int main(int argc, char *argv[])
     		}
     		
     		// closest vertical index
-    		closest_index = find_min_index(vector_to_minimize, NO_OF_LEVELS_INPUT);
+    		closest_index = find_min_index(vector_to_minimize, &no_of_levels_input);
     		
     		// value at the closest vertical index
     		closest_value = temperature_in[interpolation_indices_scalar[h_index][j]][closest_index];
@@ -453,7 +437,7 @@ int main(int argc, char *argv[])
     			- z_coords_input_model[interpolation_indices_vector[h_index][j]][k]);
     		}
     		// closest vertical index
-    		closest_index = find_min_index(vector_to_minimize, NO_OF_LEVELS_INPUT);
+    		closest_index = find_min_index(vector_to_minimize, &no_of_levels_input);
     		// value at the closest vertical index
     		closest_value = u_wind_in[interpolation_indices_vector[h_index][j]][closest_index];
     		
@@ -507,6 +491,7 @@ int main(int argc, char *argv[])
 	INTERPOLATION OF THE SST
 	------------------------
 	*/
+	int no_of_sst_points = NO_OF_SST_POINTS;
 	printf("Interpolating the SST to the model grid ...\n");
 	double *sst_out = malloc(NO_OF_SCALARS_H*sizeof(double));
 	int min_index;
@@ -518,7 +503,7 @@ int main(int argc, char *argv[])
     	{
     		distance_vector[j] = calculate_distance_h(latitudes_sst[j], longitudes_sst[j], latitudes_game[i], longitudes_game[i], 1);
     	}
-		min_index = find_min_index(distance_vector, NO_OF_SST_POINTS);
+		min_index = find_min_index(distance_vector, &no_of_sst_points);
 		sst_out[i] = sst_in[min_index];
 		free(distance_vector);
 	}
