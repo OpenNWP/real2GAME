@@ -15,6 +15,7 @@ real2GAME incorporates different tools:
 
 ### Dependencies
 
+* eccodes (Ubuntu: `sudo apt-get install libeccodes-dev`)
 * bzip2 (Ubuntu: `sudo apt-get install bzip2`)
 * basic calculator (Ubuntu: `sudo apt-get install bc`)
 
