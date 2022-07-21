@@ -14,9 +14,8 @@ This file prepares the horizontal interpolation from the foreign model to GAME.
 #include "eccodes.h"
 #include "../../header.h"
 #include "../../game_properties.h"
-#define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
-#define ERRCODE 3
-#define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(ERRCODE);}
+#define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(1);}
+#define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(1);}
 
 double calculate_distance_h(double latitude_a, double longitude_a, double latitude_b, double longitude_b, double radius)
 {
