@@ -16,6 +16,7 @@ This tool reads the output from other models / data assimilation systems and bri
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(1);}
 #define NCCHECK(e) {if(e != 0) NCERR(e)}
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(1);}
+#define ECCCHECK(e) {if(e != 0) ECCERR(e)}
 
 int main(int argc, char *argv[])
 {
@@ -63,7 +64,7 @@ int main(int argc, char *argv[])
 	// grib stuff
 	FILE *ecc_file;
 	size_t no_of_points_per_layer_input_size_t;
-	int retval, err;
+	int err;
 	codes_handle *handle = NULL;
 	
 	// reading the data from the free atmosphere
@@ -79,11 +80,9 @@ int main(int argc, char *argv[])
 		
 		ecc_file = fopen(z_inpput_model_file, "r");
 		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
-		if (err != 0)
-			ECCERR(err);
+		if (err != 0) ECCERR(err);
 		no_of_points_per_layer_input_size_t = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
-		if ((retval = codes_get_double_array(handle, "values", &z_height_amsl_one_layer[0], &no_of_points_per_layer_input_size_t)))
-			ECCERR(retval);
+		ECCCHECK(codes_get_double_array(handle, "values", &z_height_amsl_one_layer[0], &no_of_points_per_layer_input_size_t));
 		codes_handle_delete(handle);
 		fclose(ecc_file);
 		
@@ -102,10 +101,8 @@ int main(int argc, char *argv[])
 		
 		ecc_file = fopen(temperature_file, "r");
 		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
-		if (err != 0)
-			ECCERR(err);
-		if ((retval = codes_get_double_array(handle, "values", &temperature_one_layer[0], &no_of_points_per_layer_input_size_t)))
-			ECCERR(retval);
+		if (err != 0) ECCERR(err);
+		ECCCHECK(codes_get_double_array(handle, "values", &temperature_one_layer[0], &no_of_points_per_layer_input_size_t));
 		codes_handle_delete(handle);
 		fclose(ecc_file);
 		
@@ -124,10 +121,8 @@ int main(int argc, char *argv[])
 		
 		ecc_file = fopen(spec_hum_file, "r");
 		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
-		if (err != 0)
-			ECCERR(err);
-		if ((retval = codes_get_double_array(handle, "values", &spec_hum_one_layer[0], &no_of_points_per_layer_input_size_t)))
-			ECCERR(retval);
+		if (err != 0) ECCERR(err);
+		ECCCHECK(codes_get_double_array(handle, "values", &spec_hum_one_layer[0], &no_of_points_per_layer_input_size_t));
 		codes_handle_delete(handle);
 		fclose(ecc_file);
 		
@@ -146,10 +141,8 @@ int main(int argc, char *argv[])
 		
 		ecc_file = fopen(u_wind_file, "r");
 		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
-		if (err != 0)
-			ECCERR(err);
-		if ((retval = codes_get_double_array(handle, "values", &u_one_layer[0], &no_of_points_per_layer_input_size_t)))
-			ECCERR(retval);
+		if (err != 0) ECCERR(err);
+		ECCCHECK(codes_get_double_array(handle, "values", &u_one_layer[0], &no_of_points_per_layer_input_size_t));
 		codes_handle_delete(handle);
 		fclose(ecc_file);
 		
@@ -168,10 +161,8 @@ int main(int argc, char *argv[])
 		
 		ecc_file = fopen(v_wind_file, "r");
 		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
-		if (err != 0)
-			ECCERR(err);
-		if ((retval = codes_get_double_array(handle, "values", &v_one_layer[0], &no_of_points_per_layer_input_size_t)))
-			ECCERR(retval);
+		if (err != 0) ECCERR(err);
+		ECCCHECK(codes_get_double_array(handle, "values", &v_one_layer[0], &no_of_points_per_layer_input_size_t));
 		codes_handle_delete(handle);
 		fclose(ecc_file);
 		
@@ -197,10 +188,8 @@ int main(int argc, char *argv[])
 	
 	ecc_file = fopen(sfc_obs_file, "r");
 	handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
-	if (err != 0)
-		ECCERR(err);
-	if ((retval = codes_get_double_array(handle, "values", &surface_height[0], &no_of_points_per_layer_input_size_t)))
-		ECCERR(retval);
+	if (err != 0) ECCERR(err);
+	ECCCHECK(codes_get_double_array(handle, "values", &surface_height[0], &no_of_points_per_layer_input_size_t));
 	codes_handle_delete(handle);
 	fclose(ecc_file);
 	
@@ -214,10 +203,8 @@ int main(int argc, char *argv[])
 	
 	ecc_file = fopen(sfc_pres_file, "r");
 	handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
-	if (err != 0)
-		ECCERR(err);
-	if ((retval = codes_get_double_array(handle, "values", &pressure_surface[0], &no_of_points_per_layer_input_size_t)))
-		ECCERR(retval);
+	if (err != 0) ECCERR(err);
+	ECCCHECK(codes_get_double_array(handle, "values", &pressure_surface[0], &no_of_points_per_layer_input_size_t));
 	codes_handle_delete(handle);
 	fclose(ecc_file);
 	
@@ -233,15 +220,11 @@ int main(int argc, char *argv[])
 	
 	ecc_file = fopen(sst_file, "r");
 	handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
-	if (err != 0)
-		ECCERR(err);
+	if (err != 0) ECCERR(err);
 	size_t no_of_sst_points_size_t = (size_t) NO_OF_SST_POINTS;
-	if ((retval = codes_get_double_array(handle, "values", &sst[0], &no_of_sst_points_size_t)))
-		ECCERR(retval);
-	if ((retval = codes_get_double_array(handle, "latitudes", &latitudes_sst[0], &no_of_sst_points_size_t)))
-		ECCERR(retval);
-	if ((retval = codes_get_double_array(handle, "longitudes", &longitudes_sst[0], &no_of_sst_points_size_t)))
-		ECCERR(retval);
+	ECCCHECK(codes_get_double_array(handle, "values", &sst[0], &no_of_sst_points_size_t));
+	ECCCHECK(codes_get_double_array(handle, "latitudes", &latitudes_sst[0], &no_of_sst_points_size_t));
+	ECCCHECK(codes_get_double_array(handle, "longitudes", &longitudes_sst[0], &no_of_sst_points_size_t));
 	codes_handle_delete(handle);
 	fclose(ecc_file);
 	

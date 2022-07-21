@@ -17,6 +17,7 @@ This file prepares the horizontal interpolation from the foreign model to GAME.
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(1);}
 #define NCCHECK(e) {if(e != 0) NCERR(e)}
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(1);}
+#define ECCCHECK(e) {if(e != 0) ECCERR(e)}
 
 double calculate_distance_h(double latitude_a, double longitude_a, double latitude_b, double longitude_b, double radius)
 {
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
 	double *latitudes_input_model = malloc(no_of_points_per_layer_input_model*sizeof(double));
 	double *longitudes_input_model = malloc(no_of_points_per_layer_input_model*sizeof(double));
 	
-	int retval, err;
+	int err;
 	codes_handle *handle = NULL;
 	
 	// Properties of the input model's grid.
@@ -70,12 +71,10 @@ int main(int argc, char *argv[])
 	FILE *ECC_FILE;
 	ECC_FILE = fopen(lat_obs_file, "r");
 	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
-	if (err != 0)
-		ECCERR(err);
+	if (err != 0) ECCERR(err);
 	size_t no_of_points_per_layer_input_model_SIZE_T;
 	no_of_points_per_layer_input_model_SIZE_T = (size_t) no_of_points_per_layer_input_model;
-	if ((retval = codes_get_double_array(handle, "values", &latitudes_input_model[0], &no_of_points_per_layer_input_model_SIZE_T)))
-		ECCERR(retval);
+	ECCCHECK(codes_get_double_array(handle, "values", &latitudes_input_model[0], &no_of_points_per_layer_input_model_SIZE_T));
 	codes_handle_delete(handle);
     fclose(ECC_FILE);
     
@@ -95,11 +94,9 @@ int main(int argc, char *argv[])
     
 	ECC_FILE = fopen(lon_obs_file, "r");
 	handle = codes_handle_new_from_file(NULL, ECC_FILE, PRODUCT_GRIB, &err);
-	if (err != 0)
-		ECCERR(err);
+	if (err != 0) ECCERR(err);
 	no_of_points_per_layer_input_model_SIZE_T = (size_t) no_of_points_per_layer_input_model;
-	if ((retval = codes_get_double_array(handle, "values", &longitudes_input_model[0], &no_of_points_per_layer_input_model_SIZE_T)))
-		ECCERR(retval);
+	ECCCHECK(codes_get_double_array(handle, "values", &longitudes_input_model[0], &no_of_points_per_layer_input_model_SIZE_T));
 	codes_handle_delete(handle);
     fclose(ECC_FILE);
     
