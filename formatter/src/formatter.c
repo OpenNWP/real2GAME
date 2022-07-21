@@ -13,9 +13,9 @@ This tool reads the output from other models / data assimilation systems and bri
 #include <stdlib.h>
 #include "eccodes.h"
 #include "../../header.h"
-#define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(2);}
-#define ERRCODE 3
-#define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(ERRCODE);}
+#define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(1);}
+#define NCCHECK(e) {if(e != 0) NCERR(e)}
+#define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(1);}
 
 int main(int argc, char *argv[])
 {
@@ -261,62 +261,36 @@ int main(int argc, char *argv[])
     
     int ncid, h_dimid, v_dimid, z_surf_id, sp_id, sst_dimid, t_id, spec_hum_id, z_id, u_id, v_id, lat_sst_id, lon_sst_id, sst_id;
     int dim_vector[2];
-    if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
-        NCERR(retval);
+    NCCHECK(nc_create(output_file, NC_CLOBBER, &ncid));
     // Defining the dimensions.
-    if ((retval = nc_def_dim(ncid, "h_index", NO_OF_POINTS_PER_LAYER_INPUT, &h_dimid)))
-        NCERR(retval);
-    if ((retval = nc_def_dim(ncid, "v_index", NO_OF_LEVELS_INPUT, &v_dimid)))
-        NCERR(retval);
-    if ((retval = nc_def_dim(ncid, "sst_index", NO_OF_SST_POINTS, &sst_dimid)))
-        NCERR(retval);
+    NCCHECK(nc_def_dim(ncid, "h_index", NO_OF_POINTS_PER_LAYER_INPUT, &h_dimid));
+    NCCHECK(nc_def_dim(ncid, "v_index", NO_OF_LEVELS_INPUT, &v_dimid));
+    NCCHECK(nc_def_dim(ncid, "sst_index", NO_OF_SST_POINTS, &sst_dimid));
     dim_vector[0] = h_dimid;
     dim_vector[1] = v_dimid;
-    if ((retval = nc_def_var(ncid, "z_surface", NC_DOUBLE, 1, &h_dimid, &z_surf_id)))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "pressure_surface", NC_DOUBLE, 1, &h_dimid, &sp_id)))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "z_height", NC_DOUBLE, 2, dim_vector, &z_id)))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "temperature", NC_DOUBLE, 2, dim_vector, &t_id)))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "spec_humidity", NC_DOUBLE, 2, dim_vector, &spec_hum_id)))
-        NCERR(retval);
-	if ((retval = nc_def_var(ncid, "u_wind", NC_DOUBLE, 2, dim_vector, &u_id)))
-	  	NCERR(retval);
-	if ((retval = nc_def_var(ncid, "v_wind", NC_DOUBLE, 2, dim_vector, &v_id)))
-	  	NCERR(retval);
-	if ((retval = nc_def_var(ncid, "lat_sst", NC_DOUBLE, 1, &sst_dimid, &lat_sst_id)))
-	  	NCERR(retval);
-	if ((retval = nc_def_var(ncid, "lon_sst", NC_DOUBLE, 1, &sst_dimid, &lon_sst_id)))
-	  	NCERR(retval);
-	if ((retval = nc_def_var(ncid, "sst", NC_DOUBLE, 1, &sst_dimid, &sst_id)))
-	  	NCERR(retval);
-    if ((retval = nc_enddef(ncid)))
-        NCERR(retval);
+    NCCHECK(nc_def_var(ncid, "z_surface", NC_DOUBLE, 1, &h_dimid, &z_surf_id));
+    NCCHECK(nc_def_var(ncid, "pressure_surface", NC_DOUBLE, 1, &h_dimid, &sp_id));
+    NCCHECK(nc_def_var(ncid, "z_height", NC_DOUBLE, 2, dim_vector, &z_id));
+    NCCHECK(nc_def_var(ncid, "temperature", NC_DOUBLE, 2, dim_vector, &t_id));
+    NCCHECK(nc_def_var(ncid, "spec_humidity", NC_DOUBLE, 2, dim_vector, &spec_hum_id));
+	NCCHECK(nc_def_var(ncid, "u_wind", NC_DOUBLE, 2, dim_vector, &u_id));
+	NCCHECK(nc_def_var(ncid, "v_wind", NC_DOUBLE, 2, dim_vector, &v_id));
+	NCCHECK(nc_def_var(ncid, "lat_sst", NC_DOUBLE, 1, &sst_dimid, &lat_sst_id));
+	NCCHECK(nc_def_var(ncid, "lon_sst", NC_DOUBLE, 1, &sst_dimid, &lon_sst_id));
+	NCCHECK(nc_def_var(ncid, "sst", NC_DOUBLE, 1, &sst_dimid, &sst_id));
+    NCCHECK(nc_enddef(ncid));
     // Setting the variables.
-	if ((retval = nc_put_var_double(ncid, z_surf_id, &surface_height[0])))
-	  	NCERR(retval);
-	if ((retval = nc_put_var_double(ncid, sp_id, &pressure_surface[0])))
-	  	NCERR(retval);
-	if ((retval = nc_put_var_double(ncid, z_id, &z_height_amsl[0][0])))
-	  	NCERR(retval);
-	if ((retval = nc_put_var_double(ncid, t_id, &temperature[0][0])))
-	  	NCERR(retval);
-	if ((retval = nc_put_var_double(ncid, spec_hum_id, &spec_hum[0][0])))
-	  	NCERR(retval);
-	if ((retval = nc_put_var_double(ncid, u_id, &u_wind[0][0])))
-	  	NCERR(retval);
-	if ((retval = nc_put_var_double(ncid, v_id, &v_wind[0][0])))
-	  	NCERR(retval);
-	if ((retval = nc_put_var_double(ncid, lat_sst_id, &latitudes_sst[0])))
-	  	NCERR(retval);
-	if ((retval = nc_put_var_double(ncid, lon_sst_id, &longitudes_sst[0])))
-	  	NCERR(retval);
-	if ((retval = nc_put_var_double(ncid, sst_id, &sst[0])))
-	  	NCERR(retval);
-    if ((retval = nc_close(ncid)))
-    	NCERR(retval);
+	NCCHECK(nc_put_var_double(ncid, z_surf_id, &surface_height[0]));
+	NCCHECK(nc_put_var_double(ncid, sp_id, &pressure_surface[0]));
+	NCCHECK(nc_put_var_double(ncid, z_id, &z_height_amsl[0][0]));
+	NCCHECK(nc_put_var_double(ncid, t_id, &temperature[0][0]));
+	NCCHECK(nc_put_var_double(ncid, spec_hum_id, &spec_hum[0][0]));
+	NCCHECK(nc_put_var_double(ncid, u_id, &u_wind[0][0]));
+	NCCHECK(nc_put_var_double(ncid, v_id, &v_wind[0][0]));
+	NCCHECK(nc_put_var_double(ncid, lat_sst_id, &latitudes_sst[0]));
+	NCCHECK(nc_put_var_double(ncid, lon_sst_id, &longitudes_sst[0]));
+	NCCHECK(nc_put_var_double(ncid, sst_id, &sst[0]));
+    NCCHECK(nc_close(ncid));
     
     // freeing the memory
     free(z_height_amsl);
