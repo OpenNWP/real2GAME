@@ -15,6 +15,7 @@ This file prepares the horizontal interpolation from the foreign model to GAME.
 #include "../../header.h"
 #include "../../game_properties.h"
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(1);}
+#define NCCHECK(e) {if(e != 0) NCERR(e)}
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(1);}
 
 double calculate_distance_h(double latitude_a, double longitude_a, double latitude_b, double longitude_b, double radius)
@@ -124,28 +125,18 @@ int main(int argc, char *argv[])
 		printf("Grid file: %s\n", geo_pro_file);
 		printf("Reading grid file of GAME ...\n");
 		int ncid;
-		if ((retval = nc_open(geo_pro_file, NC_NOWRITE, &ncid)))
-		    NCERR(retval);
+		NCCHECK(nc_open(geo_pro_file, NC_NOWRITE, &ncid));
 		
 		int latitudes_game_id, latitudes_game_wind_id, longitudes_game_id, longitudes_game_wind_id;
-		if ((retval = nc_inq_varid(ncid, "latitude_scalar", &latitudes_game_id)))
-		    NCERR(retval);
-		if ((retval = nc_inq_varid(ncid, "longitude_scalar", &longitudes_game_id)))
-		    NCERR(retval);
-		if ((retval = nc_inq_varid(ncid, "latitude_vector", &latitudes_game_wind_id)))
-		    NCERR(retval);
-		if ((retval = nc_inq_varid(ncid, "longitude_vector", &longitudes_game_wind_id)))
-		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, latitudes_game_id, &latitudes_game[0])))
-		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, longitudes_game_id, &longitudes_game[0])))
-		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, latitudes_game_wind_id, &latitudes_game_wind[0])))
-		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, longitudes_game_wind_id, &longitudes_game_wind[0])))
-		    NCERR(retval);
-		if ((retval = nc_close(ncid)))
-		    NCERR(retval);
+		NCCHECK(nc_inq_varid(ncid, "latitude_scalar", &latitudes_game_id));
+		NCCHECK(nc_inq_varid(ncid, "longitude_scalar", &longitudes_game_id));
+		NCCHECK(nc_inq_varid(ncid, "latitude_vector", &latitudes_game_wind_id));
+		NCCHECK(nc_inq_varid(ncid, "longitude_vector", &longitudes_game_wind_id));
+		NCCHECK(nc_get_var_double(ncid, latitudes_game_id, &latitudes_game[0]));
+		NCCHECK(nc_get_var_double(ncid, longitudes_game_id, &longitudes_game[0]));
+		NCCHECK(nc_get_var_double(ncid, latitudes_game_wind_id, &latitudes_game_wind[0]));
+		NCCHECK(nc_get_var_double(ncid, longitudes_game_wind_id, &longitudes_game_wind[0]));
+		NCCHECK(nc_close(ncid));
 		printf("Grid file of GAME read.\n");
 		
 		// allocating memory for the result arrays
@@ -221,37 +212,23 @@ int main(int argc, char *argv[])
 		int interpolation_indices_scalar_id, interpolation_weights_scalar_id, interpolation_indices_vector_id, interpolation_weights_vector_id,
 		scalar_dimid, vector_dimid, avg_dimid;
 		int dim_vector[2];
-		if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
-		    NCERR(retval);
-		if ((retval = nc_def_dim(ncid, "scalar_index", NO_OF_SCALARS_H, &scalar_dimid)))
-		    NCERR(retval);
-		if ((retval = nc_def_dim(ncid, "vector_index", NO_OF_VECTORS_H, &vector_dimid)))
-		    NCERR(retval);
-		if ((retval = nc_def_dim(ncid, "interpol_index", NO_OF_AVG_POINTS, &avg_dimid)))
-		    NCERR(retval);
+		NCCHECK(nc_create(output_file, NC_CLOBBER, &ncid));
+		NCCHECK(nc_def_dim(ncid, "scalar_index", NO_OF_SCALARS_H, &scalar_dimid));
+		NCCHECK(nc_def_dim(ncid, "vector_index", NO_OF_VECTORS_H, &vector_dimid));
+		NCCHECK(nc_def_dim(ncid, "interpol_index", NO_OF_AVG_POINTS, &avg_dimid));
 		dim_vector[0] = scalar_dimid;
 		dim_vector[1] = avg_dimid;
-		if ((retval = nc_def_var(ncid, "interpolation_indices_scalar", NC_INT, 2, dim_vector, &interpolation_indices_scalar_id)))
-		    NCERR(retval);
-		if ((retval = nc_def_var(ncid, "interpolation_weights_scalar", NC_DOUBLE, 2, dim_vector, &interpolation_weights_scalar_id)))
-		    NCERR(retval);
+		NCCHECK(nc_def_var(ncid, "interpolation_indices_scalar", NC_INT, 2, dim_vector, &interpolation_indices_scalar_id));
+		NCCHECK(nc_def_var(ncid, "interpolation_weights_scalar", NC_DOUBLE, 2, dim_vector, &interpolation_weights_scalar_id));
 		dim_vector[0] = vector_dimid;
-		if ((retval = nc_def_var(ncid, "interpolation_indices_vector", NC_INT, 2, dim_vector, &interpolation_indices_vector_id)))
-		  	NCERR(retval);
-		if ((retval = nc_def_var(ncid, "interpolation_weights_vector", NC_DOUBLE, 2, dim_vector, &interpolation_weights_vector_id)))
-		  	NCERR(retval);
-		if ((retval = nc_enddef(ncid)))
-		    NCERR(retval);
-		if ((retval = nc_put_var_int(ncid, interpolation_indices_scalar_id, &interpolation_indices_scalar[0][0])))
-		    NCERR(retval);
-		if ((retval = nc_put_var_double(ncid, interpolation_weights_scalar_id, &interpolation_weights_scalar[0][0])))
-		    NCERR(retval);
-		if ((retval = nc_put_var_int(ncid, interpolation_indices_vector_id, &interpolation_indices_vector[0][0])))
-		  	NCERR(retval);
-		if ((retval = nc_put_var_double(ncid, interpolation_weights_vector_id, &interpolation_weights_vector[0][0])))
-		  	NCERR(retval);
-		if ((retval = nc_close(ncid)))
-		    NCERR(retval);
+		NCCHECK(nc_def_var(ncid, "interpolation_indices_vector", NC_INT, 2, dim_vector, &interpolation_indices_vector_id));
+		NCCHECK(nc_def_var(ncid, "interpolation_weights_vector", NC_DOUBLE, 2, dim_vector, &interpolation_weights_vector_id));
+		NCCHECK(nc_enddef(ncid));
+		NCCHECK(nc_put_var_int(ncid, interpolation_indices_scalar_id, &interpolation_indices_scalar[0][0]));
+		NCCHECK(nc_put_var_double(ncid, interpolation_weights_scalar_id, &interpolation_weights_scalar[0][0]));
+		NCCHECK(nc_put_var_int(ncid, interpolation_indices_vector_id, &interpolation_indices_vector[0][0]));
+		NCCHECK(nc_put_var_double(ncid, interpolation_weights_vector_id, &interpolation_weights_vector[0][0]));
+		NCCHECK(nc_close(ncid));
 		    
 		// freeing the memory
 		free(interpolation_indices_scalar);
@@ -278,37 +255,23 @@ int main(int argc, char *argv[])
 		printf("Grid file: %s\n", geo_pro_file);
 		printf("Reading grid file of L-GAME ...\n");
 		int ncid;
-		if ((retval = nc_open(geo_pro_file, NC_NOWRITE, &ncid)))
-		    NCERR(retval);
+		NCCHECK(nc_open(geo_pro_file, NC_NOWRITE, &ncid));
 		
 		int latitudes_lgame_id, longitudes_lgame_id, longitudes_lgame_wind_u_id, latitudes_lgame_wind_u_id,
 		longitudes_lgame_wind_v_id, latitudes_lgame_wind_v_id;
-		if ((retval = nc_inq_varid(ncid, "lat_geo", &latitudes_lgame_id)))
-		    NCERR(retval);
-		if ((retval = nc_inq_varid(ncid, "lon_geo", &longitudes_lgame_id)))
-		    NCERR(retval);
-		if ((retval = nc_inq_varid(ncid, "lat_geo_u", &latitudes_lgame_wind_u_id)))
-		    NCERR(retval);
-		if ((retval = nc_inq_varid(ncid, "lon_geo_u", &longitudes_lgame_wind_u_id)))
-		    NCERR(retval);
-		if ((retval = nc_inq_varid(ncid, "lat_geo_v", &latitudes_lgame_wind_v_id)))
-		    NCERR(retval);
-		if ((retval = nc_inq_varid(ncid, "lon_geo_v", &longitudes_lgame_wind_v_id)))
-		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, latitudes_lgame_id, &latitudes_lgame[0][0])))
-		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, longitudes_lgame_id, &longitudes_lgame[0][0])))
-		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, latitudes_lgame_wind_u_id, &latitudes_lgame_wind_u[0][0])))
-		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, longitudes_lgame_wind_u_id, &longitudes_lgame_wind_u[0][0])))
-		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, latitudes_lgame_wind_v_id, &latitudes_lgame_wind_v[0][0])))
-		    NCERR(retval);
-		if ((retval = nc_get_var_double(ncid, longitudes_lgame_wind_v_id, &longitudes_lgame_wind_v[0][0])))
-		    NCERR(retval);
-		if ((retval = nc_close(ncid)))
-		    NCERR(retval);
+		NCCHECK(nc_inq_varid(ncid, "lat_geo", &latitudes_lgame_id));
+		NCCHECK(nc_inq_varid(ncid, "lon_geo", &longitudes_lgame_id));
+		NCCHECK(nc_inq_varid(ncid, "lat_geo_u", &latitudes_lgame_wind_u_id));
+		NCCHECK(nc_inq_varid(ncid, "lon_geo_u", &longitudes_lgame_wind_u_id));
+		NCCHECK(nc_inq_varid(ncid, "lat_geo_v", &latitudes_lgame_wind_v_id));
+		NCCHECK(nc_inq_varid(ncid, "lon_geo_v", &longitudes_lgame_wind_v_id));
+		NCCHECK(nc_get_var_double(ncid, latitudes_lgame_id, &latitudes_lgame[0][0]));
+		NCCHECK(nc_get_var_double(ncid, longitudes_lgame_id, &longitudes_lgame[0][0]));
+		NCCHECK(nc_get_var_double(ncid, latitudes_lgame_wind_u_id, &latitudes_lgame_wind_u[0][0]));
+		NCCHECK(nc_get_var_double(ncid, longitudes_lgame_wind_u_id, &longitudes_lgame_wind_u[0][0]));
+		NCCHECK(nc_get_var_double(ncid, latitudes_lgame_wind_v_id, &latitudes_lgame_wind_v[0][0]));
+		NCCHECK(nc_get_var_double(ncid, longitudes_lgame_wind_v_id, &longitudes_lgame_wind_v[0][0]));
+		NCCHECK(nc_close(ncid));
 		printf("Grid file of L-GAME read.\n");
 		
 		// allocating memory for the result arrays
@@ -420,48 +383,29 @@ int main(int argc, char *argv[])
 		int interpolation_indices_scalar_id, interpolation_weights_scalar_id, interpolation_indices_vector_u_id, interpolation_weights_vector_u_id,
         interpolation_indices_vector_v_id, interpolation_weights_vector_v_id, scalar_dimid, u_dimid, v_dimid, avg_dimid;
 		int dim_vector[2];
-		if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
-		    NCERR(retval);
-		if ((retval = nc_def_dim(ncid, "scalar_index", nlat*nlon, &scalar_dimid)))
-		    NCERR(retval);
-		if ((retval = nc_def_dim(ncid, "u_index", nlat*(nlon+1), &u_dimid)))
-		    NCERR(retval);
-		if ((retval = nc_def_dim(ncid, "v_index", (nlat+1)*nlon, &v_dimid)))
-		    NCERR(retval);
-		if ((retval = nc_def_dim(ncid, "interpol_index", NO_OF_AVG_POINTS, &avg_dimid)))
-		    NCERR(retval);
+		NCCHECK(nc_create(output_file, NC_CLOBBER, &ncid));
+		NCCHECK(nc_def_dim(ncid, "scalar_index", nlat*nlon, &scalar_dimid));
+		NCCHECK(nc_def_dim(ncid, "u_index", nlat*(nlon+1), &u_dimid));
+		NCCHECK(nc_def_dim(ncid, "v_index", (nlat+1)*nlon, &v_dimid));
+		NCCHECK(nc_def_dim(ncid, "interpol_index", NO_OF_AVG_POINTS, &avg_dimid));
 		dim_vector[0] = scalar_dimid;
 		dim_vector[1] = avg_dimid;
-		if ((retval = nc_def_var(ncid, "interpolation_indices_scalar", NC_INT, 2, dim_vector, &interpolation_indices_scalar_id)))
-		    NCERR(retval);
-		if ((retval = nc_def_var(ncid, "interpolation_weights_scalar", NC_DOUBLE, 2, dim_vector, &interpolation_weights_scalar_id)))
-		    NCERR(retval);
+		NCCHECK(nc_def_var(ncid, "interpolation_indices_scalar", NC_INT, 2, dim_vector, &interpolation_indices_scalar_id));
+		NCCHECK(nc_def_var(ncid, "interpolation_weights_scalar", NC_DOUBLE, 2, dim_vector, &interpolation_weights_scalar_id));
 		dim_vector[0] = u_dimid;
-		if ((retval = nc_def_var(ncid, "interpolation_indices_vector_u", NC_INT, 2, dim_vector, &interpolation_indices_vector_u_id)))
-		  	NCERR(retval);
-		if ((retval = nc_def_var(ncid, "interpolation_weights_vector_u", NC_DOUBLE, 2, dim_vector, &interpolation_weights_vector_u_id)))
-		  	NCERR(retval);
+		NCCHECK(nc_def_var(ncid, "interpolation_indices_vector_u", NC_INT, 2, dim_vector, &interpolation_indices_vector_u_id));
+		NCCHECK(nc_def_var(ncid, "interpolation_weights_vector_u", NC_DOUBLE, 2, dim_vector, &interpolation_weights_vector_u_id));
 		dim_vector[0] = v_dimid;
-		if ((retval = nc_def_var(ncid, "interpolation_indices_vector_v", NC_INT, 2, dim_vector, &interpolation_indices_vector_v_id)))
-		  	NCERR(retval);
-		if ((retval = nc_def_var(ncid, "interpolation_weights_vector_v", NC_DOUBLE, 2, dim_vector, &interpolation_weights_vector_v_id)))
-		  	NCERR(retval);
-		if ((retval = nc_enddef(ncid)))
-		    NCERR(retval);
-		if ((retval = nc_put_var_int(ncid, interpolation_indices_scalar_id, &interpolation_indices_scalar[0][0])))
-		    NCERR(retval);
-		if ((retval = nc_put_var_double(ncid, interpolation_weights_scalar_id, &interpolation_weights_scalar[0][0])))
-		    NCERR(retval);
-		if ((retval = nc_put_var_int(ncid, interpolation_indices_vector_u_id, &interpolation_indices_vector_u[0][0])))
-		  	NCERR(retval);
-		if ((retval = nc_put_var_double(ncid, interpolation_weights_vector_u_id, &interpolation_weights_vector_u[0][0])))
-		  	NCERR(retval);
-		if ((retval = nc_put_var_int(ncid, interpolation_indices_vector_v_id, &interpolation_indices_vector_v[0][0])))
-		  	NCERR(retval);
-		if ((retval = nc_put_var_double(ncid, interpolation_weights_vector_v_id, &interpolation_weights_vector_v[0][0])))
-		  	NCERR(retval);
-		if ((retval = nc_close(ncid)))
-		    NCERR(retval);
+		NCCHECK(nc_def_var(ncid, "interpolation_indices_vector_v", NC_INT, 2, dim_vector, &interpolation_indices_vector_v_id));
+		NCCHECK(nc_def_var(ncid, "interpolation_weights_vector_v", NC_DOUBLE, 2, dim_vector, &interpolation_weights_vector_v_id));
+		NCCHECK(nc_enddef(ncid));
+		NCCHECK(nc_put_var_int(ncid, interpolation_indices_scalar_id, &interpolation_indices_scalar[0][0]));
+		NCCHECK(nc_put_var_double(ncid, interpolation_weights_scalar_id, &interpolation_weights_scalar[0][0]));
+		NCCHECK(nc_put_var_int(ncid, interpolation_indices_vector_u_id, &interpolation_indices_vector_u[0][0]));
+		NCCHECK(nc_put_var_double(ncid, interpolation_weights_vector_u_id, &interpolation_weights_vector_u[0][0]));
+		NCCHECK(nc_put_var_int(ncid, interpolation_indices_vector_v_id, &interpolation_indices_vector_v[0][0]));
+		NCCHECK(nc_put_var_double(ncid, interpolation_weights_vector_v_id, &interpolation_weights_vector_v[0][0]));
+		NCCHECK(nc_close(ncid));
 	
 		// freeing the memory
 		free(interpolation_indices_scalar);
