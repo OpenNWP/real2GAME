@@ -15,6 +15,7 @@ This file coordinates the data interpolation process.
 #include <math.h>
 #include <netcdf.h>
 #define NCERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(1);}
+#define NCCHECK(e) {if(e != 0) NCERR(e)}
 #define SCALE_HEIGHT 8000.0
 #define P_0 100000.0
 #define R_D 287.057811
@@ -60,42 +61,28 @@ int main(int argc, char *argv[])
     double *z_coords_game_wind = malloc(NO_OF_VECTORS*sizeof(double));
     double *gravity_potential_game = malloc(NO_OF_SCALARS*sizeof(double));
     // Reading the grid properties.
-    int ncid_grid, retval;
+    int ncid;
     char GEO_PROP_FILE_PRE[200];
     sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, NO_OF_LAYERS, ORO_ID);
     char GEO_PROP_FILE[strlen(GEO_PROP_FILE_PRE) + 1];
     strcpy(GEO_PROP_FILE, GEO_PROP_FILE_PRE);
 	printf("Grid file: %s\n", GEO_PROP_FILE);
 	printf("Reading grid file ...\n");
-    if ((retval = nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid_grid)))
-        NCERR(retval);
+    NCCHECK(nc_open(GEO_PROP_FILE, NC_NOWRITE, &ncid));
     int latitudes_game_id, longitudes_game_id, z_coords_game_id, z_coords_game_wind_id, gravity_potential_game_id, directions_id;
-    if ((retval = nc_inq_varid(ncid_grid, "latitude_scalar", &latitudes_game_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "longitude_scalar", &longitudes_game_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "z_scalar", &z_coords_game_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "direction", &directions_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "z_vector", &z_coords_game_wind_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid_grid, "gravity_potential", &gravity_potential_game_id)))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, latitudes_game_id, &latitudes_game[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, longitudes_game_id, &longitudes_game[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, z_coords_game_id, &z_coords_game[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, directions_id, &directions[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, z_coords_game_wind_id, &z_coords_game_wind[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid_grid, gravity_potential_game_id, &gravity_potential_game[0])))
-        NCERR(retval);
-    if ((retval = nc_close(ncid_grid)))
-        NCERR(retval);
+    NCCHECK(nc_inq_varid(ncid, "latitude_scalar", &latitudes_game_id));
+    NCCHECK(nc_inq_varid(ncid, "longitude_scalar", &longitudes_game_id));
+    NCCHECK(nc_inq_varid(ncid, "z_scalar", &z_coords_game_id));
+    NCCHECK(nc_inq_varid(ncid, "direction", &directions_id));
+    NCCHECK(nc_inq_varid(ncid, "z_vector", &z_coords_game_wind_id));
+    NCCHECK(nc_inq_varid(ncid, "gravity_potential", &gravity_potential_game_id));
+    NCCHECK(nc_get_var_double(ncid, latitudes_game_id, &latitudes_game[0]));
+    NCCHECK(nc_get_var_double(ncid, longitudes_game_id, &longitudes_game[0]));
+    NCCHECK(nc_get_var_double(ncid, z_coords_game_id, &z_coords_game[0]));
+    NCCHECK(nc_get_var_double(ncid, directions_id, &directions[0]));
+    NCCHECK(nc_get_var_double(ncid, z_coords_game_wind_id, &z_coords_game_wind[0]));
+    NCCHECK(nc_get_var_double(ncid, gravity_potential_game_id, &gravity_potential_game[0]));
+    NCCHECK(nc_close(ncid));
 	printf("Grid file read.\n");
 	
 	// constructing the filename of the input file for GAME
@@ -111,18 +98,14 @@ int main(int argc, char *argv[])
     
     // Reading the background state.
 	printf("Reading background state ...\n");
-    int ncid;
-    if ((retval = nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid)))
-        NCERR(retval);
+    NCCHECK(nc_open(BACKGROUND_STATE_FILE, NC_NOWRITE, &ncid));
     int densities_background_id, tke_avail, tke_id, t_soil_avail, t_soil_id;
-    if ((retval = nc_inq_varid(ncid, "densities", &densities_background_id)))
-        NCERR(retval);
+    NCCHECK(nc_inq_varid(ncid, "densities", &densities_background_id));
     tke_avail = 0;
     if (nc_inq_varid(ncid, "tke", &tke_id) == 0)
     {
     	tke_avail = 1;
-		if ((retval = nc_inq_varid(ncid, "tke", &tke_id)))
-		    NCERR(retval);
+		NCCHECK(nc_inq_varid(ncid, "tke", &tke_id));
 		printf("TKE found in background state file.\n");
     }
     else
@@ -133,28 +116,23 @@ int main(int argc, char *argv[])
     if (nc_inq_varid(ncid, "t_soil", &t_soil_id) == 0)
     {
     	t_soil_avail = 1;
-		if ((retval = nc_inq_varid(ncid, "t_soil", &t_soil_id)))
-		    NCERR(retval);
+		NCCHECK(nc_inq_varid(ncid, "t_soil", &t_soil_id));
 		printf("Soil temperature found in background state file.\n");
     }
     else
     {
     	printf("Soil temperature not found in background state file.\n");
     }
-    if ((retval = nc_get_var_double(ncid, densities_background_id, &densities_background[0])))
-        NCERR(retval);
+    NCCHECK(nc_get_var_double(ncid, densities_background_id, &densities_background[0]));
     if (tke_avail == 1)
     {
-		if ((retval = nc_get_var_double(ncid, tke_id, &tke[0])))
-		    NCERR(retval);
+		NCCHECK(nc_get_var_double(ncid, tke_id, &tke[0]));
     }
     if (t_soil_avail == 1)
     {
-		if ((retval = nc_get_var_double(ncid, t_soil_id, &t_soil[0])))
-		    NCERR(retval);
+		NCCHECK(nc_get_var_double(ncid, t_soil_id, &t_soil[0]));
     }
-    if ((retval = nc_close(ncid)))
-        NCERR(retval);
+    NCCHECK(nc_close(ncid));
 	printf("Background state read.\n");	
 	
 	// allocating the memory for the analysis of the other model
@@ -179,51 +157,29 @@ int main(int argc, char *argv[])
     // reading the analysis of the other model
 	printf("Reading input ...\n");
     int sp_id, z_surf_id, z_coords_id, t_in_id, spec_hum_id, u_id, v_id, lat_sst_id, lon_sst_id, sst_id;
-    if ((retval = nc_open(input_file, NC_NOWRITE, &ncid)))
-        NCERR(retval);
+    NCCHECK(nc_open(input_file, NC_NOWRITE, &ncid));
     // Defining the variables.
-    if ((retval = nc_inq_varid(ncid, "z_height", &z_coords_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "temperature", &t_in_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "spec_humidity", &spec_hum_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "u_wind", &u_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "v_wind", &v_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "z_surface", &z_surf_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "pressure_surface", &sp_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "lat_sst", &lat_sst_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "lon_sst", &lon_sst_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "sst", &sst_id)))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, z_coords_id, &z_coords_input_model[0][0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, t_in_id, &temperature_in[0][0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, spec_hum_id, &spec_hum_in[0][0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, u_id, &u_wind_in[0][0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, v_id, &v_wind_in[0][0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, z_surf_id, &z_surf_in[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, sp_id, &p_surf_in[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, lat_sst_id, &latitudes_sst[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, lon_sst_id, &longitudes_sst[0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, sst_id, &sst_in[0])))
-        NCERR(retval);
-    if ((retval = nc_close(ncid)))
-    	NCERR(retval);
+    NCCHECK(nc_inq_varid(ncid, "z_height", &z_coords_id));
+    NCCHECK(nc_inq_varid(ncid, "temperature", &t_in_id));
+    NCCHECK(nc_inq_varid(ncid, "spec_humidity", &spec_hum_id));
+    NCCHECK(nc_inq_varid(ncid, "u_wind", &u_id));
+    NCCHECK(nc_inq_varid(ncid, "v_wind", &v_id));
+    NCCHECK(nc_inq_varid(ncid, "z_surface", &z_surf_id));
+    NCCHECK(nc_inq_varid(ncid, "pressure_surface", &sp_id));
+    NCCHECK(nc_inq_varid(ncid, "lat_sst", &lat_sst_id));
+    NCCHECK(nc_inq_varid(ncid, "lon_sst", &lon_sst_id));
+    NCCHECK(nc_inq_varid(ncid, "sst", &sst_id));
+    NCCHECK(nc_get_var_double(ncid, z_coords_id, &z_coords_input_model[0][0]));
+    NCCHECK(nc_get_var_double(ncid, t_in_id, &temperature_in[0][0]));
+    NCCHECK(nc_get_var_double(ncid, spec_hum_id, &spec_hum_in[0][0]));
+    NCCHECK(nc_get_var_double(ncid, u_id, &u_wind_in[0][0]));
+    NCCHECK(nc_get_var_double(ncid, v_id, &v_wind_in[0][0]));
+    NCCHECK(nc_get_var_double(ncid, z_surf_id, &z_surf_in[0]));
+    NCCHECK(nc_get_var_double(ncid, sp_id, &p_surf_in[0]));
+    NCCHECK(nc_get_var_double(ncid, lat_sst_id, &latitudes_sst[0]));
+    NCCHECK(nc_get_var_double(ncid, lon_sst_id, &longitudes_sst[0]));
+    NCCHECK(nc_get_var_double(ncid, sst_id, &sst_in[0]));
+    NCCHECK(nc_close(ncid));
 	printf("Input read.\n");
 	
 	// memory alloction for the interpolation indices and weights
@@ -242,26 +198,16 @@ int main(int argc, char *argv[])
 	
 	// reading the interpolation file
 	int interpolation_indices_scalar_id, interpolation_weights_scalar_id, interpolation_indices_vector_id, interpolation_weights_vector_id;
-    if ((retval = nc_open(interpol_file, NC_NOWRITE, &ncid)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "interpolation_indices_scalar", &interpolation_indices_scalar_id)))
-        NCERR(retval);
-    if ((retval = nc_inq_varid(ncid, "interpolation_weights_scalar", &interpolation_weights_scalar_id)))
-        NCERR(retval);
-	if ((retval = nc_inq_varid(ncid, "interpolation_indices_vector", &interpolation_indices_vector_id)))
-	  	NCERR(retval);
-	if ((retval = nc_inq_varid(ncid, "interpolation_weights_vector", &interpolation_weights_vector_id)))
-	  	NCERR(retval);
-    if ((retval = nc_get_var_int(ncid, interpolation_indices_scalar_id, &interpolation_indices_scalar[0][0])))
-        NCERR(retval);
-    if ((retval = nc_get_var_double(ncid, interpolation_weights_scalar_id, &interpolation_weights_scalar[0][0])))
-        NCERR(retval);
-	if ((retval = nc_get_var_int(ncid, interpolation_indices_vector_id, &interpolation_indices_vector[0][0])))
-	  	NCERR(retval);
-	if ((retval = nc_get_var_double(ncid, interpolation_weights_vector_id, &interpolation_weights_vector[0][0])))
-	  	NCERR(retval);
-    if ((retval = nc_close(ncid)))
-        NCERR(retval);
+    NCCHECK(nc_open(interpol_file, NC_NOWRITE, &ncid));
+    NCCHECK(nc_inq_varid(ncid, "interpolation_indices_scalar", &interpolation_indices_scalar_id));
+    NCCHECK(nc_inq_varid(ncid, "interpolation_weights_scalar", &interpolation_weights_scalar_id));
+	NCCHECK(nc_inq_varid(ncid, "interpolation_indices_vector", &interpolation_indices_vector_id));
+	NCCHECK(nc_inq_varid(ncid, "interpolation_weights_vector", &interpolation_weights_vector_id));
+    NCCHECK(nc_get_var_int(ncid, interpolation_indices_scalar_id, &interpolation_indices_scalar[0][0]));
+    NCCHECK(nc_get_var_double(ncid, interpolation_weights_scalar_id, &interpolation_weights_scalar[0][0]));
+	NCCHECK(nc_get_var_int(ncid, interpolation_indices_vector_id, &interpolation_indices_vector[0][0]));
+	NCCHECK(nc_get_var_double(ncid, interpolation_weights_vector_id, &interpolation_weights_vector[0][0]));
+    NCCHECK(nc_close(ncid));
     printf("Interpolation indices and weights read.\n");
 	
 	// Begin of the actual interpolation.
@@ -551,72 +497,45 @@ int main(int argc, char *argv[])
     printf("Writing result to output file ...\n");
     int densities_dimid, scalar_dimid, vector_dimid, scalar_h_dimid, single_double_dimid,
     densities_id, temperature_id, wind_id, soil_dimid;
-    if ((retval = nc_create(output_file, NC_CLOBBER, &ncid)))
-        NCERR(retval);
-    if ((retval = nc_def_dim(ncid, "densities_index", 6*NO_OF_SCALARS, &densities_dimid)))
-        NCERR(retval);
-    if ((retval = nc_def_dim(ncid, "vector_index", NO_OF_VECTORS, &vector_dimid)))
-        NCERR(retval);
-    if ((retval = nc_def_dim(ncid, "scalar_index", NO_OF_SCALARS, &scalar_dimid)))
-        NCERR(retval);
-    if ((retval = nc_def_dim(ncid, "soil_index", NO_OF_SOIL_LAYERS*NO_OF_SCALARS_H, &soil_dimid)))
-        NCERR(retval);
-    if ((retval = nc_def_dim(ncid, "scalar_h_index", NO_OF_SCALARS_H, &scalar_h_dimid)))
-        NCERR(retval);
-    if ((retval = nc_def_dim(ncid, "single_double_dimid_index", 1, &single_double_dimid)))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "densities", NC_DOUBLE, 1, &densities_dimid, &densities_id)))
-        NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, densities_id, "units", strlen("kg/m^3"), "kg/m^3")))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "temperature", NC_DOUBLE, 1, &scalar_dimid, &temperature_id)))
-        NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, temperature_id, "units", strlen("K"), "K")))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "wind", NC_DOUBLE, 1, &vector_dimid, &wind_id)))
-        NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, wind_id, "units", strlen("m/s"), "m/s")))
-        NCERR(retval);
-    if ((retval = nc_def_var(ncid, "sst", NC_DOUBLE, 1, &scalar_h_dimid, &sst_id)))
-        NCERR(retval);
-    if ((retval = nc_put_att_text(ncid, sst_id, "units", strlen("K"), "K")))
-        NCERR(retval);
+    NCCHECK(nc_create(output_file, NC_CLOBBER, &ncid));
+    NCCHECK(nc_def_dim(ncid, "densities_index", 6*NO_OF_SCALARS, &densities_dimid));
+    NCCHECK(nc_def_dim(ncid, "vector_index", NO_OF_VECTORS, &vector_dimid));
+    NCCHECK(nc_def_dim(ncid, "scalar_index", NO_OF_SCALARS, &scalar_dimid));
+    NCCHECK(nc_def_dim(ncid, "soil_index", NO_OF_SOIL_LAYERS*NO_OF_SCALARS_H, &soil_dimid));
+    NCCHECK(nc_def_dim(ncid, "scalar_h_index", NO_OF_SCALARS_H, &scalar_h_dimid));
+    NCCHECK(nc_def_dim(ncid, "single_double_dimid_index", 1, &single_double_dimid));
+    NCCHECK(nc_def_var(ncid, "densities", NC_DOUBLE, 1, &densities_dimid, &densities_id));
+    NCCHECK(nc_put_att_text(ncid, densities_id, "units", strlen("kg/m^3"), "kg/m^3"));
+    NCCHECK(nc_def_var(ncid, "temperature", NC_DOUBLE, 1, &scalar_dimid, &temperature_id));
+    NCCHECK(nc_put_att_text(ncid, temperature_id, "units", strlen("K"), "K"));
+    NCCHECK(nc_def_var(ncid, "wind", NC_DOUBLE, 1, &vector_dimid, &wind_id));
+    NCCHECK(nc_put_att_text(ncid, wind_id, "units", strlen("m/s"), "m/s"));
+    NCCHECK(nc_def_var(ncid, "sst", NC_DOUBLE, 1, &scalar_h_dimid, &sst_id));
+    NCCHECK(nc_put_att_text(ncid, sst_id, "units", strlen("K"), "K"));
     if (tke_avail == 1)
     {
-		if ((retval = nc_def_var(ncid, "tke", NC_DOUBLE, 1, &scalar_dimid, &tke_id)))
-		    NCERR(retval);
-		if ((retval = nc_put_att_text(ncid, tke_id, "units", strlen("J/kg"), "J/kg")))
-		    NCERR(retval);
+		NCCHECK(nc_def_var(ncid, "tke", NC_DOUBLE, 1, &scalar_dimid, &tke_id));
+		NCCHECK(nc_put_att_text(ncid, tke_id, "units", strlen("J/kg"), "J/kg"));
     }
     if (t_soil_avail == 1)
     {
-		if ((retval = nc_def_var(ncid, "t_soil", NC_DOUBLE, 1, &soil_dimid, &t_soil_id)))
-		    NCERR(retval);
-		if ((retval = nc_put_att_text(ncid, t_soil_id, "units", strlen("K"), "K")))
-		    NCERR(retval);
+		NCCHECK(nc_def_var(ncid, "t_soil", NC_DOUBLE, 1, &soil_dimid, &t_soil_id));
+		NCCHECK(nc_put_att_text(ncid, t_soil_id, "units", strlen("K"), "K"));
     }
-    if ((retval = nc_enddef(ncid)))
-        NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, densities_id, &densities[0])))
-        NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, temperature_id, &temperature_out[0])))
-        NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, wind_id, &wind_out[0])))
-        NCERR(retval);
-    if ((retval = nc_put_var_double(ncid, sst_id, &sst_out[0])))
-        NCERR(retval);
+    NCCHECK(nc_enddef(ncid));
+    NCCHECK(nc_put_var_double(ncid, densities_id, &densities[0]));
+    NCCHECK(nc_put_var_double(ncid, temperature_id, &temperature_out[0]));
+    NCCHECK(nc_put_var_double(ncid, wind_id, &wind_out[0]));
+    NCCHECK(nc_put_var_double(ncid, sst_id, &sst_out[0]));
     if (tke_avail == 1)
     {
-		if ((retval = nc_put_var_double(ncid, tke_id, &tke[0])))
-		    NCERR(retval);
+		NCCHECK(nc_put_var_double(ncid, tke_id, &tke[0]));
     }
     if (t_soil_avail == 1)
     {
-		if ((retval = nc_put_var_double(ncid, t_soil_id, &t_soil[0])))
-		    NCERR(retval);
+		NCCHECK(nc_put_var_double(ncid, t_soil_id, &t_soil[0]));
     }
-    if ((retval = nc_close(ncid)))
-    	NCERR(retval);
+    NCCHECK(nc_close(ncid));
     printf("Result successfully written.\n");
     
     // freeing the stil occupied memory

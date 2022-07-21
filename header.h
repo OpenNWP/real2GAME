@@ -12,6 +12,7 @@ Github repository: https://github.com/OpenNWP/real2GAME
 // the number of points of the SST grid
 #define NO_OF_SST_POINTS 259200
 
+extern int find_min_index();
 
 
 
