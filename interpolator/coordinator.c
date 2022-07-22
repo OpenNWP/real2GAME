@@ -24,15 +24,6 @@ This file coordinates the data interpolation process.
 #define M_D (N_A*0.004810e-23)
 #define M_V (N_A*0.002991e-23)
 
-double calculate_distance_h(double latitude_a, double longitude_a, double latitude_b, double longitude_b, double radius)
-{
-	/*
-	This function returns the geodetic distance of two points given their geographical coordinates.
-	*/
-    double dist = 2.0*radius*asin(sqrt(0.5 - 0.5*(cos(latitude_a)*cos(latitude_b)*cos(longitude_b - longitude_a) + sin(latitude_a)*sin(latitude_b))));
-    return dist;
-}
-
 int main(int argc, char *argv[])
 {
     char year_string[strlen(argv[1]) + 1];
@@ -447,7 +438,8 @@ int main(int argc, char *argv[])
     	double *distance_vector = malloc(NO_OF_SST_POINTS*sizeof(double));
     	for (int j = 0; j < NO_OF_SST_POINTS; ++j)
     	{
-    		distance_vector[j] = calculate_distance_h(latitudes_sst[j], longitudes_sst[j], latitudes_game[i], longitudes_game[i], 1);
+    		double one = 1.0;
+    		distance_vector[j] = calculate_distance_h(&latitudes_sst[j], &longitudes_sst[j], &latitudes_game[i], &longitudes_game[i], &one);
     	}
 		min_index = find_min_index(distance_vector, &no_of_sst_points);
 		sst_out[i] = sst_in[min_index];

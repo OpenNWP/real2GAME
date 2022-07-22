@@ -13,6 +13,7 @@ Github repository: https://github.com/OpenNWP/real2GAME
 #define NO_OF_SST_POINTS 259200
 
 extern int find_min_index();
+extern double calculate_distance_h();
 
 
 

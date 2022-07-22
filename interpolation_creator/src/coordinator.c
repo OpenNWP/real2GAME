@@ -19,15 +19,6 @@ This file prepares the horizontal interpolation from the foreign model to GAME.
 #define ECCERR(e) {printf("Error: Eccodes failed with error code %d. See http://download.ecmwf.int/test-data/eccodes/html/group__errors.html for meaning of the error codes.\n", e); exit(1);}
 #define ECCCHECK(e) {if(e != 0) ECCERR(e)}
 
-double calculate_distance_h(double latitude_a, double longitude_a, double latitude_b, double longitude_b, double radius)
-{
-	/*
-	This function returns the geodetic distance of two points given their geographical coordinates.
-	*/
-    double dist = 2.0*radius*asin(sqrt(0.5 - 0.5*(cos(latitude_a)*cos(latitude_b)*cos(longitude_b - longitude_a) + sin(latitude_a)*sin(latitude_b))));
-    return dist;
-}
-
 int main(int argc, char *argv[])
 {
 	
@@ -60,6 +51,8 @@ int main(int argc, char *argv[])
 	
 	int err;
 	codes_handle *handle = NULL;
+	
+	double one = 1.0;
 	
 	// Properties of the input model's grid.
 	// latitudes of the grid
@@ -151,7 +144,7 @@ int main(int argc, char *argv[])
 			double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 			for (int j = 0; j < no_of_points_per_layer_input_model; ++j)
 			{
-				distance_vector[j] = calculate_distance_h(latitudes_game[i], longitudes_game[i], latitudes_input_model[j], longitudes_input_model[j], 1.0);
+				distance_vector[j] = calculate_distance_h(&latitudes_game[i], &longitudes_game[i], &latitudes_input_model[j], &longitudes_input_model[j], &one);
 			}
 			double sum_of_weights = 0.0;
 			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
@@ -174,7 +167,7 @@ int main(int argc, char *argv[])
 			double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 			for (int j = 0; j < no_of_points_per_layer_input_model; ++j)
 			{
-				distance_vector[j] =  calculate_distance_h(latitudes_game_wind[i], longitudes_game_wind[i], latitudes_input_model[j], longitudes_input_model[j], 1.0);
+				distance_vector[j] =  calculate_distance_h(&latitudes_game_wind[i], &longitudes_game_wind[i], &latitudes_input_model[j], &longitudes_input_model[j], &one);
 			}
 			double sum_of_weights = 0.0;
 			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
@@ -290,7 +283,7 @@ int main(int argc, char *argv[])
 				double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 				for (int k = 0; k < no_of_points_per_layer_input_model; ++k)
 				{
-					distance_vector[k] = calculate_distance_h(latitudes_lgame[i][j], longitudes_lgame[i][j], latitudes_input_model[k], longitudes_input_model[k], 1.0);
+					distance_vector[k] = calculate_distance_h(&latitudes_lgame[i][j], &longitudes_lgame[i][j], &latitudes_input_model[k], &longitudes_input_model[k], &one);
 				}
 				double sum_of_weights = 0.0;
 				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
@@ -316,7 +309,7 @@ int main(int argc, char *argv[])
 				double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 				for (int k = 0; k < no_of_points_per_layer_input_model; ++k)
 				{
-					distance_vector[k] = calculate_distance_h(latitudes_lgame_wind_u[i][j], longitudes_lgame_wind_u[i][j], latitudes_input_model[k], longitudes_input_model[k], 1.0);
+					distance_vector[k] = calculate_distance_h(&latitudes_lgame_wind_u[i][j], &longitudes_lgame_wind_u[i][j], &latitudes_input_model[k], &longitudes_input_model[k], &one);
 				}
 				double sum_of_weights = 0.0;
 				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
@@ -342,7 +335,7 @@ int main(int argc, char *argv[])
 				double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 				for (int k = 0; k < no_of_points_per_layer_input_model; ++k)
 				{
-					distance_vector[k] = calculate_distance_h(latitudes_lgame_wind_v[i][j], longitudes_lgame_wind_v[i][j], latitudes_input_model[k], longitudes_input_model[k], 1.0);
+					distance_vector[k] = calculate_distance_h(&latitudes_lgame_wind_v[i][j], &longitudes_lgame_wind_v[i][j], &latitudes_input_model[k], &longitudes_input_model[k], &one);
 				}
 				double sum_of_weights = 0.0;
 				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
