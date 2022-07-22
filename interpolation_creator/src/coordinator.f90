@@ -18,9 +18,9 @@ module index_helpers
   
     ! This function returns the index where a vector has its minimum.
     
+    integer(c_int), intent(in) :: vector_length
     real(c_double), intent(in) :: vector(vector_length)
-    integer, intent(in)        :: vector_length
-    integer                    :: find_min_index
+    integer(c_int)             :: find_min_index
     
     ! local variables
     integer        :: ji

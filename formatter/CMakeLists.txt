@@ -12,7 +12,6 @@ formatter
 src/formatter.c)
 add_definitions(-Wall)
 find_package(OpenMP)
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -O2 -Wall -Wpedantic")
 target_link_libraries(formatter m netcdf eccodes)
 enable_testing()
