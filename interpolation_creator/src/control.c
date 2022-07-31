@@ -104,12 +104,12 @@ int main(int argc, char *argv[])
     if (model_target_id == 0)
     {
 		// reading the horizontal coordinates of the grid of GAME
-		double *latitudes_game = malloc(NO_OF_SCALARS_H*sizeof(double));
-		double *longitudes_game = malloc(NO_OF_SCALARS_H*sizeof(double));
-		double *latitudes_game_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
-		double *longitudes_game_wind = malloc(NO_OF_VECTORS_H*sizeof(double));
+		double *latitudes_game = malloc(N_SCALARS_H*sizeof(double));
+		double *longitudes_game = malloc(N_SCALARS_H*sizeof(double));
+		double *latitudes_game_wind = malloc(N_VECTORS_H*sizeof(double));
+		double *longitudes_game_wind = malloc(N_VECTORS_H*sizeof(double));
 		char geo_pro_file_pre[200];
-		sprintf(geo_pro_file_pre, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, NO_OF_LAYERS, oro_id);
+		sprintf(geo_pro_file_pre, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, N_LAYERS, oro_id);
 		char geo_pro_file[strlen(geo_pro_file_pre) + 1];
 		strcpy(geo_pro_file, geo_pro_file_pre);
 		printf("Grid file: %s\n", geo_pro_file);
@@ -130,16 +130,16 @@ int main(int argc, char *argv[])
 		printf("Grid file of GAME read.\n");
 		
 		// allocating memory for the result arrays
-		int (*interpolation_indices_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(int[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
-		double (*interpolation_weights_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(double[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
-		int (*interpolation_indices_vector)[NO_OF_AVG_POINTS] = malloc(sizeof(int[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
-		double (*interpolation_weights_vector)[NO_OF_AVG_POINTS] = malloc(sizeof(double[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
+		int (*interpolation_indices_scalar)[N_AVG_POINTS] = malloc(sizeof(int[N_SCALARS_H][N_AVG_POINTS]));
+		double (*interpolation_weights_scalar)[N_AVG_POINTS] = malloc(sizeof(double[N_SCALARS_H][N_AVG_POINTS]));
+		int (*interpolation_indices_vector)[N_AVG_POINTS] = malloc(sizeof(int[N_VECTORS_H][N_AVG_POINTS]));
+		double (*interpolation_weights_vector)[N_AVG_POINTS] = malloc(sizeof(double[N_VECTORS_H][N_AVG_POINTS]));
 		
 		// executing the actual interpolation
 		printf("Calculating interpolation indices and weights ...\n");
 		
 		#pragma omp parallel for
-		for (int i = 0; i < NO_OF_SCALARS_H; ++i)
+		for (int i = 0; i < N_SCALARS_H; ++i)
 		{
 			double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 			for (int j = 0; j < no_of_points_per_layer_input_model; ++j)
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 				distance_vector[j] = calculate_distance_h(&latitudes_game[i], &longitudes_game[i], &latitudes_input_model[j], &longitudes_input_model[j], &one);
 			}
 			double sum_of_weights = 0.0;
-			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+			for (int j = 0; j < N_AVG_POINTS; ++j)
 			{
 				interpolation_indices_scalar[i][j] = find_min_index(distance_vector, &no_of_points_per_layer_input_model);
 				interpolation_weights_scalar[i][j] = 1.0/(pow(distance_vector[interpolation_indices_scalar[i][j]], interpol_exp));
@@ -155,14 +155,14 @@ int main(int argc, char *argv[])
 				sum_of_weights += interpolation_weights_scalar[i][j];
 			}
 			free(distance_vector);
-			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+			for (int j = 0; j < N_AVG_POINTS; ++j)
 			{
 				interpolation_weights_scalar[i][j] = interpolation_weights_scalar[i][j]/sum_of_weights;
 			}
 		}
 		
 		#pragma omp parallel for
-		for (int i = 0; i < NO_OF_VECTORS_H; ++i)
+		for (int i = 0; i < N_VECTORS_H; ++i)
 		{
 			double *distance_vector = malloc(no_of_points_per_layer_input_model*sizeof(double));
 			for (int j = 0; j < no_of_points_per_layer_input_model; ++j)
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 				distance_vector[j] =  calculate_distance_h(&latitudes_game_wind[i], &longitudes_game_wind[i], &latitudes_input_model[j], &longitudes_input_model[j], &one);
 			}
 			double sum_of_weights = 0.0;
-			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+			for (int j = 0; j < N_AVG_POINTS; ++j)
 			{
 				interpolation_indices_vector[i][j] = find_min_index(distance_vector, &no_of_points_per_layer_input_model);
 				interpolation_weights_vector[i][j] = 1.0/(pow(distance_vector[interpolation_indices_vector[i][j]], interpol_exp));
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 				sum_of_weights += interpolation_weights_vector[i][j];
 			}
 			free(distance_vector);
-			for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+			for (int j = 0; j < N_AVG_POINTS; ++j)
 			{
 				interpolation_weights_vector[i][j] = interpolation_weights_vector[i][j]/sum_of_weights;
 			}
@@ -203,9 +203,9 @@ int main(int argc, char *argv[])
 		scalar_dimid, vector_dimid, avg_dimid;
 		int dim_vector[2];
 		NCCHECK(nc_create(output_file, NC_CLOBBER, &ncid));
-		NCCHECK(nc_def_dim(ncid, "scalar_index", NO_OF_SCALARS_H, &scalar_dimid));
-		NCCHECK(nc_def_dim(ncid, "vector_index", NO_OF_VECTORS_H, &vector_dimid));
-		NCCHECK(nc_def_dim(ncid, "interpol_index", NO_OF_AVG_POINTS, &avg_dimid));
+		NCCHECK(nc_def_dim(ncid, "scalar_index", N_SCALARS_H, &scalar_dimid));
+		NCCHECK(nc_def_dim(ncid, "vector_index", N_VECTORS_H, &vector_dimid));
+		NCCHECK(nc_def_dim(ncid, "interpol_index", N_AVG_POINTS, &avg_dimid));
 		dim_vector[0] = scalar_dimid;
 		dim_vector[1] = avg_dimid;
 		NCCHECK(nc_def_var(ncid, "interpolation_indices_scalar", NC_INT, 2, dim_vector, &interpolation_indices_scalar_id));
@@ -265,12 +265,12 @@ int main(int argc, char *argv[])
 		printf("Grid file of L-GAME read.\n");
 		
 		// allocating memory for the result arrays
-		int (*interpolation_indices_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(int[nlat*nlon][NO_OF_AVG_POINTS]));
-		double (*interpolation_weights_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(double[nlat*nlon][NO_OF_AVG_POINTS]));
-		int (*interpolation_indices_vector_u)[NO_OF_AVG_POINTS] = malloc(sizeof(int[nlat*(nlon+1)][NO_OF_AVG_POINTS]));
-		double (*interpolation_weights_vector_u)[NO_OF_AVG_POINTS] = malloc(sizeof(double[nlat*(nlon+1)][NO_OF_AVG_POINTS]));
-		int (*interpolation_indices_vector_v)[NO_OF_AVG_POINTS] = malloc(sizeof(int[(nlat+1)*nlon][NO_OF_AVG_POINTS]));
-		double (*interpolation_weights_vector_v)[NO_OF_AVG_POINTS] = malloc(sizeof(double[(nlat+1)*nlon][NO_OF_AVG_POINTS]));
+		int (*interpolation_indices_scalar)[N_AVG_POINTS] = malloc(sizeof(int[nlat*nlon][N_AVG_POINTS]));
+		double (*interpolation_weights_scalar)[N_AVG_POINTS] = malloc(sizeof(double[nlat*nlon][N_AVG_POINTS]));
+		int (*interpolation_indices_vector_u)[N_AVG_POINTS] = malloc(sizeof(int[nlat*(nlon+1)][N_AVG_POINTS]));
+		double (*interpolation_weights_vector_u)[N_AVG_POINTS] = malloc(sizeof(double[nlat*(nlon+1)][N_AVG_POINTS]));
+		int (*interpolation_indices_vector_v)[N_AVG_POINTS] = malloc(sizeof(int[(nlat+1)*nlon][N_AVG_POINTS]));
+		double (*interpolation_weights_vector_v)[N_AVG_POINTS] = malloc(sizeof(double[(nlat+1)*nlon][N_AVG_POINTS]));
 		
 		// executing the actual interpolation
 		printf("Calculating interpolation indices and weights ...\n");
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 					distance_vector[k] = calculate_distance_h(&latitudes_lgame[i][j], &longitudes_lgame[i][j], &latitudes_input_model[k], &longitudes_input_model[k], &one);
 				}
 				double sum_of_weights = 0.0;
-				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
+				for (int k = 0; k < N_AVG_POINTS; ++k)
 				{
 					interpolation_indices_scalar[j*nlat + i][k] = find_min_index(distance_vector, &no_of_points_per_layer_input_model);
 					interpolation_weights_scalar[j*nlat + i][k] = 1.0/(pow(distance_vector[interpolation_indices_scalar[j*nlat + i][k]], interpol_exp));
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 					sum_of_weights += interpolation_weights_scalar[j*nlat + i][k];
 				}
 				free(distance_vector);
-				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
+				for (int k = 0; k < N_AVG_POINTS; ++k)
 				{
 					interpolation_weights_scalar[j*nlat + i][k] = interpolation_weights_scalar[j*nlat + i][k]/sum_of_weights;
 				}
@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
 					distance_vector[k] = calculate_distance_h(&latitudes_lgame_wind_u[i][j], &longitudes_lgame_wind_u[i][j], &latitudes_input_model[k], &longitudes_input_model[k], &one);
 				}
 				double sum_of_weights = 0.0;
-				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
+				for (int k = 0; k < N_AVG_POINTS; ++k)
 				{
 					interpolation_indices_vector_u[j*nlat + i][k] = find_min_index(distance_vector, &no_of_points_per_layer_input_model);
 					interpolation_weights_vector_u[j*nlat + i][k] = 1.0/(pow(distance_vector[interpolation_indices_vector_u[j*nlat + i][k]], interpol_exp));
@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
 					sum_of_weights += interpolation_weights_vector_u[j*nlat + i][k];
 				}
 				free(distance_vector);
-				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
+				for (int k = 0; k < N_AVG_POINTS; ++k)
 				{
 					interpolation_weights_vector_u[j*nlat + i][k] = interpolation_weights_vector_u[j*nlat + i][k]/sum_of_weights;
 				}
@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
 					distance_vector[k] = calculate_distance_h(&latitudes_lgame_wind_v[i][j], &longitudes_lgame_wind_v[i][j], &latitudes_input_model[k], &longitudes_input_model[k], &one);
 				}
 				double sum_of_weights = 0.0;
-				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
+				for (int k = 0; k < N_AVG_POINTS; ++k)
 				{
 					interpolation_indices_vector_v[j*(nlat+1) + i][k] = find_min_index(distance_vector, &no_of_points_per_layer_input_model);
 					interpolation_weights_vector_v[j*(nlat+1) + i][k] = 1.0/(pow(distance_vector[interpolation_indices_vector_v[j*(nlat+1) + i][k]], interpol_exp));
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 					sum_of_weights += interpolation_weights_vector_v[j*(nlat+1) + i][k];
 				}
 				free(distance_vector);
-				for (int k = 0; k < NO_OF_AVG_POINTS; ++k)
+				for (int k = 0; k < N_AVG_POINTS; ++k)
 				{
 					interpolation_weights_vector_v[j*(nlat+1) + i][k] = interpolation_weights_vector_v[j*(nlat+1) + i][k]/sum_of_weights;
 				}
@@ -377,7 +377,7 @@ int main(int argc, char *argv[])
 		NCCHECK(nc_def_dim(ncid, "scalar_index", nlat*nlon, &scalar_dimid));
 		NCCHECK(nc_def_dim(ncid, "u_index", nlat*(nlon+1), &u_dimid));
 		NCCHECK(nc_def_dim(ncid, "v_index", (nlat+1)*nlon, &v_dimid));
-		NCCHECK(nc_def_dim(ncid, "interpol_index", NO_OF_AVG_POINTS, &avg_dimid));
+		NCCHECK(nc_def_dim(ncid, "interpol_index", N_AVG_POINTS, &avg_dimid));
 		dim_vector[0] = scalar_dimid;
 		dim_vector[1] = avg_dimid;
 		NCCHECK(nc_def_var(ncid, "interpolation_indices_scalar", NC_INT, 2, dim_vector, &interpolation_indices_scalar_id));

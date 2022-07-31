@@ -21,7 +21,7 @@ This tool reads the output from other models / data assimilation systems and bri
 int main(int argc, char *argv[])
 {
 	// defining the levels of the model we want to use
-	int levels_vector[NO_OF_LEVELS_INPUT];
+	int levels_vector[N_LEVELS_INPUT];
 	levels_vector[0] = 1;
 	levels_vector[1] = 10;
 	levels_vector[2] = 19;
@@ -48,18 +48,18 @@ int main(int argc, char *argv[])
     strcpy(real2game_root_dir, argv[5]);
 	
 	// single-layer arrays from grib
-	double *z_height_amsl_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
-	double *temperature_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
-	double *spec_hum_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
-	double *u_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
-	double *v_one_layer = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *z_height_amsl_one_layer = malloc(N_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *temperature_one_layer = malloc(N_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *spec_hum_one_layer = malloc(N_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *u_one_layer = malloc(N_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *v_one_layer = malloc(N_POINTS_PER_LAYER_INPUT*sizeof(double));
 	
 	// 2D-arrays for NetCDF
-	double (*z_height_amsl)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
-	double (*temperature)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
-	double (*spec_hum)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
-	double (*u_wind)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
-	double (*v_wind)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
+	double (*z_height_amsl)[N_LEVELS_INPUT] = malloc(sizeof(double[N_POINTS_PER_LAYER_INPUT][N_LEVELS_INPUT]));
+	double (*temperature)[N_LEVELS_INPUT] = malloc(sizeof(double[N_POINTS_PER_LAYER_INPUT][N_LEVELS_INPUT]));
+	double (*spec_hum)[N_LEVELS_INPUT] = malloc(sizeof(double[N_POINTS_PER_LAYER_INPUT][N_LEVELS_INPUT]));
+	double (*u_wind)[N_LEVELS_INPUT] = malloc(sizeof(double[N_POINTS_PER_LAYER_INPUT][N_LEVELS_INPUT]));
+	double (*v_wind)[N_LEVELS_INPUT] = malloc(sizeof(double[N_POINTS_PER_LAYER_INPUT][N_LEVELS_INPUT]));
 	
 	// grib stuff
 	FILE *ecc_file;
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 	
 	// reading the data from the free atmosphere
 	// loop over all relevant levels in the free atmosphere
-	for (int level_index = 0; level_index < NO_OF_LEVELS_INPUT; ++level_index)
+	for (int level_index = 0; level_index < N_LEVELS_INPUT; ++level_index)
 	{
 		// vertical position of the current layer
 		char z_inpput_model_file_pre[200];
@@ -81,13 +81,13 @@ int main(int argc, char *argv[])
 		ecc_file = fopen(z_inpput_model_file, "r");
 		handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 		if (err != 0) ECCERR(err);
-		no_of_points_per_layer_input_size_t = (size_t) NO_OF_POINTS_PER_LAYER_INPUT;
+		no_of_points_per_layer_input_size_t = (size_t) N_POINTS_PER_LAYER_INPUT;
 		ECCCHECK(codes_get_double_array(handle, "values", &z_height_amsl_one_layer[0], &no_of_points_per_layer_input_size_t));
 		codes_handle_delete(handle);
 		fclose(ecc_file);
 		
 		#pragma omp parallel for
-		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
+		for (int i = 0; i < N_POINTS_PER_LAYER_INPUT; ++i)
 		{
 			z_height_amsl[i][level_index] = z_height_amsl_one_layer[i];
 		}
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 		fclose(ecc_file);
 		
 		#pragma omp parallel for
-		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
+		for (int i = 0; i < N_POINTS_PER_LAYER_INPUT; ++i)
 		{
 			temperature[i][level_index] = temperature_one_layer[i];
 		}
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 		fclose(ecc_file);
 		
 		#pragma omp parallel for
-		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
+		for (int i = 0; i < N_POINTS_PER_LAYER_INPUT; ++i)
 		{
 			spec_hum[i][level_index] = spec_hum_one_layer[i];
 		}
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 		fclose(ecc_file);
 		
 		#pragma omp parallel for
-		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
+		for (int i = 0; i < N_POINTS_PER_LAYER_INPUT; ++i)
 		{
 			u_wind[i][level_index] = u_one_layer[i];
 		}
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 		fclose(ecc_file);
 		
 		#pragma omp parallel for
-		for (int i = 0; i < NO_OF_POINTS_PER_LAYER_INPUT; ++i)
+		for (int i = 0; i < N_POINTS_PER_LAYER_INPUT; ++i)
 		{
 			v_wind[i][level_index] = v_one_layer[i];
 		}
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 	free(v_one_layer);
 	
 	// reading the surface height
-	double *surface_height = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *surface_height = malloc(N_POINTS_PER_LAYER_INPUT*sizeof(double));
 	char sfc_obs_file_pre[200];
 	sprintf(sfc_obs_file_pre , "%s/input/icon_global_icosahedral_time-invariant_%s%s%s%s_HSURF.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
 	char sfc_obs_file[strlen(sfc_obs_file_pre) + 1];
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
 	fclose(ecc_file);
 	
 	// reading the surface presure
-	double *pressure_surface = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *pressure_surface = malloc(N_POINTS_PER_LAYER_INPUT*sizeof(double));
 	
 	char sfc_pres_file_pre[200];
 	sprintf(sfc_pres_file_pre , "%s/input/icon_global_icosahedral_single-level_%s%s%s%s_000_PS.grib2", real2game_root_dir, year_string, month_string, day_string, hour_string);
@@ -209,9 +209,9 @@ int main(int argc, char *argv[])
 	fclose(ecc_file);
 	
 	// reading the SST
-	double *latitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
-	double *longitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
-	double *sst = malloc(NO_OF_SST_POINTS*sizeof(double));
+	double *latitudes_sst = malloc(N_SST_POINTS*sizeof(double));
+	double *longitudes_sst = malloc(N_SST_POINTS*sizeof(double));
+	double *sst = malloc(N_SST_POINTS*sizeof(double));
 	
 	char sst_file_pre[200];
 	sprintf(sst_file_pre , "%s/input/rtgssthr_grb_0.5.grib2", real2game_root_dir);
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 	ecc_file = fopen(sst_file, "r");
 	handle = codes_handle_new_from_file(NULL, ecc_file, PRODUCT_GRIB, &err);
 	if (err != 0) ECCERR(err);
-	size_t no_of_sst_points_size_t = (size_t) NO_OF_SST_POINTS;
+	size_t no_of_sst_points_size_t = (size_t) N_SST_POINTS;
 	ECCCHECK(codes_get_double_array(handle, "values", &sst[0], &no_of_sst_points_size_t));
 	ECCCHECK(codes_get_double_array(handle, "latitudes", &latitudes_sst[0], &no_of_sst_points_size_t));
 	ECCCHECK(codes_get_double_array(handle, "longitudes", &longitudes_sst[0], &no_of_sst_points_size_t));
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
 	
 	// transforming the coordinates of the SST grid from degrees to radians
 	#pragma omp parallel for
-	for (int i = 0; i < NO_OF_SST_POINTS; ++i)
+	for (int i = 0; i < N_SST_POINTS; ++i)
 	{
 		latitudes_sst[i] = 2.0*M_PI*latitudes_sst[i]/360.0;
 		longitudes_sst[i] = 2.0*M_PI*longitudes_sst[i]/360.0;
@@ -246,9 +246,9 @@ int main(int argc, char *argv[])
     int dim_vector[2];
     NCCHECK(nc_create(output_file, NC_CLOBBER, &ncid));
     // Defining the dimensions.
-    NCCHECK(nc_def_dim(ncid, "h_index", NO_OF_POINTS_PER_LAYER_INPUT, &h_dimid));
-    NCCHECK(nc_def_dim(ncid, "v_index", NO_OF_LEVELS_INPUT, &v_dimid));
-    NCCHECK(nc_def_dim(ncid, "sst_index", NO_OF_SST_POINTS, &sst_dimid));
+    NCCHECK(nc_def_dim(ncid, "h_index", N_POINTS_PER_LAYER_INPUT, &h_dimid));
+    NCCHECK(nc_def_dim(ncid, "v_index", N_LEVELS_INPUT, &v_dimid));
+    NCCHECK(nc_def_dim(ncid, "sst_index", N_SST_POINTS, &sst_dimid));
     dim_vector[0] = h_dimid;
     dim_vector[1] = v_dimid;
     NCCHECK(nc_def_var(ncid, "z_surface", NC_DOUBLE, 1, &h_dimid, &z_surf_id));

@@ -45,16 +45,16 @@ int main(int argc, char *argv[])
 	printf("Background state file: %s\n", BACKGROUND_STATE_FILE);
     
     // Allocating memory for the grid properties.
-    double *latitudes_game = malloc(NO_OF_SCALARS_H*sizeof(double));
-    double *longitudes_game = malloc(NO_OF_SCALARS_H*sizeof(double));
-    double *z_coords_game = malloc(NO_OF_SCALARS*sizeof(double));
-    double *directions = malloc(NO_OF_VECTORS_H*sizeof(double));
-    double *z_coords_game_wind = malloc(NO_OF_VECTORS*sizeof(double));
-    double *gravity_potential_game = malloc(NO_OF_SCALARS*sizeof(double));
+    double *latitudes_game = malloc(N_SCALARS_H*sizeof(double));
+    double *longitudes_game = malloc(N_SCALARS_H*sizeof(double));
+    double *z_coords_game = malloc(N_SCALARS*sizeof(double));
+    double *directions = malloc(N_VECTORS_H*sizeof(double));
+    double *z_coords_game_wind = malloc(N_VECTORS*sizeof(double));
+    double *gravity_potential_game = malloc(N_SCALARS*sizeof(double));
     // Reading the grid properties.
     int ncid;
     char GEO_PROP_FILE_PRE[200];
-    sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, NO_OF_LAYERS, ORO_ID);
+    sprintf(GEO_PROP_FILE_PRE, "%s/grid_generator/grids/RES%d_L%d_ORO%d.nc", model_home_dir, RES_ID, N_LAYERS, ORO_ID);
     char GEO_PROP_FILE[strlen(GEO_PROP_FILE_PRE) + 1];
     strcpy(GEO_PROP_FILE, GEO_PROP_FILE_PRE);
 	printf("Grid file: %s\n", GEO_PROP_FILE);
@@ -83,9 +83,9 @@ int main(int argc, char *argv[])
     strcpy(output_file, output_file_pre);
     
     // These are the arrays of the background state.
-    double *densities_background = malloc(6*NO_OF_SCALARS*sizeof(double));
-    double *tke = malloc(NO_OF_SCALARS*sizeof(double));
-    double *t_soil = malloc(NO_OF_SOIL_LAYERS*NO_OF_SCALARS_H*sizeof(double));
+    double *densities_background = malloc(6*N_SCALARS*sizeof(double));
+    double *tke = malloc(N_SCALARS*sizeof(double));
+    double *t_soil = malloc(N_SOIL_LAYERS*N_SCALARS_H*sizeof(double));
     
     // Reading the background state.
 	printf("Reading background state ...\n");
@@ -127,16 +127,16 @@ int main(int argc, char *argv[])
 	printf("Background state read.\n");	
 	
 	// allocating the memory for the analysis of the other model
-	double (*z_coords_input_model)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
-	double (*temperature_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
-	double (*spec_hum_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
-	double (*u_wind_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
-	double (*v_wind_in)[NO_OF_LEVELS_INPUT] = malloc(sizeof(double[NO_OF_POINTS_PER_LAYER_INPUT][NO_OF_LEVELS_INPUT]));
-	double *z_surf_in = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
-	double *p_surf_in = malloc(NO_OF_POINTS_PER_LAYER_INPUT*sizeof(double));
-	double *latitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
-	double *longitudes_sst = malloc(NO_OF_SST_POINTS*sizeof(double));
-	double *sst_in = malloc(NO_OF_SST_POINTS*sizeof(double));
+	double (*z_coords_input_model)[N_LEVELS_INPUT] = malloc(sizeof(double[N_POINTS_PER_LAYER_INPUT][N_LEVELS_INPUT]));
+	double (*temperature_in)[N_LEVELS_INPUT] = malloc(sizeof(double[N_POINTS_PER_LAYER_INPUT][N_LEVELS_INPUT]));
+	double (*spec_hum_in)[N_LEVELS_INPUT] = malloc(sizeof(double[N_POINTS_PER_LAYER_INPUT][N_LEVELS_INPUT]));
+	double (*u_wind_in)[N_LEVELS_INPUT] = malloc(sizeof(double[N_POINTS_PER_LAYER_INPUT][N_LEVELS_INPUT]));
+	double (*v_wind_in)[N_LEVELS_INPUT] = malloc(sizeof(double[N_POINTS_PER_LAYER_INPUT][N_LEVELS_INPUT]));
+	double *z_surf_in = malloc(N_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *p_surf_in = malloc(N_POINTS_PER_LAYER_INPUT*sizeof(double));
+	double *latitudes_sst = malloc(N_SST_POINTS*sizeof(double));
+	double *longitudes_sst = malloc(N_SST_POINTS*sizeof(double));
+	double *sst_in = malloc(N_SST_POINTS*sizeof(double));
     
     // determining the name of the input file
     char input_file_pre[200];
@@ -174,10 +174,10 @@ int main(int argc, char *argv[])
 	printf("Input read.\n");
 	
 	// memory alloction for the interpolation indices and weights
-	int (*interpolation_indices_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(int[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
-	double (*interpolation_weights_scalar)[NO_OF_AVG_POINTS] = malloc(sizeof(double[NO_OF_SCALARS_H][NO_OF_AVG_POINTS]));
-	int (*interpolation_indices_vector)[NO_OF_AVG_POINTS] = malloc(sizeof(int[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
-	double (*interpolation_weights_vector)[NO_OF_AVG_POINTS] = malloc(sizeof(double[NO_OF_VECTORS_H][NO_OF_AVG_POINTS]));
+	int (*interpolation_indices_scalar)[N_AVG_POINTS] = malloc(sizeof(int[N_SCALARS_H][N_AVG_POINTS]));
+	double (*interpolation_weights_scalar)[N_AVG_POINTS] = malloc(sizeof(double[N_SCALARS_H][N_AVG_POINTS]));
+	int (*interpolation_indices_vector)[N_AVG_POINTS] = malloc(sizeof(int[N_VECTORS_H][N_AVG_POINTS]));
+	double (*interpolation_weights_vector)[N_AVG_POINTS] = malloc(sizeof(double[N_VECTORS_H][N_AVG_POINTS]));
 	
 	printf("Reading the interpolation indices and weights.\n");
 	
@@ -211,26 +211,26 @@ int main(int argc, char *argv[])
 	printf("Starting the interpolation of scalar quantities ...\n");
     
     // These are the arrays for the result of the interpolation process.
-    double *temperature_out = calloc(1, NO_OF_SCALARS*sizeof(double));
-	double *spec_hum_out = calloc(1, NO_OF_SCALARS*sizeof(double));
+    double *temperature_out = calloc(1, N_SCALARS*sizeof(double));
+	double *spec_hum_out = calloc(1, N_SCALARS*sizeof(double));
 	
-	int no_of_levels_input = NO_OF_LEVELS_INPUT;
+	int no_of_levels_input = N_LEVELS_INPUT;
 	
     int layer_index, h_index, closest_index, other_index;
     double closest_value, other_value, df, dz, gradient, delta_z;
     #pragma omp parallel for private(layer_index, h_index, closest_value, other_value, df, dz, gradient, delta_z)
-    for (int i = 0; i < NO_OF_SCALARS; ++i)
+    for (int i = 0; i < N_SCALARS; ++i)
     {
-    	layer_index = i/NO_OF_SCALARS_H;
-    	h_index = i - layer_index*NO_OF_SCALARS_H;
+    	layer_index = i/N_SCALARS_H;
+    	h_index = i - layer_index*N_SCALARS_H;
     	
     	// loop over all points over which the averaging is executed
-    	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+    	for (int j = 0; j < N_AVG_POINTS; ++j)
     	{
     		// computing linear vertical interpolation
     		// vertical distance vector
-    		double vector_to_minimize[NO_OF_LEVELS_INPUT];
-    		for (int k = 0; k < NO_OF_LEVELS_INPUT; ++k)
+    		double vector_to_minimize[N_LEVELS_INPUT];
+    		for (int k = 0; k < N_LEVELS_INPUT; ++k)
     		{
     			vector_to_minimize[k] = fabs(z_coords_game[i]
     			- z_coords_input_model[interpolation_indices_scalar[h_index][j]][k]);
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
     		}
     		
     		// avoiding array excess
-    		if (other_index == NO_OF_LEVELS_INPUT)
+    		if (other_index == N_LEVELS_INPUT)
     		{
     			other_index = closest_index - 1;
     		}
@@ -283,17 +283,17 @@ int main(int argc, char *argv[])
     free(temperature_in);
     
     // surface pressure interpolation
-    double *pressure_lowest_layer_out = calloc(1, NO_OF_SCALARS_H*sizeof(double));
+    double *pressure_lowest_layer_out = calloc(1, N_SCALARS_H*sizeof(double));
     # pragma omp parallel for
-    for (int i = 0; i < NO_OF_SCALARS_H; ++i)
+    for (int i = 0; i < N_SCALARS_H; ++i)
     {
-    	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+    	for (int j = 0; j < N_AVG_POINTS; ++j)
     	{
     		pressure_lowest_layer_out[i]
     		// horizontal component of the interpolation
     		+= interpolation_weights_scalar[i][j]*p_surf_in[interpolation_indices_scalar[i][j]]
     		// vertical component of the interpolation according to the barometric height formula
-    		*exp(-(z_coords_game[NO_OF_SCALARS - NO_OF_SCALARS_H + i] - z_surf_in[interpolation_indices_scalar[i][j]])/SCALE_HEIGHT);
+    		*exp(-(z_coords_game[N_SCALARS - N_SCALARS_H + i] - z_surf_in[interpolation_indices_scalar[i][j]])/SCALE_HEIGHT);
     	}
     }
     free(z_coords_game);
@@ -304,21 +304,21 @@ int main(int argc, char *argv[])
 	free(interpolation_weights_scalar);
     
     // density is determined out of the hydrostatic equation
-    double *density_moist_out = malloc(NO_OF_SCALARS*sizeof(double));
+    double *density_moist_out = malloc(N_SCALARS*sizeof(double));
     // firstly setting the virtual temperature
-    double *temperature_v = malloc(NO_OF_SCALARS*sizeof(double));
-    for (int i = 0; i < NO_OF_SCALARS; ++i)
+    double *temperature_v = malloc(N_SCALARS*sizeof(double));
+    for (int i = 0; i < N_SCALARS; ++i)
     {
     	temperature_v[i] = temperature_out[i]*(1.0 + spec_hum_out[i]*(M_D/M_V - 1.0));
     }
     // the Exner pressure is just a temporarily needed helper variable here to integrate the hydrostatic equation
-    double *exner = malloc(NO_OF_SCALARS*sizeof(double));
+    double *exner = malloc(N_SCALARS*sizeof(double));
     double b, c;
-    for (int i = NO_OF_SCALARS - 1; i >= 0; --i)
+    for (int i = N_SCALARS - 1; i >= 0; --i)
     {
-    	layer_index = i/NO_OF_SCALARS_H;
-    	h_index = i - layer_index*NO_OF_SCALARS_H;
-    	if (layer_index == NO_OF_LAYERS - 1)
+    	layer_index = i/N_SCALARS_H;
+    	h_index = i - layer_index*N_SCALARS_H;
+    	if (layer_index == N_LAYERS - 1)
     	{
         	density_moist_out[i] = pressure_lowest_layer_out[h_index]/(R_D*temperature_v[i]);
         	exner[i] = pow((density_moist_out[i]*R_D*temperature_v[i])/P_0, R_D/C_D_P);
@@ -326,10 +326,10 @@ int main(int argc, char *argv[])
         else
         {
 			// solving a quadratic equation for the Exner pressure
-			b = -0.5*exner[i + NO_OF_SCALARS_H]/temperature_v[i + NO_OF_SCALARS_H]
-			*(temperature_v[i] - temperature_v[i + NO_OF_SCALARS_H]
-			+ 2.0/C_D_P*(gravity_potential_game[i] - gravity_potential_game[i + NO_OF_SCALARS_H]));
-			c = pow(exner[i + NO_OF_SCALARS_H], 2.0)*temperature_v[i]/temperature_v[i + NO_OF_SCALARS_H];
+			b = -0.5*exner[i + N_SCALARS_H]/temperature_v[i + N_SCALARS_H]
+			*(temperature_v[i] - temperature_v[i + N_SCALARS_H]
+			+ 2.0/C_D_P*(gravity_potential_game[i] - gravity_potential_game[i + N_SCALARS_H]));
+			c = pow(exner[i + N_SCALARS_H], 2.0)*temperature_v[i]/temperature_v[i + N_SCALARS_H];
 			exner[i] = b + pow((pow(b, 2.0) + c), 0.5);
         	density_moist_out[i] = P_0*pow(exner[i], C_D_P/R_D)/(R_D*temperature_v[i]);
         }
@@ -348,27 +348,27 @@ int main(int argc, char *argv[])
 	*/
 	
 	printf("Starting the wind interpolation ...\n");
-    double *wind_out = calloc(1, NO_OF_VECTORS*sizeof(double));
+    double *wind_out = calloc(1, N_VECTORS*sizeof(double));
     int vector_index;
     double u_local, v_local;
     // loop over all horizontal vector points
     # pragma omp parallel for private(h_index, layer_index, vector_index, closest_index, other_index, closest_value, other_value, df, dz, gradient, delta_z, u_local, v_local)
-    for (int i = 0; i < NO_OF_H_VECTORS; ++i)
+    for (int i = 0; i < N_H_VECTORS; ++i)
     {
-    	layer_index = i/NO_OF_VECTORS_H;
-    	h_index = i - layer_index*NO_OF_VECTORS_H;
-   		vector_index = NO_OF_SCALARS_H + layer_index*NO_OF_VECTORS_PER_LAYER + h_index;
+    	layer_index = i/N_VECTORS_H;
+    	h_index = i - layer_index*N_VECTORS_H;
+   		vector_index = N_SCALARS_H + layer_index*N_VECTORS_PER_LAYER + h_index;
    		
    		// the u- and v-components of the wind at the grid point of GAME
    		u_local = 0.0;
    		v_local = 0.0;
    		// loop over all horizontal points that are used for averaging
-    	for (int j = 0; j < NO_OF_AVG_POINTS; ++j)
+    	for (int j = 0; j < N_AVG_POINTS; ++j)
     	{
     		// computing linear vertical interpolation
     		// vertical distance vector
-    		double vector_to_minimize[NO_OF_LEVELS_INPUT];
-    		for (int k = 0; k < NO_OF_LEVELS_INPUT; ++k)
+    		double vector_to_minimize[N_LEVELS_INPUT];
+    		for (int k = 0; k < N_LEVELS_INPUT; ++k)
     		{
     			vector_to_minimize[k] = fabs(z_coords_game_wind[vector_index]
     			- z_coords_input_model[interpolation_indices_vector[h_index][j]][k]);
@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
     			other_index = closest_index + 1;
     		}
     		// avoiding array excess
-    		if (other_index == NO_OF_LEVELS_INPUT)
+    		if (other_index == N_LEVELS_INPUT)
     		{
     			other_index = closest_index - 1;
     		}
@@ -428,15 +428,15 @@ int main(int argc, char *argv[])
 	INTERPOLATION OF THE SST
 	------------------------
 	*/
-	int no_of_sst_points = NO_OF_SST_POINTS;
+	int no_of_sst_points = N_SST_POINTS;
 	printf("Interpolating the SST to the model grid ...\n");
-	double *sst_out = malloc(NO_OF_SCALARS_H*sizeof(double));
+	double *sst_out = malloc(N_SCALARS_H*sizeof(double));
 	int min_index;
 	#pragma omp parallel for private(min_index)
-	for (int i = 0; i < NO_OF_SCALARS_H; ++i)
+	for (int i = 0; i < N_SCALARS_H; ++i)
 	{
-    	double *distance_vector = malloc(NO_OF_SST_POINTS*sizeof(double));
-    	for (int j = 0; j < NO_OF_SST_POINTS; ++j)
+    	double *distance_vector = malloc(N_SST_POINTS*sizeof(double));
+    	for (int j = 0; j < N_SST_POINTS; ++j)
     	{
     		double one = 1.0;
     		distance_vector[j] = calculate_distance_h(&latitudes_sst[j], &longitudes_sst[j], &latitudes_game[i], &longitudes_game[i], &one);
@@ -459,21 +459,21 @@ int main(int argc, char *argv[])
 	*/
 	
 	// clouds and precipitation are set equal to the background state
-	double *densities = malloc(6*NO_OF_SCALARS*sizeof(double));
+	double *densities = malloc(6*N_SCALARS*sizeof(double));
     #pragma omp parallel for
-	for (int i = 0; i < NO_OF_SCALARS; ++i)
+	for (int i = 0; i < N_SCALARS; ++i)
 	{
 		// setting the mass densities of the result
 		// condensate densities are not assimilated
 		densities[i] = densities_background[i];
-		densities[NO_OF_SCALARS + i] = densities_background[NO_OF_SCALARS + i];
-		densities[2*NO_OF_SCALARS + i] = densities_background[2*NO_OF_SCALARS + i];
-		densities[3*NO_OF_SCALARS + i] = densities_background[3*NO_OF_SCALARS + i];
-		densities[4*NO_OF_SCALARS + i] = density_moist_out[i];
-		densities[5*NO_OF_SCALARS + i] = spec_hum_out[i]*density_moist_out[i];
-		if (densities[5*NO_OF_SCALARS + i] < 0.0)
+		densities[N_SCALARS + i] = densities_background[N_SCALARS + i];
+		densities[2*N_SCALARS + i] = densities_background[2*N_SCALARS + i];
+		densities[3*N_SCALARS + i] = densities_background[3*N_SCALARS + i];
+		densities[4*N_SCALARS + i] = density_moist_out[i];
+		densities[5*N_SCALARS + i] = spec_hum_out[i]*density_moist_out[i];
+		if (densities[5*N_SCALARS + i] < 0.0)
 		{
-			densities[5*NO_OF_SCALARS + i] = 0.0;
+			densities[5*N_SCALARS + i] = 0.0;
 		}
     }
     free(density_moist_out);
@@ -490,11 +490,11 @@ int main(int argc, char *argv[])
     int densities_dimid, scalar_dimid, vector_dimid, scalar_h_dimid, single_double_dimid,
     densities_id, temperature_id, wind_id, soil_dimid;
     NCCHECK(nc_create(output_file, NC_CLOBBER, &ncid));
-    NCCHECK(nc_def_dim(ncid, "densities_index", 6*NO_OF_SCALARS, &densities_dimid));
-    NCCHECK(nc_def_dim(ncid, "vector_index", NO_OF_VECTORS, &vector_dimid));
-    NCCHECK(nc_def_dim(ncid, "scalar_index", NO_OF_SCALARS, &scalar_dimid));
-    NCCHECK(nc_def_dim(ncid, "soil_index", NO_OF_SOIL_LAYERS*NO_OF_SCALARS_H, &soil_dimid));
-    NCCHECK(nc_def_dim(ncid, "scalar_h_index", NO_OF_SCALARS_H, &scalar_h_dimid));
+    NCCHECK(nc_def_dim(ncid, "densities_index", 6*N_SCALARS, &densities_dimid));
+    NCCHECK(nc_def_dim(ncid, "vector_index", N_VECTORS, &vector_dimid));
+    NCCHECK(nc_def_dim(ncid, "scalar_index", N_SCALARS, &scalar_dimid));
+    NCCHECK(nc_def_dim(ncid, "soil_index", N_SOIL_LAYERS*N_SCALARS_H, &soil_dimid));
+    NCCHECK(nc_def_dim(ncid, "scalar_h_index", N_SCALARS_H, &scalar_h_dimid));
     NCCHECK(nc_def_dim(ncid, "single_double_dimid_index", 1, &single_double_dimid));
     NCCHECK(nc_def_var(ncid, "densities", NC_DOUBLE, 1, &densities_dimid, &densities_id));
     NCCHECK(nc_put_att_text(ncid, densities_id, "units", strlen("kg/m^3"), "kg/m^3"));
