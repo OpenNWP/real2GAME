@@ -47,6 +47,13 @@ echo "Starting to download initial data ..."
 $real2game_home_dir/downloader/run.sh $real2game_home_dir $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string
 echo "Collection of initial data completed."
 
+if [ ! -f $real2game_home_dir/formatter/build/formatter ]
+then
+  echo "Executable formatter/build/formatter does not exist. Compile first."
+  echo "Aborting."
+  exit
+fi
+
 # reformatting
 echo "Reformatting the input data ..."
 $real2game_home_dir/formatter/build/formatter $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string $real2game_home_dir
@@ -65,6 +72,14 @@ echo "analysis year: "$analysis_year
 echo "analysis month: "$analysis_month
 echo "analysis day: "$analysis_day
 echo "analysis hour: "$analysis_hour
+
+if [ ! -f $real2game_home_dir/build/real2game ]
+then
+  echo "Executable /build/real2game does not exist. Compile first."
+  echo "Aborting."
+  exit
+fi
+
 $real2game_home_dir/build/real2game $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string $model_home_directory $orography_id $background_file $real2game_home_dir
 if [ $? -ne 0 ]
 then
