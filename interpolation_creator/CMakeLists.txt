@@ -10,8 +10,8 @@ project(real2GAME VERSION ${version})
 enable_language(Fortran)
 add_executable(
 interpolation_creator
-src/coordinator.c
-src/coordinator.f90)
+src/control.c
+src/control.f90)
 add_definitions(-Wall)
 find_package(OpenMP)
 SET(CMAKE_C_FLAGS "${OpenMP_C_FLAGS} -O2 -Wall")

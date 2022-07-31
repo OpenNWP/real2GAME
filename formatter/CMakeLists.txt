@@ -9,7 +9,7 @@ set(version ${version_major}.${version_minor}.${version_patch})
 project(real2GAME VERSION ${version})
 add_executable(
 formatter
-src/formatter.c)
+src/control.c)
 add_definitions(-Wall)
 find_package(OpenMP)
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -O2 -Wall -Wpedantic")
