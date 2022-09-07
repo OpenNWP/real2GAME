@@ -6,6 +6,7 @@ program formatter
   ! This tool reads the output from other models / data assimilation systems and brings it into a standardized format.
 
   use netcdf
+  use eccodes
   use mo_shared, only: wp
 
   implicit none
@@ -16,6 +17,9 @@ program formatter
   real(wp), allocatable :: z_height_amsl_one_layer(:),temperature_one_layer(:),spec_hum_one_layer(:), &
                            u_one_layer(:),v_one_layer(:),z_height_amsl(:,:),temperature(:,:),spec_hum(:,:), &
                            u_wind(:,:),v_wind(:,:)
+  character(len=4)      :: year_string
+  character(len=2)      :: month_string,day_string,hour_string
+  character(len=128)    :: real2game_root_dir
 
   ! defining the levels of the model we want to use
   levels_vector(1) = 1
@@ -32,16 +36,11 @@ program formatter
   levels_vector(12) = 90
   
   ! shell arguments
-  char year_string(strlen(argv(1)) + 1)
-  strcpy(year_string,argv(1))
-  char month_string(strlen(argv(2)) + 1)
-  strcpy(month_string,argv(2))
-  char day_string(strlen(argv(3)) + 1)
-  strcpy(day_string,argv(3))
-  char hour_string(strlen(argv(4)) + 1)
-  strcpy(hour_string,argv(4))
-  char real2game_root_dir(strlen(argv(5)) + 1)
-  strcpy(real2game_root_dir,argv(5))
+  call get_command_argument(1,year_string)
+  call get_command_argument(2,month_string)
+  call get_command_argument(3,day_string)
+  call get_command_argument(4,hour_string)
+  call get_command_argument(5,real2game_root_dir)
   
   ! single-layer arrays from grib
   allocate(z_height_amsl_one_layer(n_points_per_layer_input))
@@ -65,7 +64,7 @@ program formatter
   
   ! reading the data from the free atmosphere
   ! loop over all relevant levels in the free atmosphere
-  do (int level_index = 0 level_index < n_levels_input ++level_index)
+  do level_index=1,n_levels_input
     ! vertical position of the current layer
     z_inpput_model_file = real2game_root_dir // "/input/icon_global_icosahedral_time-invariant_" // year_string &
                           // month_string // day_string // hour_string // "_" &
@@ -75,12 +74,12 @@ program formatter
     handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
     if (err != 0) ECCERR(err)
     no_of_points_per_layer_input_size_t = (size_t) n_points_per_layer_input
-    ECCCHECK(codes_get_double_array(handle,"values",z_height_amsl_one_layer(0),no_of_points_per_layer_input_size_t))
+    ECCCHECK(codes_get_double_array(handle,"values",z_height_amsl_one_layer,no_of_points_per_layer_input_size_t))
     codes_handle_delete(handle)
     fclose(ecc_file)
     
     !$omp parallel do private(ji)
-    do (int i = 0 i < n_points_per_layer_input ++i)
+    do ji=1,n_points_per_layer_input
       z_height_amsl(ji,level_index) = z_height_amsl_one_layer(ji)
     enddo
     !$omp end parallel do
@@ -115,7 +114,7 @@ program formatter
     fclose(ecc_file)
     
     !$omp parallel do private(ji)
-    do (int i = 0 i < n_points_per_layer_input ++i)
+    do ji=1,n_points_per_layer_input
       spec_hum(ji,level_index) = spec_hum_one_layer(ji)
     enddo
     !$omp end parallel do
@@ -133,7 +132,7 @@ program formatter
     fclose(ecc_file)
     
     !$omp parallel do private(ji)
-    do (int i = 0 i < n_points_per_layer_input ++i)
+    do ji=1,n_points_per_layer_input
       u_wind(ji,level_index) = u_one_layer(ji)
     enddo
     !$omp end parallel do
@@ -208,7 +207,7 @@ program formatter
   
   ! transforming the coordinates of the SST grid from degrees to radians
   !$omp parallel do private(ji)
-  do (int i = 0 i < N_SST_POINTS ++i)
+  do ji=1,n_sst_oints
     latitudes_sst(ji) = 2._wp*M_PI*latitudes_sst(ji)/360._wp
     longitudes_sst(ji) = 2._wp*M_PI*longitudes_sst(ji)/360._wp
   enddo
