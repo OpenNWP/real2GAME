@@ -7,11 +7,11 @@ set(version_minor 1)
 set(version_patch 1)
 set(version ${version_major}.${version_minor}.${version_patch})
 project(real2GAME VERSION ${version})
+enable_language(Fortran)
 add_executable(
 formatter
-src/control.f90)
-add_definitions(-Wall)
+src/control.f90
+../mo_shared.f90)
 find_package(OpenMP)
 SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -Wall -Wpedantic -Wno-c-binding-type -I/usr/include -L/usr/lib/x86_64-linux-gnu")
 target_link_libraries(formatter m netcdff eccodes)
-enable_testing()

@@ -6,7 +6,7 @@ program formatter
   ! This tool reads the output from other models / data assimilation systems and brings it into a standardized format.
 
   use netcdf
-  use definitions, only: wp
+  use mo_shared, only: wp
 
   implicit none
 
