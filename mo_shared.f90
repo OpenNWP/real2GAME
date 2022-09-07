@@ -20,5 +20,9 @@ module mo_shared
   integer, parameter :: dp = selected_real_kind(pd,rd) ! real(wp) :: precission
   
   integer, parameter :: wp = dp                        ! working precission
+  
+  integer, parameter :: n_levels_input = 12                ! number of levels from the input model that are used
+  integer, parameter :: n_sst_points = 259200              ! the number of points of the SST grid
+  integer, parameter :: N_POINTS_PER_LAYER_INPUT = 2949120 ! the number of points per layer of the input model
 
 end module mo_shared

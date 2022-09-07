@@ -7,16 +7,15 @@ program formatter
 
   use netcdf
   use eccodes
-  use mo_shared, only: wp
+  use mo_shared, only: wp,n_levels_input,n_sst_points
 
   implicit none
 
-  integer, parameter    :: n_levels_input = 12
   integer               :: ji,ncid,h_dimid,v_dimid,z_surf_id,sp_id,sst_dimid,t_id,spec_hum_id,z_id,u_id,v_id, &
                            lat_sst_id,lon_sst_id,sst_id,dim_vector(2),levels_vector(n_levels_input)
   real(wp), allocatable :: z_height_amsl_one_layer(:),temperature_one_layer(:),spec_hum_one_layer(:), &
                            u_one_layer(:),v_one_layer(:),z_height_amsl(:,:),temperature(:,:),spec_hum(:,:), &
-                           u_wind(:,:),v_wind(:,:)
+                           u_wind(:,:),v_wind(:,:),latitudes_sst(:),longitudes_sst(:),sst(:)
   character(len=4)      :: year_string
   character(len=2)      :: month_string,day_string,hour_string
   character(len=128)    :: real2game_root_dir
@@ -74,7 +73,7 @@ program formatter
     handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
     if (err != 0) ECCERR(err)
     no_of_points_per_layer_input_size_t = (size_t) n_points_per_layer_input
-    ECCCHECK(codes_get_double_array(handle,"values",z_height_amsl_one_layer,no_of_points_per_layer_input_size_t))
+    codes_get_double_array(handle,"values",z_height_amsl_one_layer,no_of_points_per_layer_input_size_t)
     codes_handle_delete(handle)
     fclose(ecc_file)
     
@@ -85,13 +84,13 @@ program formatter
     !$omp end parallel do
     
     ! reading the temperature
-    temperature_file = real2game_root_dir // "/input/icon_global_icosahedral_model-level_" year_string // month_string // day_string &
-                       // hour_string "_000_" // int2string(trim(levels_vector(level_index))) // "_T.grib2"
+    temperature_file = real2game_root_dir // "/input/icon_global_icosahedral_model-level_" year_string // month_string &
+                       // day_string // hour_string "_000_" // int2string(trim(levels_vector(level_index))) // "_T.grib2"
     
     ecc_file = fopen(temperature_file,"r")
     handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
     if (err != 0) ECCERR(err)
-    ECCCHECK(codes_get_double_array(handle,"values",temperature_one_layer(0),no_of_points_per_layer_input_size_t))
+    codes_get_double_array(handle,"values",temperature_one_layer(0),no_of_points_per_layer_input_size_t))
     codes_handle_delete(handle)
     fclose(ecc_file)
     
@@ -109,7 +108,7 @@ program formatter
     ecc_file = fopen(spec_hum_file,"r")
     handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
     if (err != 0) ECCERR(err)
-    ECCCHECK(codes_get_double_array(handle,"values",spec_hum_one_layer,no_of_points_per_layer_input_size_t))
+    codes_get_double_array(handle,"values",spec_hum_one_layer,no_of_points_per_layer_input_size_t))
     codes_handle_delete(handle)
     fclose(ecc_file)
     
@@ -127,7 +126,7 @@ program formatter
     ecc_file = fopen(u_wind_file,"r")
     handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
     if (err != 0) ECCERR(err)
-    ECCCHECK(codes_get_double_array(handle,"values",u_one_layer,no_of_points_per_layer_input_size_t))
+    codes_get_double_array(handle,"values",u_one_layer,no_of_points_per_layer_input_size_t))
     codes_handle_delete(handle)
     fclose(ecc_file)
     
@@ -145,7 +144,7 @@ program formatter
     ecc_file = fopen(v_wind_file,"r")
     handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
     if (err != 0) ECCERR(err)
-    ECCCHECK(codes_get_double_array(handle,"values",v_one_layer,no_of_points_per_layer_input_size_t))
+    codes_get_double_array(handle,"values",v_one_layer,no_of_points_per_layer_input_size_t))
     codes_handle_delete(handle)
     fclose(ecc_file)
     
@@ -171,7 +170,7 @@ program formatter
   ecc_file = fopen(sfc_obs_file,"r")
   handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
   if (err != 0) ECCERR(err)
-  ECCCHECK(codes_get_double_array(handle,"values",surface_height,no_of_points_per_layer_input_size_t))
+  codes_get_double_array(handle,"values",surface_height,no_of_points_per_layer_input_size_t))
   codes_handle_delete(handle)
   fclose(ecc_file)
   
@@ -184,14 +183,14 @@ program formatter
   ecc_file = fopen(sfc_pres_file,"r")
   handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
   if (err != 0) ECCERR(err)
-  ECCCHECK(codes_get_double_array(handle,"values",pressure_surface,no_of_points_per_layer_input_size_t))
+  codes_get_double_array(handle,"values",pressure_surface,no_of_points_per_layer_input_size_t))
   codes_handle_delete(handle)
   fclose(ecc_file)
   
   ! reading the SST
-  double *latitudes_sst = malloc(N_SST_POINTS)
-  double *longitudes_sst = malloc(N_SST_POINTS)
-  double *sst = malloc(N_SST_POINTS)
+  allocate(latitudes_sst(n_sst_points))
+  allocate(longitudes_sst(n_sst_points))
+  allocate(sst(n_sst_points))
   
   sst_file = real2game_root_dir // "/input/rtgssthr_grb_0.5.grib2"
   
@@ -199,9 +198,9 @@ program formatter
   handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
   if (err /= 0) ECCERR(err)
   size_t no_of_sst_points_size_t = (size_t) N_SST_POINTS
-  ECCCHECK(codes_get_double_array(handle,"values",sst,no_of_sst_points_size_t))
-  ECCCHECK(codes_get_double_array(handle,"latitudes",latitudes_sst,no_of_sst_points_size_t))
-  ECCCHECK(codes_get_double_array(handle,"longitudes",longitudes_sst,no_of_sst_points_size_t))
+  codes_get_double_array(handle,"values",sst,no_of_sst_points_size_t))
+  codes_get_double_array(handle,"latitudes",latitudes_sst,no_of_sst_points_size_t))
+  codes_get_double_array(handle,"longitudes",longitudes_sst,no_of_sst_points_size_t))
   codes_handle_delete(handle)
   fclose(ecc_file)
   
@@ -217,11 +216,11 @@ program formatter
   output_file = real2game_root_dir // "/input/obs_" // year_string // month_string // day_string // &
                 hour_string // "%s%s%s.nc"
     
-  nc_check(nc_create(output_file,NC_CLOBBER,ncid))
+  nc_check(nf90_create(output_file,NC_CLOBBER,ncid))
   ! Defining the dimensions.
-  nc_check(nc_def_dim(ncid,"h_index",n_points_per_layer_input,h_dimid))
-  nc_check(nc_def_dim(ncid,"v_index",n_levels_input,v_dimid))
-  nc_check(nc_def_dim(ncid,"sst_index",N_SST_POINTS,sst_dimid))
+  nc_check(nf90_def_dim(ncid,"h_index",n_points_per_layer_input,h_dimid))
+  nc_check(nf90_def_dim(ncid,"v_index",n_levels_input,v_dimid))
+  nc_check(nf90_def_dim(ncid,"sst_index",N_SST_POINTS,sst_dimid))
   dim_vector(1) = h_dimid
   dim_vector(2) = v_dimid
   nc_check(nf90_def_var(ncid,"z_surface",NC_DOUBLE,1,h_dimid,z_surf_id))
@@ -234,7 +233,7 @@ program formatter
   nc_check(nf90_def_var(ncid,"lat_sst",NC_DOUBLE,1,sst_dimid,lat_sst_id))
   nc_check(nf90_def_var(ncid,"lon_sst",NC_DOUBLE,1,sst_dimid,lon_sst_id))
   nc_check(nf90_def_var(ncid,"sst",NC_DOUBLE,1,sst_dimid,sst_id))
-  nc_check(nc_enddef(ncid))
+  nc_check(nf90_enddef(ncid))
   ! Setting the variables.
   nc_check(nf90_put_var(ncid,z_surf_id,surface_height))
   nc_check(nf90_put_var(ncid,sp_id,pressure_surface))
@@ -246,7 +245,7 @@ program formatter
   nc_check(nf90_put_var(ncid,lat_sst_id,latitudes_sst))
   nc_check(nf90_put_var(ncid,lon_sst_id,longitudes_sst))
   nc_check(nf90_put_var(ncid,sst_id,sst))
-  nc_check(nc_close(ncid))
+  nc_check(nf90_close(ncid))
     
   ! freeing the memory
   deallocate(z_height_amsl)
