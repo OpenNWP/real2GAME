@@ -9,9 +9,9 @@ set(version ${version_major}.${version_minor}.${version_patch})
 project(real2GAME VERSION ${version})
 add_executable(
 formatter
-src/control.c)
+src/control.f90)
 add_definitions(-Wall)
 find_package(OpenMP)
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -O2 -Wall -Wpedantic")
-target_link_libraries(formatter m netcdf eccodes)
+SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -Wall -Wpedantic -Wno-c-binding-type -I/usr/include -L/usr/lib/x86_64-linux-gnu")
+target_link_libraries(formatter m netcdff eccodes)
 enable_testing()
