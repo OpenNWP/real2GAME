@@ -51,7 +51,7 @@ program formatter
   allocate(u_one_layer(n_points_per_layer_input))
   allocate(v_one_layer(n_points_per_layer_input))
   
-  ! 2D-arrays for NetCDF
+  ! 2D-arrays for netCDF
   allocate(z_height_amsl(n_points_per_layer_input,n_levels_input))
   allocate(temperature(n_points_per_layer_input,n_levels_input))
   allocate(spec_hum(n_points_per_layer_input,n_levels_input))
@@ -64,13 +64,14 @@ program formatter
   ! loop over all relevant levels in the free atmosphere
   do jl=1,n_levels_input
     ! vertical position of the current layer
-    z_input_model_file = real2game_root_dir // "/input/icon_global_icosahedral_time-invariant_" // year_string &
-                          // month_string // day_string // hour_string // "_" &
-                          // trim(int2string(levels_vector(jl))) // "_HHL.grib2"
+    z_input_model_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_time-invariant_" // year_string &
+                         // month_string // day_string // hour_string // "_" &
+                         // trim(int2string(levels_vector(jl))) // "_HHL.grib2"
     
-    call codes_open_file(jfile,z_input_model_file,"r")
+    call codes_open_file(jfile,trim(z_input_model_file),"r")
     call codes_grib_new_from_file(jfile,jgrib)
     call codes_get(jgrib,"values",z_height_amsl_one_layer)
+    call codes_release(jgrib)
     call codes_close_file(jfile)
     
     !$omp parallel do private(ji)
@@ -80,12 +81,13 @@ program formatter
     !$omp end parallel do
     
     ! reading the temperature
-    temperature_file = real2game_root_dir // "/input/icon_global_icosahedral_model-level_" // year_string // month_string &
+    temperature_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // month_string &
                        // day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) // "_T.grib2"
                        
-    call codes_open_file(jfile,temperature_file,"r")
+    call codes_open_file(jfile,trim(temperature_file),"r")
     call codes_grib_new_from_file(jfile,jgrib)
     call codes_get(jgrib,"values",temperature_one_layer)
+    call codes_release(jgrib)
     call codes_close_file(jfile)
     
     !$omp parallel do private(ji)
@@ -95,13 +97,14 @@ program formatter
     !$omp end parallel do
     
     ! reading the specific humidity
-    spec_hum_file = real2game_root_dir // "/input/icon_global_icosahedral_model-level_" // year_string // month_string // &
+    spec_hum_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // month_string // &
                     day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) // &
                     "_QV.grib2"
     
-    call codes_open_file(jfile,spec_hum_file,"r")
+    call codes_open_file(jfile,trim(spec_hum_file),"r")
     call codes_grib_new_from_file(jfile,jgrib)
     call codes_get(jgrib,"values",spec_hum_one_layer)
+    call codes_release(jgrib)
     call codes_close_file(jfile)
     
     !$omp parallel do private(ji)
@@ -111,13 +114,14 @@ program formatter
     !$omp end parallel do
     
     ! reading the u wind
-    u_wind_file = real2game_root_dir // "/input/icon_global_icosahedral_model-level_" // year_string // month_string // &
+    u_wind_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // month_string // &
                   day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) // & 
                   "_U.grib2"
     
-    call codes_open_file(jfile,u_wind_file,"r")
+    call codes_open_file(jfile,trim(u_wind_file),"r")
     call codes_grib_new_from_file(jfile,jgrib)
     call codes_get(jgrib,"values",u_one_layer)
+    call codes_release(jgrib)
     call codes_close_file(jfile)
     
     !$omp parallel do private(ji)
@@ -127,13 +131,14 @@ program formatter
     !$omp end parallel do
     
     ! reading the v wind
-    v_wind_file = real2game_root_dir // "/input/icon_global_icosahedral_model-level_" // year_string // &
+    v_wind_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // &
                   month_string // day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) &
                   // "_V.grib2"
     
-    call codes_open_file(jfile,v_wind_file,"r")
+    call codes_open_file(jfile,trim(v_wind_file),"r")
     call codes_grib_new_from_file(jfile,jgrib)
     call codes_get(jgrib,"values",v_one_layer)
+    call codes_release(jgrib)
     call codes_close_file(jfile)
     
     !$omp parallel do private(ji)
@@ -152,23 +157,25 @@ program formatter
   
   ! reading the surface height
   allocate(surface_height(n_points_per_layer_input))
-  sfc_height_file = real2game_root_dir // "/input/icon_global_icosahedral_time-invariant_" // year_string // month_string // &
-                 day_string // hour_string // "%s_HSURF.grib2"
+  sfc_height_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_time-invariant_" // year_string // month_string // &
+                    day_string // hour_string // "_HSURF.grib2"
   
-  call codes_open_file(jfile,sfc_height_file,"r")
-    call codes_grib_new_from_file(jfile,jgrib)
+  call codes_open_file(jfile,trim(sfc_height_file),"r")
+  call codes_grib_new_from_file(jfile,jgrib)
   call codes_get(jgrib,"values",surface_height)
+  call codes_release(jgrib)
   call codes_close_file(jfile)
   
   ! reading the surface presure
   allocate(pressure_surface(n_points_per_layer_input))
   
-  sfc_pres_file = real2game_root_dir // "/input/icon_global_icosahedral_single-level_" // year_string // month_string // &
+  sfc_pres_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_single-level_" // year_string // month_string // &
                   day_string // hour_string // "_000_PS.grib2"
   
-  call codes_open_file(jfile,sfc_pres_file,"r")
-    call codes_grib_new_from_file(jfile,jgrib)
+  call codes_open_file(jfile,trim(sfc_pres_file),"r")
+  call codes_grib_new_from_file(jfile,jgrib)
   call codes_get(jgrib,"values",pressure_surface)
+  call codes_release(jgrib)
   call codes_close_file(jfile)
   
   ! reading the SST
@@ -176,13 +183,14 @@ program formatter
   allocate(longitudes_sst(n_sst_points))
   allocate(sst(n_sst_points))
   
-  sst_file = real2game_root_dir // "/input/rtgssthr_grb_0.5.grib2"
+  sst_file = trim(real2game_root_dir) // "/input/rtgssthr_grb_0.5.grib2"
   
-  call codes_open_file(jfile,sst_file,"r")
+  call codes_open_file(jfile,trim(sst_file),"r")
   call codes_grib_new_from_file(jfile,jgrib)
   call codes_get(jgrib,"values",sst)
   call codes_get(jgrib,"latitudes",latitudes_sst)
   call codes_get(jgrib,"longitudes",longitudes_sst)
+  call codes_release(jgrib)
   call codes_close_file(jfile)
   
   ! transforming the coordinates of the SST grid from degrees to radians
@@ -194,10 +202,10 @@ program formatter
   !$omp end parallel do
     
   ! Writing the observations to a netcdf file.
-  output_file = real2game_root_dir // "/input/obs_" // year_string // month_string // day_string // &
+  output_file = trim(real2game_root_dir) // "/input/obs_" // year_string // month_string // day_string // &
                 hour_string // ".nc"
     
-  call nc_check(nf90_create(output_file,NF90_CLOBBER,ncid))
+  call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
   ! Defining the dimensions.
   call nc_check(nf90_def_dim(ncid,"h_index",n_points_per_layer_input,h_dimid))
   call nc_check(nf90_def_dim(ncid,"v_index",n_levels_input,v_dimid))
