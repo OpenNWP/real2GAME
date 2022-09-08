@@ -69,6 +69,7 @@ program formatter
                           // trim(int2string(levels_vector(jl))) // "_HHL.grib2"
     
     call codes_open_file(jfile,z_input_model_file,"r")
+    call codes_grib_new_from_file(jfile,jgrib)
     call codes_get(jgrib,"values",z_height_amsl_one_layer)
     call codes_close_file(jfile)
     
@@ -83,6 +84,7 @@ program formatter
                        // day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) // "_T.grib2"
                        
     call codes_open_file(jfile,temperature_file,"r")
+    call codes_grib_new_from_file(jfile,jgrib)
     call codes_get(jgrib,"values",temperature_one_layer)
     call codes_close_file(jfile)
     
@@ -98,6 +100,7 @@ program formatter
                     "_QV.grib2"
     
     call codes_open_file(jfile,spec_hum_file,"r")
+    call codes_grib_new_from_file(jfile,jgrib)
     call codes_get(jgrib,"values",spec_hum_one_layer)
     call codes_close_file(jfile)
     
@@ -113,6 +116,7 @@ program formatter
                   "_U.grib2"
     
     call codes_open_file(jfile,u_wind_file,"r")
+    call codes_grib_new_from_file(jfile,jgrib)
     call codes_get(jgrib,"values",u_one_layer)
     call codes_close_file(jfile)
     
@@ -128,6 +132,7 @@ program formatter
                   // "_V.grib2"
     
     call codes_open_file(jfile,v_wind_file,"r")
+    call codes_grib_new_from_file(jfile,jgrib)
     call codes_get(jgrib,"values",v_one_layer)
     call codes_close_file(jfile)
     
@@ -151,6 +156,7 @@ program formatter
                  day_string // hour_string // "%s_HSURF.grib2"
   
   call codes_open_file(jfile,sfc_height_file,"r")
+    call codes_grib_new_from_file(jfile,jgrib)
   call codes_get(jgrib,"values",surface_height)
   call codes_close_file(jfile)
   
@@ -161,6 +167,7 @@ program formatter
                   day_string // hour_string // "_000_PS.grib2"
   
   call codes_open_file(jfile,sfc_pres_file,"r")
+    call codes_grib_new_from_file(jfile,jgrib)
   call codes_get(jgrib,"values",pressure_surface)
   call codes_close_file(jfile)
   
@@ -172,6 +179,7 @@ program formatter
   sst_file = real2game_root_dir // "/input/rtgssthr_grb_0.5.grib2"
   
   call codes_open_file(jfile,sst_file,"r")
+  call codes_grib_new_from_file(jfile,jgrib)
   call codes_get(jgrib,"values",sst)
   call codes_get(jgrib,"latitudes",latitudes_sst)
   call codes_get(jgrib,"longitudes",longitudes_sst)
