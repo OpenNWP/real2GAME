@@ -7,12 +7,12 @@ program formatter
 
   use netcdf
   use eccodes
-  use mo_shared, only: wp,n_levels_input,n_sst_points,n_points_per_layer_input,nc_check,int2string
+  use mo_shared, only: wp,n_levels_input,n_sst_points,n_points_per_layer_input,nc_check,int2string,M_PI
 
   implicit none
 
   integer               :: ji,jl,ncid,h_dimid,v_dimid,z_surf_id,sp_id,sst_dimid,t_id,spec_hum_id,z_id,u_id,v_id, &
-                           lat_sst_id,lon_sst_id,sst_id,dim_vector(2),levels_vector(n_levels_input)
+                           lat_sst_id,lon_sst_id,sst_id,dim_vector(2),levels_vector(n_levels_input),jfile,jgrib
   real(wp), allocatable :: z_height_amsl_one_layer(:),temperature_one_layer(:),spec_hum_one_layer(:), &
                            u_one_layer(:),v_one_layer(:),z_height_amsl(:,:),temperature(:,:),spec_hum(:,:), &
                            u_wind(:,:),v_wind(:,:),latitudes_sst(:),longitudes_sst(:),sst(:),surface_height(:), &
@@ -20,6 +20,8 @@ program formatter
   character(len=4)      :: year_string
   character(len=2)      :: month_string,day_string,hour_string
   character(len=128)    :: real2game_root_dir
+  character(len=256)    :: z_input_model_file,temperature_file,u_wind_file,v_wind_file,sfc_height_file, &
+                           sfc_pres_file,sst_file,output_file,spec_hum_file
 
   ! defining the levels of the model we want to use
   levels_vector(1) = 1
@@ -57,25 +59,18 @@ program formatter
   allocate(v_wind(n_points_per_layer_input,n_levels_input))
   
   ! grib stuff
-  FILE *ecc_file
-  size_t no_of_points_per_layer_input_size_t
-  int err
-  codes_handle *handle = NULL
   
   ! reading the data from the free atmosphere
   ! loop over all relevant levels in the free atmosphere
   do jl=1,n_levels_input
     ! vertical position of the current layer
-    z_inpput_model_file = real2game_root_dir // "/input/icon_global_icosahedral_time-invariant_" // year_string &
+    z_input_model_file = real2game_root_dir // "/input/icon_global_icosahedral_time-invariant_" // year_string &
                           // month_string // day_string // hour_string // "_" &
                           // trim(int2string(levels_vector(jl))) // "_HHL.grib2"
     
-    ecc_file = fopen(z_input_model_file,"r")
-    handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
-    no_of_points_per_layer_input_size_t = (size_t) n_points_per_layer_input
-    codes_get_double_array(handle,"values",z_height_amsl_one_layer,no_of_points_per_layer_input_size_t)
-    codes_handle_delete(handle)
-    fclose(ecc_file)
+    call codes_open_file(jfile,z_input_model_file,"r")
+    call codes_get(jgrib,"values",z_height_amsl_one_layer)
+    call codes_close_file(jfile)
     
     !$omp parallel do private(ji)
     do ji=1,n_points_per_layer_input
@@ -84,14 +79,12 @@ program formatter
     !$omp end parallel do
     
     ! reading the temperature
-    temperature_file = real2game_root_dir // "/input/icon_global_icosahedral_model-level_" year_string // month_string &
-                       // day_string // hour_string "_000_" // int2string(trim(levels_vector(jl))) // "_T.grib2"
-    
-    ecc_file = fopen(temperature_file,"r")
-    handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
-    codes_get_double_array(handle,"values",temperature_one_layer,no_of_points_per_layer_input_size_t))
-    codes_handle_delete(handle)
-    fclose(ecc_file)
+    temperature_file = real2game_root_dir // "/input/icon_global_icosahedral_model-level_" // year_string // month_string &
+                       // day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) // "_T.grib2"
+                       
+    call codes_open_file(jfile,temperature_file,"r")
+    call codes_get(jgrib,"values",temperature_one_layer)
+    call codes_close_file(jfile)
     
     !$omp parallel do private(ji)
     do ji=1,n_points_per_layer_input
@@ -101,14 +94,12 @@ program formatter
     
     ! reading the specific humidity
     spec_hum_file = real2game_root_dir // "/input/icon_global_icosahedral_model-level_" // year_string // month_string // &
-                    month_string // day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) // &
+                    day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) // &
                     "_QV.grib2"
     
-    ecc_file = fopen(spec_hum_file,"r")
-    handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
-    codes_get_double_array(handle,"values",spec_hum_one_layer,no_of_points_per_layer_input_size_t))
-    codes_handle_delete(handle)
-    fclose(ecc_file)
+    call codes_open_file(jfile,spec_hum_file,"r")
+    call codes_get(jgrib,"values",spec_hum_one_layer)
+    call codes_close_file(jfile)
     
     !$omp parallel do private(ji)
     do ji=1,n_points_per_layer_input
@@ -118,14 +109,12 @@ program formatter
     
     ! reading the u wind
     u_wind_file = real2game_root_dir // "/input/icon_global_icosahedral_model-level_" // year_string // month_string // &
-                  day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) & 
-                  // "_U.grib2",
+                  day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) // & 
+                  "_U.grib2"
     
-    ecc_file = fopen(u_wind_file,"r")
-    handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
-    codes_get_double_array(handle,"values",u_one_layer,no_of_points_per_layer_input_size_t))
-    codes_handle_delete(handle)
-    fclose(ecc_file)
+    call codes_open_file(jfile,u_wind_file,"r")
+    call codes_get(jgrib,"values",u_one_layer)
+    call codes_close_file(jfile)
     
     !$omp parallel do private(ji)
     do ji=1,n_points_per_layer_input
@@ -135,14 +124,12 @@ program formatter
     
     ! reading the v wind
     v_wind_file = real2game_root_dir // "/input/icon_global_icosahedral_model-level_" // year_string // &
-                  month_string // day_string // hour_string // "%s_000_" // trim(int2string(levels_vector(jl))) &
-                  // "_V.grib2",
+                  month_string // day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) &
+                  // "_V.grib2"
     
-    ecc_file = fopen(v_wind_file,"r")
-    handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
-    codes_get_double_array(handle,"values",v_one_layer,no_of_points_per_layer_input_size_t))
-    codes_handle_delete(handle)
-    fclose(ecc_file)
+    call codes_open_file(jfile,v_wind_file,"r")
+    call codes_get(jgrib,"values",v_one_layer)
+    call codes_close_file(jfile)
     
     !$omp parallel do private(ji)
     do ji=1,n_points_per_layer_input
@@ -160,14 +147,12 @@ program formatter
   
   ! reading the surface height
   allocate(surface_height(n_points_per_layer_input))
-  sfc_obs_file = real2game_root_dir // "/input/icon_global_icosahedral_time-invariant_" // year_string // month_string // &
+  sfc_height_file = real2game_root_dir // "/input/icon_global_icosahedral_time-invariant_" // year_string // month_string // &
                  day_string // hour_string // "%s_HSURF.grib2"
   
-  ecc_file = fopen(sfc_obs_file,"r")
-  handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
-  codes_get_double_array(handle,"values",surface_height,no_of_points_per_layer_input_size_t))
-  codes_handle_delete(handle)
-  fclose(ecc_file)
+  call codes_open_file(jfile,sfc_height_file,"r")
+  call codes_get(jgrib,"values",surface_height)
+  call codes_close_file(jfile)
   
   ! reading the surface presure
   allocate(pressure_surface(n_points_per_layer_input))
@@ -175,11 +160,9 @@ program formatter
   sfc_pres_file = real2game_root_dir // "/input/icon_global_icosahedral_single-level_" // year_string // month_string // &
                   day_string // hour_string // "_000_PS.grib2"
   
-  ecc_file = fopen(sfc_pres_file,"r")
-  handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
-  codes_get_double_array(handle,"values",pressure_surface,no_of_points_per_layer_input_size_t))
-  codes_handle_delete(handle)
-  fclose(ecc_file)
+  call codes_open_file(jfile,sfc_pres_file,"r")
+  call codes_get(jgrib,"values",pressure_surface)
+  call codes_close_file(jfile)
   
   ! reading the SST
   allocate(latitudes_sst(n_sst_points))
@@ -188,18 +171,15 @@ program formatter
   
   sst_file = real2game_root_dir // "/input/rtgssthr_grb_0.5.grib2"
   
-  ecc_file = fopen(sst_file,"r")
-  handle = codes_handle_new_from_file(NULL,ecc_file,PRODUCT_GRIB,err)
-  size_t no_of_sst_points_size_t = (size_t) N_SST_POINTS
-  codes_get_double_array(handle,"values",sst,no_of_sst_points_size_t))
-  codes_get_double_array(handle,"latitudes",latitudes_sst,no_of_sst_points_size_t))
-  codes_get_double_array(handle,"longitudes",longitudes_sst,no_of_sst_points_size_t))
-  codes_handle_delete(handle)
-  fclose(ecc_file)
+  call codes_open_file(jfile,sst_file,"r")
+  call codes_get(jgrib,"values",sst)
+  call codes_get(jgrib,"latitudes",latitudes_sst)
+  call codes_get(jgrib,"longitudes",longitudes_sst)
+  call codes_close_file(jfile)
   
   ! transforming the coordinates of the SST grid from degrees to radians
   !$omp parallel do private(ji)
-  do ji=1,n_sst_oints
+  do ji=1,n_sst_points
     latitudes_sst(ji) = 2._wp*M_PI*latitudes_sst(ji)/360._wp
     longitudes_sst(ji) = 2._wp*M_PI*longitudes_sst(ji)/360._wp
   enddo
@@ -207,25 +187,25 @@ program formatter
     
   ! Writing the observations to a netcdf file.
   output_file = real2game_root_dir // "/input/obs_" // year_string // month_string // day_string // &
-                hour_string // "%s%s%s.nc"
+                hour_string // ".nc"
     
-  call nc_check(nf90_create(output_file,NC_CLOBBER,ncid))
+  call nc_check(nf90_create(output_file,NF90_CLOBBER,ncid))
   ! Defining the dimensions.
   call nc_check(nf90_def_dim(ncid,"h_index",n_points_per_layer_input,h_dimid))
   call nc_check(nf90_def_dim(ncid,"v_index",n_levels_input,v_dimid))
   call nc_check(nf90_def_dim(ncid,"sst_index",N_SST_POINTS,sst_dimid))
   dim_vector(1) = h_dimid
   dim_vector(2) = v_dimid
-  call nc_check(nf90_def_var(ncid,"z_surface",NC_DOUBLE,1,h_dimid,z_surf_id))
-  call nc_check(nf90_def_var(ncid,"pressure_surface",NC_DOUBLE,1,h_dimid,sp_id))
-  call nc_check(nf90_def_var(ncid,"z_height",NC_DOUBLE,2,dim_vector,z_id))
-  call nc_check(nf90_def_var(ncid,"temperature",NC_DOUBLE,2,dim_vector,t_id))
-  call nc_check(nf90_def_var(ncid,"spec_humidity",NC_DOUBLE,2,dim_vector,spec_hum_id))
-  call nc_check(nf90_def_var(ncid,"u_wind",NC_DOUBLE,2,dim_vector,u_id))
-  call nc_check(nf90_def_var(ncid,"v_wind",NC_DOUBLE,2,dim_vector,v_id))
-  call nc_check(nf90_def_var(ncid,"lat_sst",NC_DOUBLE,1,sst_dimid,lat_sst_id))
-  call nc_check(nf90_def_var(ncid,"lon_sst",NC_DOUBLE,1,sst_dimid,lon_sst_id))
-  call nc_check(nf90_def_var(ncid,"sst",NC_DOUBLE,1,sst_dimid,sst_id))
+  call nc_check(nf90_def_var(ncid,"z_surface",NF90_REAL,h_dimid,z_surf_id))
+  call nc_check(nf90_def_var(ncid,"pressure_surface",NF90_REAL,h_dimid,sp_id))
+  call nc_check(nf90_def_var(ncid,"z_height",NF90_REAL,dim_vector,z_id))
+  call nc_check(nf90_def_var(ncid,"temperature",NF90_REAL,dim_vector,t_id))
+  call nc_check(nf90_def_var(ncid,"spec_humidity",NF90_REAL,dim_vector,spec_hum_id))
+  call nc_check(nf90_def_var(ncid,"u_wind",NF90_REAL,dim_vector,u_id))
+  call nc_check(nf90_def_var(ncid,"v_wind",NF90_REAL,dim_vector,v_id))
+  call nc_check(nf90_def_var(ncid,"lat_sst",NF90_REAL,sst_dimid,lat_sst_id))
+  call nc_check(nf90_def_var(ncid,"lon_sst",NF90_REAL,sst_dimid,lon_sst_id))
+  call nc_check(nf90_def_var(ncid,"sst",NF90_REAL,sst_dimid,sst_id))
   call nc_check(nf90_enddef(ncid))
   ! Setting the variables.
   call nc_check(nf90_put_var(ncid,z_surf_id,surface_height))
