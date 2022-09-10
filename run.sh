@@ -12,6 +12,9 @@ orography_id=${BASH_ARGV[5]}
 background_file=${BASH_ARGV[6]}
 real2game_home_dir=${BASH_ARGV[7]}
 omp_num_threads=${BASH_ARGV[8]}
+res_id=${BASH_ARGV[9]}
+n_layers=${BASH_ARGV[10]}
+nsoillays=${BASH_ARGV[11]}
 
 # parallelization
 export OMP_NUM_THREADS=$omp_num_threads # relevant only for OMP
@@ -56,7 +59,7 @@ then
   exit
 fi
 
-$real2game_home_dir/build/real2game $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $real2game_home_dir
+$real2game_home_dir/build/real2game $res_id $n_layers $nsoillays $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $real2game_home_dir
 if [ $? -ne 0 ]
 then
   echo -e ${RED}real2GAME failed.$NC
