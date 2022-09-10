@@ -27,7 +27,7 @@ program control
                            interpolation_indices_vector_id, &
                            interpolation_weights_vector_id,layer_index,h_index,closest_index,other_index, sp_id,z_surf_id, &
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id,densities_background_id, &
-                           tke_avail,tke_id,t_soil_avail,t_soil_id,vector_index,min_index,densities_dimid,scalar_dimid, &
+                           tke_id,t_soil_id,vector_index,min_index,densities_dimid,scalar_dimid, &
                            vector_dimid,scalar_h_dimid,single_double_dimid,densities_id,temperature_id,wind_id,soil_dimid, &
                            res_id,oro_id,n_pentagons,n_hexagons,n_scalars_h,n_scalars,n_vectors_h,n_layers,n_h_vectors, &
                            n_levels,n_v_vectors,n_vectors_per_layer,n_vectors,nsoillays
@@ -45,7 +45,9 @@ program control
   character(len=256)    :: background_state_file,geo_prop_file,input_file,interpol_file,output_file
 
   call get_command_argument(1,res_id_string)
+  read(res_id_string,*) res_id
   call get_command_argument(2,n_layers_string)
+  read(n_layers_string,*) n_layers
   ! grid properties
   n_pentagons = 12
   n_hexagons = 10*(2**(2*res_id)-1)
@@ -58,12 +60,14 @@ program control
   n_vectors_per_layer = n_vectors_h+n_scalars_h
   n_vectors = n_h_vectors+n_v_vectors
   call get_command_argument(3,nsoillays_string)
+  read(nsoillays_string,*) nsoillays
   call get_command_argument(4,year_string)
   call get_command_argument(5,month_string)
   call get_command_argument(6,day_string)
   call get_command_argument(7,hour_string)
   call get_command_argument(8,model_home_dir)
   call get_command_argument(9,oro_id_string)
+  read(oro_id_string,*) oro_id
   call get_command_argument(10,background_state_file)
   call get_command_argument(11,real2game_root_dir)
   
