@@ -34,8 +34,8 @@ module mo_shared
   
     ! This function returns the geodetic distance of two points given their geographical coordinates.
     
-    real(c_double), intent(in) :: latitude_a,longitude_a,latitude_b,longitude_b,radius
-    real(c_double)             :: calculate_distance_h
+    real(wp), intent(in) :: latitude_a,longitude_a,latitude_b,longitude_b,radius
+    real(wp)             :: calculate_distance_h
     
     calculate_distance_h = 2.0*radius*asin(sqrt(0.5-0.5*(cos(latitude_a)*cos(latitude_b) &
     *cos(longitude_b-longitude_a)+sin(latitude_a)*sin(latitude_b))))
@@ -46,13 +46,13 @@ module mo_shared
   
     ! This function returns the index where a vector has its minimum.
     
-    integer(c_int), intent(in) :: vector_length
-    real(c_double), intent(in) :: vector(vector_length)
-    integer(c_int)             :: find_min_index
+    integer,  intent(in) :: vector_length
+    real(wp), intent(in) :: vector(vector_length)
+    integer              :: find_min_index
     
     ! local variables
-    integer        :: ji
-    real(c_double) :: current_min
+    integer   :: ji
+    real(wp) :: current_min
     
     find_min_index = 1
     current_min = vector(1)
