@@ -71,7 +71,7 @@ program control
   call get_command_argument(10,background_state_file)
   call get_command_argument(11,real2game_root_dir)
   
-  write(*,*) "Background state file:",background_state_file
+  write(*,*) "Background state file:",trim(background_state_file)
   
   ! Allocating memory for the grid properties.
   allocate(latitudes_game(n_scalars_h))
