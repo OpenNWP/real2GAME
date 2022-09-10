@@ -10,11 +10,10 @@ project(real2GAME VERSION ${version})
 enable_language(Fortran)
 add_executable(
 interpolation_creator
-src/control.c
-src/control.f90)
+src/control.f90
+../mo_shared.f90)
 add_definitions(-Wall)
 find_package(OpenMP)
-SET(CMAKE_C_FLAGS "${OpenMP_C_FLAGS} -O2 -Wall")
-SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -Wall -Wpedantic")
+SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -Wall -Wpedantic -I/usr/include")
 target_link_libraries(interpolation_creator m eccodes netcdf)
 enable_testing()
