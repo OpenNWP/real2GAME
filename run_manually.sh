@@ -3,6 +3,9 @@
 # This source file is part of real2GAME, which is released under the MIT license.
 # Github repository: https://github.com/OpenNWP/real2GAME
 
+res_id=5
+n_layers=26
+nsoillays=5
 model_home_directory=/home/max/code/GAME
 orography_id=1
 background_file=/home/max/code/GAME/standard_oro1.nc
@@ -80,7 +83,7 @@ then
   exit
 fi
 
-$real2game_home_dir/build/real2game $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string $model_home_directory $orography_id $background_file $real2game_home_dir
+$real2game_home_dir/build/real2game $res_id $n_layers $nsoillays $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string $model_home_directory $orography_id $background_file $real2game_home_dir
 if [ $? -ne 0 ]
 then
   echo -e ${RED}real2GAME failed.$NC
