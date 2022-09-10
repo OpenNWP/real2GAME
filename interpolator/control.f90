@@ -81,11 +81,11 @@ program control
   allocate(z_coords_game_wind(n_vectors))
   allocate(gravity_potential_game(n_scalars))
   ! Reading the grid properties.
-  geo_prop_file = model_home_dir // "/grid_generator/grids/RES" // trim(int2string(res_id)) // "_L" // trim(int2string(n_layers)) &
-                  // "_ORO" // trim(int2string(oro_id)) // ".nc"
-  write(*,*) "Grid file:",geo_prop_file
+  geo_prop_file = trim(model_home_dir) // "/grid_generator/grids/RES" // trim(int2string(res_id)) // "_L" // &
+                  trim(int2string(n_layers)) // "_ORO" // trim(int2string(oro_id)) // ".nc"
+  write(*,*) "Grid file:",trim(geo_prop_file)
   write(*,*) "Reading grid file ..."
-  call nc_check(nf90_open(geo_prop_file,NF90_NOWRITE,ncid))
+  call nc_check(nf90_open(trim(geo_prop_file),NF90_NOWRITE,ncid))
   call nc_check(nf90_inq_varid(ncid,"latitude_scalar",latitudes_game_id))
   call nc_check(nf90_inq_varid(ncid,"longitude_scalar",longitudes_game_id))
   call nc_check(nf90_inq_varid(ncid,"z_scalar",z_coords_game_id))
@@ -102,7 +102,7 @@ program control
   write(*,*) "Grid file read."
   
   ! constructing the filename of the input file for GAME
-  output_file = model_home_dir // "/nwp_init/" // year_string // month_string // day_string // hour_string // ".nc"
+  output_file = trim(model_home_dir) // "/nwp_init/" // year_string // month_string // day_string // hour_string // ".nc"
   
   ! These are the arrays of the background state.
   allocate(densities_background(6*n_scalars))
@@ -152,11 +152,11 @@ program control
   allocate(sst_in(n_sst_points))
   
   ! determining the name of the input file
-  input_file = real2game_root_dir // "/input/obs_" // year_string // month_string // day_string // hour_string // ".nc"
+  input_file = trim(real2game_root_dir) // "/input/obs_" // year_string // month_string // day_string // hour_string // ".nc"
   
   ! reading the analysis of the other model
   write(*,*) "Reading input ..."
-  call nc_check(nf90_open(input_file,NF90_NOWRITE,ncid))
+  call nc_check(nf90_open(trim(input_file),NF90_NOWRITE,ncid))
   ! Defining the variables.
   call nc_check(nf90_inq_varid(ncid,"z_height",z_coords_id))
   call nc_check(nf90_inq_varid(ncid,"temperature",t_in_id))
@@ -190,10 +190,10 @@ program control
   write(*,*) "Reading the interpolation indices and weights."
   
   ! constructing the name of the interpolation indices and weights file
-  interpol_file  = real2game_root_dir // "/interpolation_files/icon-global2game" // trim(int2string(res_id)) // ".nc"
+  interpol_file  = trim(real2game_root_dir) // "/interpolation_files/icon-global2game" // trim(int2string(res_id)) // ".nc"
   
   ! reading the interpolation file
-  call nc_check(nf90_open(interpol_file,NF90_NOWRITE,ncid))
+  call nc_check(nf90_open(trim(interpol_file),NF90_NOWRITE,ncid))
   call nc_check(nf90_inq_varid(ncid,"interpolation_indices_scalar",interpolation_indices_scalar_id))
   call nc_check(nf90_inq_varid(ncid,"interpolation_weights_scalar",interpolation_weights_scalar_id))
   call nc_check(nf90_inq_varid(ncid,"interpolation_indices_vector",interpolation_indices_vector_id))
@@ -456,9 +456,9 @@ program control
   ! writing the result to a netCDF file
   ! -----------------------------------
   
-  write(*,*) "Output file:",output_file
+  write(*,*) "Output file:",trim(output_file)
   write(*,*) "Writing result to output file ..."
-  call nc_check(nf90_create(output_file,NF90_CLOBBER,ncid))
+  call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
   call nc_check(nf90_def_dim(ncid,"densities_index",6*n_scalars,densities_dimid))
   call nc_check(nf90_def_dim(ncid,"vector_index",n_vectors,vector_dimid))
   call nc_check(nf90_def_dim(ncid,"scalar_index",n_scalars,scalar_dimid))
