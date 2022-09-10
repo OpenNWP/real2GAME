@@ -5,7 +5,7 @@
 
 real2game_root_dir=/home/max/code/real2GAME # the home directory of real2GAME
 model_home_dir=/home/max/code/GAME # the home directory of GAME or L-GAME
-model_target_id=0 # 0: GAME 1: L-GAME
+model_target_id=1 # 1: GAME 2: L-GAME
 nlat=35 # number of latitude points of the L-GAME grid
 nlon=35 # number of longitude points of the L-GAME grid
 interpol_exp=2.001 # interpolation exponent
