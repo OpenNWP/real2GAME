@@ -19,10 +19,12 @@ program control
   real(wp), parameter :: c_d_p = 1005._wp          ! isobaric specific heat capacity of dry air
   real(wp), parameter :: scale_height = 8000._wp   ! scale_height
   
-  
-  integer  :: interpolation_indices_scalar_id,interpolation_weights_scalar_id,interpolation_indices_vector_id, &
-              interpolation_weights_vector_id,layer_index,h_index,closest_index,other_index
-  real(wp) :: closest_value,other_value,df,dz,gradient,delta_z
+  logical  :: ltke_avail,lt_soil_avail
+  integer  :: ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,interpolation_indices_vector_id, &
+              interpolation_weights_vector_id,layer_index,h_index,closest_index,other_index, sp_id,z_surf_id, &
+              z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id,densities_background_id, &
+              tke_avail,tke_id,t_soil_avail,t_soil_id,vector_index
+  real(wp) :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local
 
   char year_string(strlen(argv(1)) + 1)
   strcpy(year_string,argv(1))
@@ -46,11 +48,10 @@ program control
   double *latitudes_game = malloc(n_scalars_h*sizeof(double))
   double *longitudes_game = malloc(n_scalars_h*sizeof(double))
   double *z_coords_game = malloc(n_scalars*sizeof(double))
-  double *directions = malloc(N_VECTORS_H*sizeof(double))
-  double *z_coords_game_wind = malloc(N_VECTORS*sizeof(double))
+  double *directions = malloc(n_vectors_h*sizeof(double))
+  double *z_coords_game_wind = malloc(n_vectors*sizeof(double))
   double *gravity_potential_game = malloc(n_scalars*sizeof(double))
   ! Reading the grid properties.
-  int ncid
   char GEO_PROP_FILE_PRE(200)
   sprintf(GEO_PROP_FILE_PRE,"%s/grid_generator/grids/RES%d_L%d_ORO%d.nc",model_home_dir,RES_ID,n_layers,ORO_ID)
   char GEO_PROP_FILE(strlen(GEO_PROP_FILE_PRE) + 1)
@@ -88,7 +89,6 @@ program control
   ! Reading the background state.
   write(*,*) "Reading background state ..."
   call nc_check(nc_open(BACKGROUND_STATE_FILE,NC_NOWRITE,ncid))
-  int densities_background_id,tke_avail,tke_id,t_soil_avail,t_soil_id
   call nc_check(nc_inq_varid(ncid,"densities",densities_background_id))
   ltke_avail = .false.
   if (nc_inq_varid(ncid,"tke",tke_id) == 0) then
@@ -137,7 +137,6 @@ program control
   
   ! reading the analysis of the other model
   write(*,*) "Reading input ..."
-  int sp_id,z_surf_id,z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id
   call nc_check(nc_open(input_file,NC_NOWRITE,ncid))
   ! Defining the variables.
   call nc_check(nc_inq_varid(ncid,"z_height",z_coords_id))
@@ -166,8 +165,8 @@ program control
   ! memory alloction for the interpolation indices and weights
   int (*interpolation_indices_scalar)(N_AVG_POINTS) = malloc(sizeof(int(n_scalars_h)(N_AVG_POINTS)))
   double (*interpolation_weights_scalar)(N_AVG_POINTS) = malloc(sizeof(double(n_scalars_h)(N_AVG_POINTS)))
-  int (*interpolation_indices_vector)(N_AVG_POINTS) = malloc(sizeof(int(N_VECTORS_H)(N_AVG_POINTS)))
-  double (*interpolation_weights_vector)(N_AVG_POINTS) = malloc(sizeof(double(N_VECTORS_H)(N_AVG_POINTS)))
+  int (*interpolation_indices_vector)(N_AVG_POINTS) = malloc(sizeof(int(n_vectors_h)(N_AVG_POINTS)))
+  double (*interpolation_weights_vector)(N_AVG_POINTS) = malloc(sizeof(double(n_vectors_h)(N_AVG_POINTS)))
   
   write(*,*) "Reading the interpolation indices and weights."
   
@@ -212,7 +211,7 @@ program control
       ! vertical distance vector
       double vector_to_minimize(n_levels_input)
       do (int k = 0 k < n_levels_input ++k)
-        vector_to_minimize(k) = fabs(z_coords_game(i)
+        vector_to_minimize(k) = abs(z_coords_game(i)
         - z_coords_input_model(interpolation_indices_scalar(h_index)(j))(k))
       enddo
       
@@ -292,13 +291,12 @@ program control
   !$omp end parallel do
   ! the Exner pressure is just a temporarily needed helper variable here to integrate the hydrostatic equation
   double *exner = malloc(n_scalars*sizeof(double))
-  double b,c
-  do (int i = n_scalars - 1 i >= 0 --i)
+  do ji=n_scalars,1,-1
     layer_index = (ji-1)/n_scalars_h
     h_index = ji - layer_index*n_scalars_h
     if (layer_index==n_layers-1) then
       density_moist_out(i) = pressure_lowest_layer_out(h_index)/(r_d*temperature_v(ji))
-      exner(ji) = (density_moist_out(ji)*r_d*temperature_v(ji)/P_0)**(r_d/c_d_p)
+      exner(ji) = (density_moist_out(ji)*r_d*temperature_v(ji)/p_0)**(r_d/c_d_p)
     else
       ! solving a quadratic equation for the Exner pressure
       b = -0.5_wp*exner(ji + n_scalars_h)/temperature_v(ji + n_scalars_h)
@@ -306,7 +304,7 @@ program control
       + 2._wp/c_d_p*(gravity_potential_game(i) - gravity_potential_game(ji + n_scalars_h)))
       c = exner(ji+n_scalars_h)**2*temperature_v(i)/temperature_v(ji + n_scalars_h)
       exner(ji) = b + (b**2 + c)**0.5_wp
-      density_moist_out(i) = P_0*exner(ji)**(c_d_p/r_d)/(r_d*temperature_v(i))
+      density_moist_out(i) = p_0*exner(ji)**(c_d_p/r_d)/(r_d*temperature_v(i))
     endif
   enddo
   deallocate(temperature_v)
@@ -321,15 +319,13 @@ program control
   ! ------------------
   
   write(*,*) "Starting the wind interpolation ..."
-  double *wind_out = calloc(1,N_VECTORS*sizeof(double))
-  int vector_index
-  double u_local,v_local
+  double *wind_out = calloc(1,n_vectors*sizeof(double))
   ! loop over all horizontal vector points
-  # pragma omp parallel for private(h_index,layer_index,vector_index,closest_index,other_index,closest_value,other_value,df,dz,gradient,delta_z,u_local,v_local)
+  !$omp parallel do private(ji,h_index,layer_index,vector_index,closest_index,other_index,closest_value,other_value,df,dz,gradient,delta_z,u_local,v_local)
   do (int i = 0 i < N_H_VECTORS ++i)
-    layer_index = i/N_VECTORS_H
-    h_index = i - layer_index*N_VECTORS_H
-    vector_index = n_scalars_h + layer_index*N_VECTORS_PER_LAYER + h_index
+    layer_index = i/n_vectors_h
+    h_index = i - layer_index*n_vectors_h
+    vector_index = n_scalars_h + layer_index*n_vectors_per_layer + h_index
      
     ! the u- and v-components of the wind at the grid point of GAME
     u_local = 0._wp
@@ -340,7 +336,7 @@ program control
       ! vertical distance vector
       double vector_to_minimize(n_levels_input)
       do (int k = 0 k < n_levels_input ++k)
-        vector_to_minimize(k) = fabs(z_coords_game_wind(vector_index)
+        vector_to_minimize(k) = abs(z_coords_game_wind(vector_index)
         - z_coords_input_model(interpolation_indices_vector(h_index)(j))(k))
       enddo
       ! closest vertical index
@@ -450,7 +446,7 @@ program control
   densities_id,temperature_id,wind_id,soil_dimid
   call nc_check(nc_create(output_file,NC_CLOBBER,ncid))
   call nc_check(nc_def_dim(ncid,"densities_index",6*n_scalars,densities_dimid))
-  call nc_check(nc_def_dim(ncid,"vector_index",N_VECTORS,vector_dimid))
+  call nc_check(nc_def_dim(ncid,"vector_index",n_vectors,vector_dimid))
   call nc_check(nc_def_dim(ncid,"scalar_index",n_scalars,scalar_dimid))
   call nc_check(nc_def_dim(ncid,"soil_index",N_SOIL_LAYERS*n_scalars_h,soil_dimid))
   call nc_check(nc_def_dim(ncid,"scalar_h_index",n_scalars_h,scalar_h_dimid))
