@@ -1,7 +1,7 @@
 ! This source file is part of real2GAME,which is released under the MIT license.
 ! Github repository: https:!github.com/OpenNWP/real2GAME
 
-program formatter
+program control
 
   ! This tool reads the output from other models / data assimilation systems and brings it into a standardized format.
 
@@ -248,7 +248,7 @@ program formatter
   deallocate(latitudes_sst)
   deallocate(longitudes_sst)
 
-end program formatter
+end program control
 
 
 
