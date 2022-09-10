@@ -8,7 +8,7 @@ n_layers=26
 nsoillays=5
 model_home_directory=/home/max/code/GAME
 orography_id=1
-background_file=/home/max/code/GAME/standard_oro1.nc
+background_file=/home/max/code/GAME/nwp_init/standard_oro1.nc
 real2game_home_dir=/home/max/code/real2GAME
 omp_num_threads=1
 
