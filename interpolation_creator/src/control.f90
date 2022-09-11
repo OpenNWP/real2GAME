@@ -68,10 +68,11 @@ program control
   fclose(ECC_FILE)
   
   ! transforming the latitude coordinates of the input model from degrees to radians
-  #pragma omp parallel for
-  do (int i = 0 i < no_of_points_per_layer_input_model ++i)
-    latitudes_input_model(i) = 2._wp*M_PI*latitudes_input_model(i)/360._wp
+  !$omp parallel do
+  do ji=1,no_of_points_per_layer_input_model
+    latitudes_input_model(ji) = 2._wp*M_PI*latitudes_input_model(ji)/360._wp
   enddo
+  !$omp end parallel do
   
   ! longitudes of the grid
   char lon_obs_file_pre(200)
@@ -110,18 +111,18 @@ program control
     printf("Grid file: %s\n",geo_pro_file)
     write(*,*) "Reading grid file of GAME ..."
     int ncid
-    call nc_check(nc_open(geo_pro_file,NC_NOWRITE,ncid))
+    call nc_check(nf90_open(geo_pro_file,NC_NOWRITE,ncid))
     
     int latitudes_game_id,latitudes_game_wind_id,longitudes_game_id,longitudes_game_wind_id  
-    call nc_check(nc_inq_varid(ncid,"latitude_scalar",latitudes_game_id))
-    call nc_check(nc_inq_varid(ncid,"longitude_scalar",longitudes_game_id))
-    call nc_check(nc_inq_varid(ncid,"latitude_vector",latitudes_game_wind_id))
-    call nc_check(nc_inq_varid(ncid,"longitude_vector",longitudes_game_wind_id))
-    call nc_check(nc_get_var_double(ncid,latitudes_game_id,latitudes_game))
-    call nc_check(nc_get_var_double(ncid,longitudes_game_id,longitudes_game))
-    call nc_check(nc_get_var_double(ncid,latitudes_game_wind_id,latitudes_game_wind))
-    call nc_check(nc_get_var_double(ncid,longitudes_game_wind_id,longitudes_game_wind))
-    call nc_check(nc_close(ncid))
+    call nc_check(nf90_inq_varid(ncid,"latitude_scalar",latitudes_game_id))
+    call nc_check(nf90_inq_varid(ncid,"longitude_scalar",longitudes_game_id))
+    call nc_check(nf90_inq_varid(ncid,"latitude_vector",latitudes_game_wind_id))
+    call nc_check(nf90_inq_varid(ncid,"longitude_vector",longitudes_game_wind_id))
+    call nc_check(nf90_get_var(ncid,latitudes_game_id,latitudes_game))
+    call nc_check(nf90_get_var(ncid,longitudes_game_id,longitudes_game))
+    call nc_check(nf90_get_var(ncid,latitudes_game_wind_id,latitudes_game_wind))
+    call nc_check(nf90_get_var(ncid,longitudes_game_wind_id,longitudes_game_wind))
+    call nc_check(nf90_close(ncid))
     write(*,*) "Grid file of GAME read."
   
     ! allocating memory for the result arrays
@@ -198,17 +199,17 @@ program control
     call nc_check(nc_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
     dim_vector(1) = scalar_dimid
     dim_vector(2) = avg_dimid
-    call nc_check(nc_def_var(ncid,"interpolation_indices_scalar",NC_INT,2,dim_vector,interpolation_indices_scalar_id))
-    call nc_check(nc_def_var(ncid,"interpolation_weights_scalar",NC_DOUBLE,2,dim_vector,interpolation_weights_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NC_INT,2,dim_vector,interpolation_indices_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NC_DOUBLE,2,dim_vector,interpolation_weights_scalar_id))
     dim_vector(1) = vector_dimid
-    call nc_check(nc_def_var(ncid,"interpolation_indices_vector",NC_INT,2,dim_vector,interpolation_indices_vector_id))
-    call nc_check(nc_def_var(ncid,"interpolation_weights_vector",NC_DOUBLE,2,dim_vector,interpolation_weights_vector_id))
-    call nc_check(nc_enddef(ncid))
-    call nc_check(nc_put_var_int(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar))
-    call nc_check(nc_put_var_double(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar))
-    call nc_check(nc_put_var_int(ncid,interpolation_indices_vector_id,interpolation_indices_vector))
-    call nc_check(nc_put_var_double(ncid,interpolation_weights_vector_id,interpolation_weights_vector))
-    call nc_check(nc_close(ncid))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector",NC_INT,2,dim_vector,interpolation_indices_vector_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector",NC_DOUBLE,2,dim_vector,interpolation_weights_vector_id))
+    call nc_check(nf90_enddef(ncid))
+    call nc_check(nf90_put_var(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar))
+    call nc_check(nf90_put_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar))
+    call nc_check(nf90_put_var(ncid,interpolation_indices_vector_id,interpolation_indices_vector))
+    call nc_check(nf90_put_var(ncid,interpolation_weights_vector_id,interpolation_weights_vector))
+    call nc_check(nf90_close(ncid))
       
     ! freeing the memory
     deallocate(interpolation_indices_scalar)
@@ -235,23 +236,23 @@ program control
     printf("Grid file: %s\n",geo_pro_file)
     printf("Reading grid file of L-GAME ...\n")
     int ncid
-    call nc_check(nc_open(geo_pro_file,NC_NOWRITE,ncid))
+    call nc_check(nf90_open(geo_pro_file,NF90_NOWRITE,ncid))
     
     int latitudes_lgame_id,longitudes_lgame_id,longitudes_lgame_wind_u_id,latitudes_lgame_wind_u_id,
     longitudes_lgame_wind_v_id,latitudes_lgame_wind_v_id
-    call nc_check(nc_inq_varid(ncid,"lat_geo",latitudes_lgame_id))
-    call nc_check(nc_inq_varid(ncid,"lon_geo",longitudes_lgame_id))
-    call nc_check(nc_inq_varid(ncid,"lat_geo_u",latitudes_lgame_wind_u_id))
-    call nc_check(nc_inq_varid(ncid,"lon_geo_u",longitudes_lgame_wind_u_id))
-    call nc_check(nc_inq_varid(ncid,"lat_geo_v",latitudes_lgame_wind_v_id))
-    call nc_check(nc_inq_varid(ncid,"lon_geo_v",longitudes_lgame_wind_v_id))
-    call nc_check(nc_get_var_double(ncid,latitudes_lgame_id,latitudes_lgame))
-    call nc_check(nc_get_var_double(ncid,longitudes_lgame_id,longitudes_lgame))
-    call nc_check(nc_get_var_double(ncid,latitudes_lgame_wind_u_id,latitudes_lgame_wind_u))
-    call nc_check(nc_get_var_double(ncid,longitudes_lgame_wind_u_id,longitudes_lgame_wind_u))
-    call nc_check(nc_get_var_double(ncid,latitudes_lgame_wind_v_id,latitudes_lgame_wind_v))
-    call nc_check(nc_get_var_double(ncid,longitudes_lgame_wind_v_id,longitudes_lgame_wind_v))
-    call nc_check(nc_close(ncid))
+    call nc_check(nf90_inq_varid(ncid,"lat_geo",latitudes_lgame_id))
+    call nc_check(nf90_inq_varid(ncid,"lon_geo",longitudes_lgame_id))
+    call nc_check(nf90_inq_varid(ncid,"lat_geo_u",latitudes_lgame_wind_u_id))
+    call nc_check(nf90_inq_varid(ncid,"lon_geo_u",longitudes_lgame_wind_u_id))
+    call nc_check(nf90_inq_varid(ncid,"lat_geo_v",latitudes_lgame_wind_v_id))
+    call nc_check(nf90_inq_varid(ncid,"lon_geo_v",longitudes_lgame_wind_v_id))
+    call nc_check(nf90_get_var(ncid,latitudes_lgame_id,latitudes_lgame))
+    call nc_check(nf90_get_var(ncid,longitudes_lgame_id,longitudes_lgame))
+    call nc_check(nf90_get_var(ncid,latitudes_lgame_wind_u_id,latitudes_lgame_wind_u))
+    call nc_check(nf90_get_var(ncid,longitudes_lgame_wind_u_id,longitudes_lgame_wind_u))
+    call nc_check(nf90_get_var(ncid,latitudes_lgame_wind_v_id,latitudes_lgame_wind_v))
+    call nc_check(nf90_get_var(ncid,longitudes_lgame_wind_v_id,longitudes_lgame_wind_v))
+    call nc_check(nf90_close(ncid))
     printf("Grid file of L-GAME read.\n")
     
     ! allocating memory for the result arrays
@@ -352,29 +353,29 @@ program control
     int interpolation_indices_scalar_id,interpolation_weights_scalar_id,interpolation_indices_vector_u_id,interpolation_weights_vector_u_id,
     interpolation_indices_vector_v_id,interpolation_weights_vector_v_id,scalar_dimid,u_dimid,v_dimid,avg_dimid
     int dim_vector(2)
-    call nc_check(nc_create(output_file,NC_CLOBBER,ncid))
-    call nc_check(nc_def_dim(ncid,"scalar_index",nlat*nlon,scalar_dimid))
-    call nc_check(nc_def_dim(ncid,"u_index",nlat*(nlon+1),u_dimid))
-    call nc_check(nc_def_dim(ncid,"v_index",(nlat+1)*nlon,v_dimid))
-    call nc_check(nc_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
+    call nc_check(nf90_create(output_file,NC_CLOBBER,ncid))
+    call nc_check(nf90_def_dim(ncid,"scalar_index",nlat*nlon,scalar_dimid))
+    call nc_check(nf90_def_dim(ncid,"u_index",nlat*(nlon+1),u_dimid))
+    call nc_check(nf90_def_dim(ncid,"v_index",(nlat+1)*nlon,v_dimid))
+    call nc_check(nf90_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
     dim_vector(1) = scalar_dimid
     dim_vector(2) = avg_dimid
-    call nc_check(nc_def_var(ncid,"interpolation_indices_scalar",NC_INT,2,dim_vector,interpolation_indices_scalar_id))
-    call nc_check(nc_def_var(ncid,"interpolation_weights_scalar",NC_DOUBLE,2,dim_vector,interpolation_weights_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NC_INT,2,dim_vector,interpolation_indices_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NC_DOUBLE,2,dim_vector,interpolation_weights_scalar_id))
     dim_vector(1) = u_dimid
-    call nc_check(nc_def_var(ncid,"interpolation_indices_vector_u",NC_INT,2,dim_vector,interpolation_indices_vector_u_id))
-    call nc_check(nc_def_var(ncid,"interpolation_weights_vector_u",NC_DOUBLE,2,dim_vector,interpolation_weights_vector_u_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_u",NC_INT,2,dim_vector,interpolation_indices_vector_u_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_u",NC_DOUBLE,2,dim_vector,interpolation_weights_vector_u_id))
     dim_vector(1) = v_dimid
-    call nc_check(nc_def_var(ncid,"interpolation_indices_vector_v",NC_INT,2,dim_vector,interpolation_indices_vector_v_id))
-    call nc_check(nc_def_var(ncid,"interpolation_weights_vector_v",NC_DOUBLE,2,dim_vector,interpolation_weights_vector_v_id))
-    call nc_check(nc_enddef(ncid))
-    call nc_check(nc_put_var_int(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar))
-    call nc_check(nc_put_var_double(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar))
-    call nc_check(nc_put_var_int(ncid,interpolation_indices_vector_u_id,interpolation_indices_vector_u))
-    call nc_check(nc_put_var_double(ncid,interpolation_weights_vector_u_id,interpolation_weights_vector_u))
-    call nc_check(nc_put_var_int(ncid,interpolation_indices_vector_v_id,interpolation_indices_vector_v))
-    call nc_check(nc_put_var_double(ncid,interpolation_weights_vector_v_id,interpolation_weights_vector_v))
-    call nc_check(nc_close(ncid))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_v",NC_INT,2,dim_vector,interpolation_indices_vector_v_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_v",NC_DOUBLE,2,dim_vector,interpolation_weights_vector_v_id))
+    call nc_check(nf90_enddef(ncid))
+    call nc_check(nf90_put_var(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar))
+    call nc_check(nf90_put_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar))
+    call nc_check(nf90_put_var(ncid,interpolation_indices_vector_u_id,interpolation_indices_vector_u))
+    call nc_check(nf90_put_var(ncid,interpolation_weights_vector_u_id,interpolation_weights_vector_u))
+    call nc_check(nf90_put_var(ncid,interpolation_indices_vector_v_id,interpolation_indices_vector_v))
+    call nc_check(nf90_put_var(ncid,interpolation_weights_vector_v_id,interpolation_weights_vector_v))
+    call nc_check(nf90_close(ncid))
     
     ! freeing the memory
     deallocate(interpolation_indices_scalar)
