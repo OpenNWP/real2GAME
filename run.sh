@@ -8,7 +8,7 @@ analysis_month=${BASH_ARGV[3]}
 analysis_day=${BASH_ARGV[2]}
 analysis_hour=${BASH_ARGV[1]}
 model_home_directory=${BASH_ARGV[0]}
-orography_id=${BASH_ARGV[5]}
+oro_id=${BASH_ARGV[5]}
 background_file=${BASH_ARGV[6]}
 real2game_home_dir=${BASH_ARGV[7]}
 omp_num_threads=${BASH_ARGV[8]}
@@ -59,7 +59,7 @@ then
   exit
 fi
 
-$real2game_home_dir/build/real2game $res_id $n_layers $nsoillays $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $orography_id $background_file $real2game_home_dir
+$real2game_home_dir/build/real2game $res_id $n_layers $nsoillays $analysis_year $analysis_month $analysis_day $analysis_hour $model_home_directory $oro_id $background_file $real2game_home_dir
 if [ $? -ne 0 ]
 then
   echo -e ${RED}real2GAME failed.$NC

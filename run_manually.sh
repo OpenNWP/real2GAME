@@ -7,7 +7,7 @@ res_id=5
 n_layers=26
 nsoillays=5
 model_home_directory=/home/max/code/GAME
-orography_id=1
+oro_id=1
 background_file=/home/max/code/GAME/nwp_init/standard_oro1.nc
 real2game_home_dir=/home/max/code/real2GAME
 omp_num_threads=1
@@ -82,8 +82,8 @@ then
   echo "Aborting."
   exit
 fi
-
-$real2game_home_dir/build/real2game $res_id $n_layers $nsoillays $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string $model_home_directory $orography_id $background_file $real2game_home_dir
+echo $res_id $n_layers $nsoillays $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string $model_home_directory $oro_id $background_file $real2game_home_dir
+$real2game_home_dir/build/real2game $res_id $n_layers $nsoillays $analysis_year $analysis_month $analysis_day $analysis_hour_extended_string $model_home_directory $oro_id $background_file $real2game_home_dir
 if [ $? -ne 0 ]
 then
   echo -e ${RED}real2GAME failed.$NC

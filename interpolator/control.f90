@@ -410,17 +410,17 @@ program control
   
   write(*,*) "Interpolating the SST to the model grid ..."
   allocate(sst_out(n_scalars_h))
-  !$omp parallel do private(ji,jk,min_index)
+  allocate(distance_vector(n_sst_points))
+  !$omp parallel do private(ji,jk,distance_vector,min_index)
   do ji=1,n_scalars_h
-    allocate(distance_vector(n_sst_points))
     do jk=1,n_sst_points
       distance_vector(jk) = calculate_distance_h(latitudes_sst(jk),longitudes_sst(jk),latitudes_game(ji),longitudes_game(ji),1._wp)
     enddo
-    min_index = find_min_index(distance_vector,n_sst_points)
-    sst_out(ji) = sst_in(min_index+1)
-    deallocate(distance_vector)
+    min_index = 1+find_min_index(distance_vector,n_sst_points)
+    sst_out(ji) = sst_in(min_index)
   enddo
   !$omp end parallel do
+  deallocate(distance_vector)
   deallocate(latitudes_sst)
   deallocate(longitudes_sst)
   deallocate(sst_in)
