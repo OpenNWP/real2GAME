@@ -113,7 +113,7 @@ program control
     allocate(longitudes_game_wind(n_vectors_h))
     geo_pro_file = trim(model_home_dir) // "/grid_generator/grids/RES" // trim(int2string(res_id)) //"_L" &
                    // trim(int2string(n_layers)) // "_ORO" // trim(int2string(oro_id)) // ".nc"
-    write(*,*) "Grid file:",geo_pro_file
+    write(*,*) "Grid file: ",trim(geo_pro_file)
     write(*,*) "Reading grid file of GAME ..."
     call nc_check(nf90_open(geo_pro_file,NF90_NOWRITE,ncid))
      
@@ -137,42 +137,39 @@ program control
     ! executing the actual interpolation
     write(*,*) "Calculating interpolation indices and weights ..."
     
-    !$omp parallel do private(ji,jk)
+    allocate(distance_vector(n_points_per_layer_input))
+    !$omp parallel do private(ji,jk,distance_vector)
     do ji=1,n_scalars_h
-      allocate(distance_vector(n_points_per_layer_input))
       do jk=1,n_points_per_layer_input
         distance_vector(jk) = calculate_distance_h(latitudes_game(ji),longitudes_game(ji), &
                                                    latitudes_input_model(jk),longitudes_input_model(jk),1._wp)
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
-        interpolation_indices_scalar(ji,jk) = find_min_index(distance_vector,n_points_per_layer_input)
+        interpolation_indices_scalar(ji,jk) = 1+find_min_index(distance_vector,n_points_per_layer_input)
         interpolation_weights_scalar(ji,jk) = 1._wp/distance_vector(interpolation_indices_scalar(ji,jk))**interpol_exp
         distance_vector(interpolation_indices_scalar(ji,jk)) = 2._wp*M_PI
         sum_of_weights = sum_of_weights + interpolation_weights_scalar(ji,jk)
       enddo
-      deallocate(distance_vector)
       do jk=1,n_avg_points
         interpolation_weights_scalar(ji,jk) = interpolation_weights_scalar(ji,jk)/sum_of_weights
       enddo
     enddo
     !$omp end parallel do
   
-    !$omp parallel do private(ji,jk)
+    !$omp parallel do private(ji,jk,distance_vector)
     do ji=1,n_vectors_h
-      allocate(distance_vector(n_points_per_layer_input))
       do jk=1,n_points_per_layer_input
         distance_vector(jk) =  calculate_distance_h(latitudes_game_wind(ji),longitudes_game_wind(ji), &
                                                     latitudes_input_model(jk),longitudes_input_model(jk),1._wp)
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
-        interpolation_indices_vector(ji,jk) = find_min_index(distance_vector,n_points_per_layer_input)
+        interpolation_indices_vector(ji,jk) = 1+find_min_index(distance_vector,n_points_per_layer_input)
         interpolation_weights_vector(ji,jk) = 1._wp/distance_vector(interpolation_indices_vector(ji,jk))**interpol_exp
         distance_vector(interpolation_indices_vector(ji,jk)) = 2._wp*M_PI
         sum_of_weights = sum_of_weights + interpolation_weights_vector(ji,jk)
       enddo
-      deallocate(distance_vector)
       do jk=1,n_avg_points
         interpolation_weights_vector(ji,jk) = interpolation_weights_vector(ji,jk)/sum_of_weights
       enddo
@@ -259,23 +256,21 @@ program control
     ! executing the actual interpolation
     write(*,*) "Calculating interpolation indices and weights ..."
     
-    !$omp parallel do private(ji,jk,jm)
+    !$omp parallel do private(ji,jk,jm,distance_vector)
     do ji=1,nlat
       do jk=1,nlon
-        allocate(distance_vector(n_points_per_layer_input))
         do jm=1,n_points_per_layer_input
           distance_vector(jm) = calculate_distance_h(latitudes_lgame(ji,jk),longitudes_lgame(ji,jk), &
                                                     latitudes_input_model(jm),longitudes_input_model(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_scalar((jk-1)*nlat+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_indices_scalar((jk-1)*nlat+ji,jm) = 1+find_min_index(distance_vector,n_points_per_layer_input)
           interpolation_weights_scalar((jk-1)*nlat+ji,jm) = 1._wp/ &
                                       distance_vector(interpolation_indices_scalar((jk-1)*nlat+ji,jm))**interpol_exp
           distance_vector(interpolation_indices_scalar((jk-1)*nlat+ji,jm)) = 2._wp*M_PI
           sum_of_weights = sum_of_weights + interpolation_weights_scalar((jk-1)*nlat+ji,jm)
         enddo
-        deallocate(distance_vector)
         do jm=1,n_avg_points
           interpolation_weights_scalar((jk-1)*nlat+ji,jm) = interpolation_weights_scalar((jk-1)*nlat+ji,jm)/sum_of_weights
         enddo
@@ -283,23 +278,21 @@ program control
     enddo
     !$omp end parallel do
     
-    !$omp parallel do private(ji,jk,jm)
+    !$omp parallel do private(ji,jk,jm,distance_vector)
     do ji=1,nlat
       do jk=1,nlon+1
-        allocate(distance_vector(n_points_per_layer_input))
         do jm=1,n_points_per_layer_input
           distance_vector(jm) = calculate_distance_h(latitudes_lgame_wind_u(ji,jk), &
                                 longitudes_lgame_wind_u(ji,jk),latitudes_input_model(jm),longitudes_input_model(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_vector_u((jk-1)*nlat+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_indices_vector_u((jk-1)*nlat+ji,jm) = 1+find_min_index(distance_vector,n_points_per_layer_input)
           interpolation_weights_vector_u((jk-1)*nlat+ji,jm) = 1._wp/ &
                                         distance_vector(interpolation_indices_vector_u((jk-1)*nlat+ji,jm))**interpol_exp
           distance_vector(interpolation_indices_vector_u((jk-1)*nlat+ji,jm)) = 2._wp*M_PI
           sum_of_weights = sum_of_weights + interpolation_weights_vector_u((jk-1)*nlat+ji,jm)
         enddo
-        deallocate(distance_vector)
         do jm=1,n_avg_points
           interpolation_weights_vector_u((jk-1)*nlat+ji,jm) = interpolation_weights_vector_u((jk-1)*nlat+ji,jm)/sum_of_weights
         enddo
@@ -307,23 +300,21 @@ program control
     enddo
     !$omp end parallel do
     
-    !$omp parallel do private(ji,jk,jm)
+    !$omp parallel do private(ji,jk,jm,distance_vector)
     do ji=1,nlat+1
       do jk=1,nlon
-      allocate(distance_vector(n_points_per_layer_input))
         do jm=1,n_points_per_layer_input
           distance_vector(jm) = calculate_distance_h(latitudes_lgame_wind_v(ji,jk),longitudes_lgame_wind_v(ji,jk), &
                                                      latitudes_input_model(jm),longitudes_input_model(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm) = 1+find_min_index(distance_vector,n_points_per_layer_input)
           interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm) = 1._wp/distance_vector( &
                                                        interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm))**interpol_exp
           distance_vector(interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm)) = 2._wp*M_PI
           sum_of_weights = sum_of_weights + interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm)
         enddo
-        deallocate(distance_vector)
         do jm=1,n_avg_points
           interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm) &
           = interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm)/sum_of_weights
