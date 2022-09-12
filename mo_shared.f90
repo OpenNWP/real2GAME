@@ -23,7 +23,7 @@ module mo_shared
   
   integer,  parameter :: wp = dp                            ! working precission
   
-  integer,  parameter :: n_levels_input = 12                ! number of levels from the input model that are used
+  integer,  parameter :: n_layers_input = 12                ! number of levels from the input model that are used
   integer,  parameter :: n_avg_points = 20                  ! number of points used for averaging
   integer,  parameter :: n_sst_points = 259200              ! the number of points of the SST grid
   integer,  parameter :: n_points_per_layer_input = 2949120 ! the number of points per layer of the input model

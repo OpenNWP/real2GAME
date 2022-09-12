@@ -7,12 +7,12 @@ program control
 
   use netcdf
   use eccodes
-  use mo_shared, only: wp,n_levels_input,n_sst_points,n_points_per_layer_input,nc_check,int2string,M_PI
+  use mo_shared, only: wp,n_layers_input,n_sst_points,n_points_per_layer_input,nc_check,int2string,M_PI
 
   implicit none
 
   integer               :: ji,jl,ncid,h_dimid,v_dimid,z_surf_id,sp_id,sst_dimid,t_id,spec_hum_id,z_id,u_id,v_id, &
-                           lat_sst_id,lon_sst_id,sst_id,dim_vector(2),levels_vector(n_levels_input),jfile,jgrib
+                           lat_sst_id,lon_sst_id,sst_id,dim_vector(2),layers_vector(n_layers_input),jfile,jgrib
   real(wp), allocatable :: z_height_amsl_one_layer(:),temperature_one_layer(:),spec_hum_one_layer(:), &
                            u_one_layer(:),v_one_layer(:),z_height_amsl(:,:),temperature(:,:),spec_hum(:,:), &
                            u_wind(:,:),v_wind(:,:),latitudes_sst(:),longitudes_sst(:),sst(:),surface_height(:), &
@@ -24,18 +24,18 @@ program control
                            sfc_pres_file,sst_file,output_file,spec_hum_file
 
   ! defining the levels of the model we want to use
-  levels_vector(1) = 1
-  levels_vector(2) = 10
-  levels_vector(3) = 19
-  levels_vector(4) = 27
-  levels_vector(5) = 35
-  levels_vector(6) = 43
-  levels_vector(7) = 51
-  levels_vector(8) = 59
-  levels_vector(9) = 67
-  levels_vector(10) = 75
-  levels_vector(11) = 83
-  levels_vector(12) = 90
+  layers_vector(1) = 1
+  layers_vector(2) = 10
+  layers_vector(3) = 19
+  layers_vector(4) = 27
+  layers_vector(5) = 35
+  layers_vector(6) = 43
+  layers_vector(7) = 51
+  layers_vector(8) = 59
+  layers_vector(9) = 67
+  layers_vector(10) = 75
+  layers_vector(11) = 83
+  layers_vector(12) = 90
   
   ! shell arguments
   call get_command_argument(1,year_string)
@@ -52,21 +52,21 @@ program control
   allocate(v_one_layer(n_points_per_layer_input))
   
   ! 2D-arrays for netCDF
-  allocate(z_height_amsl(n_points_per_layer_input,n_levels_input))
-  allocate(temperature(n_points_per_layer_input,n_levels_input))
-  allocate(spec_hum(n_points_per_layer_input,n_levels_input))
-  allocate(u_wind(n_points_per_layer_input,n_levels_input))
-  allocate(v_wind(n_points_per_layer_input,n_levels_input))
+  allocate(z_height_amsl(n_points_per_layer_input,n_layers_input))
+  allocate(temperature(n_points_per_layer_input,n_layers_input))
+  allocate(spec_hum(n_points_per_layer_input,n_layers_input))
+  allocate(u_wind(n_points_per_layer_input,n_layers_input))
+  allocate(v_wind(n_points_per_layer_input,n_layers_input))
   
   ! grib stuff
   
   ! reading the data from the free atmosphere
   ! loop over all relevant levels in the free atmosphere
-  do jl=1,n_levels_input
+  do jl=1,n_layers_input
     ! vertical position of the current layer
     z_input_model_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_time-invariant_" // year_string &
                          // month_string // day_string // hour_string // "_" &
-                         // trim(int2string(levels_vector(jl))) // "_HHL.grib2"
+                         // trim(int2string(layers_vector(jl))) // "_HHL.grib2"
     
     call codes_open_file(jfile,trim(z_input_model_file),"r")
     call codes_grib_new_from_file(jfile,jgrib)
@@ -82,7 +82,7 @@ program control
     
     ! reading the temperature
     temperature_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // month_string &
-                       // day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) // "_T.grib2"
+                       // day_string // hour_string // "_000_" // trim(int2string(layers_vector(jl))) // "_T.grib2"
                        
     call codes_open_file(jfile,trim(temperature_file),"r")
     call codes_grib_new_from_file(jfile,jgrib)
@@ -98,7 +98,7 @@ program control
     
     ! reading the specific humidity
     spec_hum_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // month_string // &
-                    day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) // &
+                    day_string // hour_string // "_000_" // trim(int2string(layers_vector(jl))) // &
                     "_QV.grib2"
     
     call codes_open_file(jfile,trim(spec_hum_file),"r")
@@ -115,7 +115,7 @@ program control
     
     ! reading the u wind
     u_wind_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // month_string // &
-                  day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) // & 
+                  day_string // hour_string // "_000_" // trim(int2string(layers_vector(jl))) // & 
                   "_U.grib2"
     
     call codes_open_file(jfile,trim(u_wind_file),"r")
@@ -132,7 +132,7 @@ program control
     
     ! reading the v wind
     v_wind_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // &
-                  month_string // day_string // hour_string // "_000_" // trim(int2string(levels_vector(jl))) &
+                  month_string // day_string // hour_string // "_000_" // trim(int2string(layers_vector(jl))) &
                   // "_V.grib2"
     
     call codes_open_file(jfile,trim(v_wind_file),"r")
@@ -208,7 +208,7 @@ program control
   call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
   ! Defining the dimensions.
   call nc_check(nf90_def_dim(ncid,"h_index",n_points_per_layer_input,h_dimid))
-  call nc_check(nf90_def_dim(ncid,"v_index",n_levels_input,v_dimid))
+  call nc_check(nf90_def_dim(ncid,"v_index",n_layers_input,v_dimid))
   call nc_check(nf90_def_dim(ncid,"sst_index",N_SST_POINTS,sst_dimid))
   dim_vector(1) = h_dimid
   dim_vector(2) = v_dimid

@@ -6,7 +6,7 @@ program control
   ! This file coordinates the data interpolation process.
   
   use netcdf
-  use mo_shared, only: wp,n_levels_input,n_sst_points,n_points_per_layer_input,n_avg_points, &
+  use mo_shared, only: wp,n_layers_input,n_sst_points,n_points_per_layer_input,n_avg_points, &
                        nc_check,int2string,find_min_index,calculate_distance_h
   
   implicit none
@@ -31,7 +31,7 @@ program control
                            vector_dimid,scalar_h_dimid,single_double_dimid,densities_id,temperature_id,wind_id,soil_dimid, &
                            res_id,oro_id,n_pentagons,n_hexagons,n_scalars_h,n_scalars,n_vectors_h,n_layers,n_h_vectors, &
                            n_levels,n_v_vectors,n_vectors_per_layer,n_vectors,nsoillays
-  real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_levels_input)
+  real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
   real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_coords_game(:),directions(:),z_coords_game_wind(:), &
                            gravity_potential_game(:),densities_background(:),tke(:),t_soil(:),z_coords_input_model(:,:), &
                            temperature_in(:,:),spec_hum_in(:,:),u_wind_in(:,:),v_wind_in(:,:),z_surf_in(:), &
@@ -140,11 +140,11 @@ program control
   write(*,*) "Background state read."
   
   ! allocating the memory for the analysis of the other model
-  allocate(z_coords_input_model(n_points_per_layer_input,n_levels_input))
-  allocate(temperature_in(n_points_per_layer_input,n_levels_input))
-  allocate(spec_hum_in(n_points_per_layer_input,n_levels_input))
-  allocate(u_wind_in(n_points_per_layer_input,n_levels_input))
-  allocate(v_wind_in(n_points_per_layer_input,n_levels_input))
+  allocate(z_coords_input_model(n_points_per_layer_input,n_layers_input))
+  allocate(temperature_in(n_points_per_layer_input,n_layers_input))
+  allocate(spec_hum_in(n_points_per_layer_input,n_layers_input))
+  allocate(u_wind_in(n_points_per_layer_input,n_layers_input))
+  allocate(v_wind_in(n_points_per_layer_input,n_layers_input))
   allocate(z_surf_in(n_points_per_layer_input))
   allocate(p_surf_in(n_points_per_layer_input))
   allocate(latitudes_sst(n_sst_points))
@@ -225,12 +225,12 @@ program control
     do jk=1,n_avg_points
       ! computing linear vertical interpolation
       ! vertical distance vector
-      do jl=1,n_levels_input
+      do jl=1,n_layers_input
         vector_to_minimize(jl) = abs(z_coords_game(ji)- z_coords_input_model(interpolation_indices_scalar(h_index,jk),jl))
       enddo
       
       ! closest vertical index
-      closest_index = find_min_index(vector_to_minimize,n_levels_input)
+      closest_index = 1+find_min_index(vector_to_minimize,n_layers_input)
       
       ! value at the closest vertical index
       closest_value = temperature_in(interpolation_indices_scalar(h_index,jk),closest_index)
@@ -241,7 +241,7 @@ program control
       endif
       
       ! avoiding array excess
-      if (other_index==n_levels_input) then
+      if (other_index==n_layers_input+1) then
         other_index = closest_index - 1
       endif
       
@@ -336,7 +336,7 @@ program control
   write(*,*) "Starting the wind interpolation ..."
   allocate(wind_out(n_vectors))
   ! loop over all horizontal vector points
-  !$omp parallel do private(ji,jk,h_index,layer_index,vector_index,closest_index,other_index,closest_value, &
+  !$omp parallel do private(ji,jk,jl,h_index,layer_index,vector_index,closest_index,other_index,closest_value, &
   !$omp other_value,df,dz,gradient,delta_z,u_local,v_local)
   do ji=1,n_h_vectors
     layer_index = (ji-1)/n_vectors_h
@@ -350,12 +350,12 @@ program control
     do jk=1,n_avg_points
       ! computing linear vertical interpolation
       ! vertical distance vector
-      do jl=1,n_levels_input
+      do jl=1,n_layers_input
         vector_to_minimize(jl) = abs(z_coords_game_wind(vector_index) &
                                     - z_coords_input_model(interpolation_indices_vector(h_index,jk),jl))
       enddo
       ! closest vertical index
-      closest_index = find_min_index(vector_to_minimize,n_levels_input)
+      closest_index = 1+find_min_index(vector_to_minimize,n_layers_input)
       ! value at the closest vertical index
       closest_value = u_wind_in(interpolation_indices_vector(h_index,jk),closest_index)
     
@@ -364,7 +364,7 @@ program control
         other_index = closest_index + 1
       endif
       ! avoiding array excess
-      if (other_index==n_levels_input) then
+      if (other_index==n_layers_input+1) then
         other_index = closest_index - 1
       endif
     
