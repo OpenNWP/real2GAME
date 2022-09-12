@@ -14,6 +14,7 @@ src/control.f90
 ../mo_shared.f90)
 add_definitions(-Wall)
 find_package(OpenMP)
-SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -Wall -Wpedantic -I/usr/include")
-target_link_libraries(interpolation_creator m eccodes netcdf)
+SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -Wall -Wpedantic -I/usr/include \
+-I/usr/lib/x86_64-linux-gnu/fortran/gfortran-mod-15/ -I/usr/lib/aarch64-linux-gnu/fortran/gfortran-mod-15")
+target_link_libraries(interpolation_creator m netcdff eccodes_f90)
 enable_testing()

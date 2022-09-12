@@ -52,7 +52,7 @@ then
   echo "Aborting."
   exit
 fi
-./build/interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_target_id $nlat $nlon $interpol_exp $lgame_grid
+./build/interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_target_id $nlat $nlon $interpol_exp $lgame_grid $res_id $n_layers
 
 # deleting the ICON grid data
 rm icon*

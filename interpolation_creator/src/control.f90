@@ -6,11 +6,22 @@ program control
   ! This file prepares the horizontal interpolation from the foreign model to GAME.
   
   use netcdf
-  use mo_shared, only: wp,n_points_per_layer_input,n_avg_points, &
+  use eccodes
+  use mo_shared, only: wp,n_points_per_layer_input,n_avg_points,M_PI, &
                        nc_check,int2string,find_min_index,calculate_distance_h
   
   implicit none
   
+  integer               :: ji,jk,jm,oro_id,model_target_id,nlat,nlon,ncid,latitudes_game_id,latitudes_game_wind_id, &
+                           longitudes_game_id,longitudes_game_wind_id,latitudes_lgame_id,longitudes_lgame_id, &
+                           longitudes_lgame_wind_u_id,latitudes_lgame_wind_u_id,longitudes_lgame_wind_v_id, &
+                           latitudes_lgame_wind_v_id,dim_vector(2),interpolation_indices_scalar_id, &
+                           interpolation_weights_scalar_id,interpolation_indices_vector_u_id, &
+                           interpolation_weights_vector_u_id,interpolation_indices_vector_v_id, &
+                           interpolation_weights_vector_v_id,scalar_dimid,u_dimid,v_dimid,avg_dimid, &
+                           vector_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id, &
+                           res_id,n_layers,n_pentagons,n_hexagons,n_scalars_h,n_vectors_h
+  real(wp)              :: sum_of_weights,interpol_exp
   integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:), &
                            interpolation_indices_vector_u(:,:),interpolation_indices_vector_v(:,:)
   real(wp), allocatable :: latitudes_input_model(:),longitudes_input_model(:),latitudes_game(:),longitudes_game(:), &
@@ -19,80 +30,76 @@ program control
                            longitudes_lgame(:,:),latitudes_lgame_wind_u(:,:),longitudes_lgame_wind_u(:,:), &
                            latitudes_lgame_wind_v(:,:),longitudes_lgame_wind_v(:,:), &
                            interpolation_weights_vector_u(:,:),interpolation_weights_vector_v(:,:)
+  character(len=4)      :: year_string,nlat_string,nlon_string,n_layers_string
+  character(len=8)      :: interpol_exp_string
+  character(len=2)      :: month_string,day_string,hour_string,oro_id_string,model_target_id_string, &
+                           res_id_string
+  character(len=128)    :: real2game_root_dir,model_home_dir,lgame_grid
+  character(len=256)    :: lat_obs_file,lon_obs_file,geo_pro_file,output_file
   
   ! shell arguments
-  char year_string(strlen(argv(1)) + 1)
-  strcpy(year_string,argv(1))
-  char month_string(strlen(argv(2)) + 1)
-  strcpy(month_string,argv(2))
-  char day_string(strlen(argv(3)) + 1)
-  strcpy(day_string,argv(3))
-  char hour_string(strlen(argv(4)) + 1)
-  strcpy(hour_string,argv(4))
-  char real2game_root_dir(strlen(argv(5)) + 1)
-  strcpy(real2game_root_dir,argv(5))
-  char model_home_dir(strlen(argv(6)) + 1)
-  strcpy(model_home_dir,argv(6))
-  int oro_id = strtod(argv(7),NULL)
-  int model_target_id = strtod(argv(8),NULL)
-  int nlat = strtod(argv(9),NULL)
-  int nlon = strtod(argv(10),NULL)
-  int interpol_exp = strtod(argv(11),NULL)
-  char lgame_grid(strlen(argv(12)) + 1)
-  strcpy(lgame_grid,argv(12))
-  
-  int no_of_points_per_layer_input_model
-  no_of_points_per_layer_input_model = 2949120
+  call get_command_argument(1,year_string)
+  call get_command_argument(2,month_string)
+  call get_command_argument(3,day_string)
+  call get_command_argument(4,hour_string)
+  call get_command_argument(5,real2game_root_dir)
+  call get_command_argument(6,model_home_dir)
+  call get_command_argument(7,oro_id_string)
+  read(oro_id_string,*) oro_id
+  call get_command_argument(8,model_target_id_string)
+  read(model_target_id_string,*) model_target_id
+  call get_command_argument(9,nlat_string)
+  read(nlat_string,*) nlat
+  call get_command_argument(10,nlon_string)
+  read(nlon_string,*) nlon
+  call get_command_argument(11,interpol_exp_string)
+  read(interpol_exp_string,*) interpol_exp
+  call get_command_argument(12,lgame_grid)
+  call get_command_argument(13,res_id_string)
+  read(res_id_string,*) res_id
+  call get_command_argument(14,n_layers_string)
+  read(n_layers_string,*) n_layers
+  ! grid properties
+  n_pentagons = 12
+  n_hexagons = 10*(2**(2*res_id)-1)
+  n_scalars_h = n_pentagons+n_hexagons
+  n_vectors_h = (5*n_pentagons/2 + 6/2*n_hexagons)
 
-  allocate(latitudes_input_model(no_of_points_per_layer_input_model))
-  allocate(longitudes_input_model(no_of_points_per_layer_input_model))
-  
-  int err
-  codes_handle *handle = NULL
+  allocate(latitudes_input_model(n_points_per_layer_input))
+  allocate(longitudes_input_model(n_points_per_layer_input))
   
   ! Properties of the input model's grid.
   ! latitudes of the grid
-  char lat_obs_file_pre(200)
-  sprintf(lat_obs_file_pre ,"%s/interpolation_creator/icon_global_icosahedral_time-invariant_%s%s%s%s_CLAT.grib2",
-  real2game_root_dir,year_string,month_string,day_string,hour_string)
-  char lat_obs_file(strlen(lat_obs_file_pre) + 1)
-  strcpy(lat_obs_file,lat_obs_file_pre)
-  FILE *ECC_FILE
-  ECC_FILE = fopen(lat_obs_file,"r")
-  handle = codes_handle_new_from_file(NULL,ECC_FILE,PRODUCT_GRIB,err)
-  if (err != 0) ECCERR(err)
-  size_t no_of_points_per_layer_input_model_SIZE_T
-  no_of_points_per_layer_input_model_SIZE_T = (size_t) no_of_points_per_layer_input_model
-  ECCCHECK(codes_get_double_array(handle,"values",latitudes_input_model,no_of_points_per_layer_input_model_SIZE_T))
-  codes_handle_delete(handle)
-  fclose(ECC_FILE)
+  lat_obs_file = trim(real2game_root_dir) // "/interpolation_creator/icon_global_icosahedral_time-invariant_" // year_string &
+                 // month_string // day_string // hour_string // "_CLAT.grib2"
+    
+  call codes_open_file(jfile,trim(lat_obs_file),"r")
+  call codes_grib_new_from_file(jfile,jgrib)
+  call codes_get(jgrib,"values",latitudes_input_model)
+  call codes_release(jgrib)
+  call codes_close_file(jfile)
   
   ! transforming the latitude coordinates of the input model from degrees to radians
   !$omp parallel do
-  do ji=1,no_of_points_per_layer_input_model
+  do ji=1,n_points_per_layer_input
     latitudes_input_model(ji) = 2._wp*M_PI*latitudes_input_model(ji)/360._wp
   enddo
   !$omp end parallel do
   
   ! longitudes of the grid
-  char lon_obs_file_pre(200)
-  sprintf(lon_obs_file_pre ,"%s/interpolation_creator/icon_global_icosahedral_time-invariant_%s%s%s%s_CLON.grib2",
-  real2game_root_dir,year_string,month_string,day_string,hour_string)
-  char lon_obs_file(strlen(lon_obs_file_pre) + 1)
-  strcpy(lon_obs_file,lon_obs_file_pre)
+  lon_obs_file = trim(real2game_root_dir) // "/interpolation_creator/icon_global_icosahedral_time-invariant_" // year_string &
+                 // month_string // day_string // hour_string // "_CLON.grib2"
   
-  ECC_FILE = fopen(lon_obs_file,"r")
-  handle = codes_handle_new_from_file(NULL,ECC_FILE,PRODUCT_GRIB,err)
-  if (err != 0) ECCERR(err)
-  no_of_points_per_layer_input_model_SIZE_T = (size_t) no_of_points_per_layer_input_model
-  ECCCHECK(codes_get_double_array(handle,"values",longitudes_input_model,no_of_points_per_layer_input_model_SIZE_T))
-  codes_handle_delete(handle)
-  fclose(ECC_FILE)
+  call codes_open_file(jfile,trim(lon_obs_file),"r")
+  call codes_grib_new_from_file(jfile,jgrib)
+  call codes_get(jgrib,"values",longitudes_input_model)
+  call codes_release(jgrib)
+  call codes_close_file(jfile)
   
   ! transforming the longitude coordinates of the input model from degrees to radians
   !$omp parallel do private(ji)
-  do ji=1,no_of_points_per_layer_input_model
-    longitudes_input_model(ji) = 2._wp*M_PI*longitudes_input_model(ji)/360._p
+  do ji=1,n_points_per_layer_input
+    longitudes_input_model(ji) = 2._wp*M_PI*longitudes_input_model(ji)/360._wp
   enddo
   !$omp end parallel do
   
@@ -100,20 +107,16 @@ program control
   if (model_target_id==1) then
   
     ! reading the horizontal coordinates of the grid of GAME
-    allocate(latitudes_game = malloc(n_scalars_h))
-    allocate(longitudes_game = malloc(n_scalars_h))
-    allocate(latitudes_game_wind = malloc(n_vectors_h))
-    allocate(longitudes_game_wind = malloc(n_vectors_h))
-    char geo_pro_file_pre(200)
-    sprintf(geo_pro_file_pre,"%s/grid_generator/grids/RES%d_L%d_ORO%d.nc",model_home_dir,RES_ID,N_LAYERS,oro_id)
-    char geo_pro_file(strlen(geo_pro_file_pre) + 1)
-    strcpy(geo_pro_file,geo_pro_file_pre)
-    printf("Grid file: %s\n",geo_pro_file)
+    allocate(latitudes_game(n_scalars_h))
+    allocate(longitudes_game(n_scalars_h))
+    allocate(latitudes_game_wind(n_vectors_h))
+    allocate(longitudes_game_wind(n_vectors_h))
+    geo_pro_file = trim(model_home_dir) // "/grid_generator/grids/RES" // trim(int2string(res_id)) //"_L" &
+                   // trim(int2string(n_layers)) // "_ORO" // trim(int2string(oro_id)) // ".nc"
+    write(*,*) "Grid file:",geo_pro_file
     write(*,*) "Reading grid file of GAME ..."
-    int ncid
-    call nc_check(nf90_open(geo_pro_file,NC_NOWRITE,ncid))
-    
-    int latitudes_game_id,latitudes_game_wind_id,longitudes_game_id,longitudes_game_wind_id  
+    call nc_check(nf90_open(geo_pro_file,NF90_NOWRITE,ncid))
+     
     call nc_check(nf90_inq_varid(ncid,"latitude_scalar",latitudes_game_id))
     call nc_check(nf90_inq_varid(ncid,"longitude_scalar",longitudes_game_id))
     call nc_check(nf90_inq_varid(ncid,"latitude_vector",latitudes_game_wind_id))
@@ -126,50 +129,52 @@ program control
     write(*,*) "Grid file of GAME read."
   
     ! allocating memory for the result arrays
-    int (*interpolation_indices_scalar,n_avg_points) = malloc(sizeof(int(n_scalars_h,n_avg_points)))
-    allocate(interpolation_weights_scalar,n_avg_points) = malloc(sizeof(double(n_scalars_h,n_avg_points)))
-    int (*interpolation_indices_vector,n_avg_points) = malloc(sizeof(int(n_vectors_h,n_avg_points)))
-    allocate(interpolation_weights_vector,n_avg_points) = malloc(sizeof(double(n_vectors_h,n_avg_points)))
+    allocate(interpolation_indices_scalar(n_scalars_h,n_avg_points))
+    allocate(interpolation_weights_scalar(n_scalars_h,n_avg_points))
+    allocate(interpolation_indices_vector(n_vectors_h,n_avg_points))
+    allocate(interpolation_weights_vector(n_vectors_h,n_avg_points))
     
     ! executing the actual interpolation
     write(*,*) "Calculating interpolation indices and weights ..."
     
-    !$omp parallel do private(ji)
-    do (int i = 0 i < n_scalars_h ++i)
-      allocate(distance_vector = malloc(no_of_points_per_layer_input_model))
-      do (int j = 0 j < no_of_points_per_layer_input_model ++j)
-        distance_vector(j) = calculate_distance_h(&latitudes_game(i),longitudes_game(i),latitudes_input_model(j),longitudes_input_model(j),1._wp)
+    !$omp parallel do private(ji,jk)
+    do ji=1,n_scalars_h
+      allocate(distance_vector(n_points_per_layer_input))
+      do jk=1,n_points_per_layer_input
+        distance_vector(jk) = calculate_distance_h(latitudes_game(ji),longitudes_game(ji), &
+                                                   latitudes_input_model(jk),longitudes_input_model(jk),1._wp)
       enddo
       sum_of_weights = 0._wp
-      do (int j = 0 j < n_avg_points ++j)
-        interpolation_indices_scalar(i,j) = find_min_index(distance_vector,no_of_points_per_layer_input_model)
-        interpolation_weights_scalar(i,j) = 1._wp/distance_vector(interpolation_indices_scalar(i,j))**interpol_exp
-        distance_vector(interpolation_indices_scalar(i,j)) = 2._wp*M_PI
-        sum_of_weights = sum_of_weights + interpolation_weights_scalar(i,j)
+      do jk=1,n_avg_points
+        interpolation_indices_scalar(ji,jk) = find_min_index(distance_vector,n_points_per_layer_input)
+        interpolation_weights_scalar(ji,jk) = 1._wp/distance_vector(interpolation_indices_scalar(ji,jk))**interpol_exp
+        distance_vector(interpolation_indices_scalar(ji,jk)) = 2._wp*M_PI
+        sum_of_weights = sum_of_weights + interpolation_weights_scalar(ji,jk)
       enddo
       deallocate(distance_vector)
-      do (int j = 0 j < n_avg_points ++j)
-        interpolation_weights_scalar(i,j) = interpolation_weights_scalar(i,j)/sum_of_weights
+      do jk=1,n_avg_points
+        interpolation_weights_scalar(ji,jk) = interpolation_weights_scalar(ji,jk)/sum_of_weights
       enddo
     enddo
     !$omp end parallel do
   
-    !$omp parallel do private(ji)
-    do (int i = 0 i < n_vectors_h ++i)
-      allocate(distance_vector = malloc(no_of_points_per_layer_input_model))
-      do (int j = 0 j < no_of_points_per_layer_input_model ++j)
-        distance_vector(j) =  calculate_distance_h(&latitudes_game_wind(i),longitudes_game_wind(i),latitudes_input_model(j),longitudes_input_model(j),1._wp)
+    !$omp parallel do private(ji,jk)
+    do ji=1,n_vectors_h
+      allocate(distance_vector(n_points_per_layer_input))
+      do jk=1,n_points_per_layer_input
+        distance_vector(jk) =  calculate_distance_h(latitudes_game_wind(ji),longitudes_game_wind(ji), &
+                                                    latitudes_input_model(jk),longitudes_input_model(jk),1._wp)
       enddo
       sum_of_weights = 0._wp
-      do (int j = 0 j < n_avg_points ++j)
-        interpolation_indices_vector(i,j) = find_min_index(distance_vector,no_of_points_per_layer_input_model)
-        interpolation_weights_vector(i,j) = 1._wp/distance_vector(interpolation_indices_vector(i,j))**interpol_exp
-        distance_vector(interpolation_indices_vector(i,j)) = 2._wp*M_PI
-        sum_of_weights = sum_of_weights + interpolation_weights_vector(i,j)
+      do jk=1,n_avg_points
+        interpolation_indices_vector(ji,jk) = find_min_index(distance_vector,n_points_per_layer_input)
+        interpolation_weights_vector(ji,jk) = 1._wp/distance_vector(interpolation_indices_vector(ji,jk))**interpol_exp
+        distance_vector(interpolation_indices_vector(ji,jk)) = 2._wp*M_PI
+        sum_of_weights = sum_of_weights + interpolation_weights_vector(ji,jk)
       enddo
       deallocate(distance_vector)
-      do (int j = 0 j < n_avg_points ++j)
-        interpolation_weights_vector(i,j) = interpolation_weights_vector(i,j)/sum_of_weights
+      do jk=1,n_avg_points
+        interpolation_weights_vector(ji,jk) = interpolation_weights_vector(ji,jk)/sum_of_weights
       enddo
     enddo
     !$omp end parallel do
@@ -184,26 +189,20 @@ program control
     deallocate(latitudes_game_wind)
     deallocate(longitudes_game_wind)
     
-    ! writing the result to a NetCDF file
-    char output_file_pre(200)
-    sprintf(output_file_pre,"%s/interpolation_files/icon-global2game%d.nc",real2game_root_dir,RES_ID)
-    char output_file(strlen(output_file_pre) + 1)
-    strcpy(output_file,output_file_pre)
+    ! writing the result to a netCDF file
+    output_file = trim(real2game_root_dir) // "/interpolation_files/icon-global2game" // trim(int2string(res_id)) // ".nc"
     write(*,*) "Starting to write to output file ..."
-    int interpolation_indices_scalar_id,interpolation_weights_scalar_id,interpolation_indices_vector_id,interpolation_weights_vector_id,
-    scalar_dimid,vector_dimid,avg_dimid
-    int dim_vector(2)
-    call nc_check(nc_create(output_file,NC_CLOBBER,ncid))
-    call nc_check(nc_def_dim(ncid,"scalar_index",n_scalars_h,scalar_dimid))
-    call nc_check(nc_def_dim(ncid,"vector_index",n_vectors_h,vector_dimid))
-    call nc_check(nc_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
+    call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
+    call nc_check(nf90_def_dim(ncid,"scalar_index",n_scalars_h,scalar_dimid))
+    call nc_check(nf90_def_dim(ncid,"vector_index",n_vectors_h,vector_dimid))
+    call nc_check(nf90_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
     dim_vector(1) = scalar_dimid
     dim_vector(2) = avg_dimid
-    call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NC_INT,2,dim_vector,interpolation_indices_scalar_id))
-    call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NC_DOUBLE,2,dim_vector,interpolation_weights_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector,interpolation_indices_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector,interpolation_weights_scalar_id))
     dim_vector(1) = vector_dimid
-    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector",NC_INT,2,dim_vector,interpolation_indices_vector_id))
-    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector",NC_DOUBLE,2,dim_vector,interpolation_weights_vector_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector",NF90_INT,dim_vector,interpolation_indices_vector_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector",NF90_REAL,dim_vector,interpolation_weights_vector_id))
     call nc_check(nf90_enddef(ncid))
     call nc_check(nf90_put_var(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar))
     call nc_check(nf90_put_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar))
@@ -229,17 +228,11 @@ program control
     allocate(longitudes_lgame_wind_u(nlon,nlat+1))
     allocate(latitudes_lgame_wind_v(nlon+1,nlat))
     allocate(longitudes_lgame_wind_v(nlon+1,nlat))
-    char geo_pro_file_pre(200)
-    sprintf(geo_pro_file_pre,"%s/grids/%s",model_home_dir,lgame_grid)
-    char geo_pro_file(strlen(geo_pro_file_pre) + 1)
-    strcpy(geo_pro_file,geo_pro_file_pre)
-    printf("Grid file: %s\n",geo_pro_file)
-    printf("Reading grid file of L-GAME ...\n")
-    int ncid
+    geo_pro_file = trim(model_home_dir) // "/grids/" // trim(lgame_grid)
+    write(*,*) "Grid file:",geo_pro_file
+    write(*,*) "Reading grid file of L-GAME ..."
     call nc_check(nf90_open(geo_pro_file,NF90_NOWRITE,ncid))
     
-    int latitudes_lgame_id,longitudes_lgame_id,longitudes_lgame_wind_u_id,latitudes_lgame_wind_u_id,
-    longitudes_lgame_wind_v_id,latitudes_lgame_wind_v_id
     call nc_check(nf90_inq_varid(ncid,"lat_geo",latitudes_lgame_id))
     call nc_check(nf90_inq_varid(ncid,"lon_geo",longitudes_lgame_id))
     call nc_check(nf90_inq_varid(ncid,"lat_geo_u",latitudes_lgame_wind_u_id))
@@ -253,80 +246,87 @@ program control
     call nc_check(nf90_get_var(ncid,latitudes_lgame_wind_v_id,latitudes_lgame_wind_v))
     call nc_check(nf90_get_var(ncid,longitudes_lgame_wind_v_id,longitudes_lgame_wind_v))
     call nc_check(nf90_close(ncid))
-    printf("Grid file of L-GAME read.\n")
+    write(*,*) "Grid file of L-GAME read."
     
     ! allocating memory for the result arrays
-    int (*interpolation_indices_scalar,n_avg_points) = malloc(sizeof(int(nlat*nlon,n_avg_points)))
-    allocate(interpolation_weights_scalar,n_avg_points) = malloc(sizeof(double(nlat*nlon,n_avg_points)))
-    int (*interpolation_indices_vector_u,n_avg_points) = malloc(sizeof(int(nlat*(nlon+1),n_avg_points)))
-    allocate(interpolation_weights_vector_u,n_avg_points) = malloc(sizeof(double(nlat*(nlon+1),n_avg_points)))
-    int (*interpolation_indices_vector_v,n_avg_points) = malloc(sizeof(int((nlat+1)*nlon,n_avg_points)))
-    allocate(interpolation_weights_vector_v,n_avg_points) = malloc(sizeof(double((nlat+1)*nlon,n_avg_points)))
+    allocate(interpolation_indices_scalar(nlat*nlon,n_avg_points))
+    allocate(interpolation_weights_scalar(nlat*nlon,n_avg_points))
+    allocate(interpolation_indices_vector_u(nlat*(nlon+1),n_avg_points))
+    allocate(interpolation_weights_vector_u(nlat*(nlon+1),n_avg_points))
+    allocate(interpolation_indices_vector_v((nlat+1)*nlon,n_avg_points))
+    allocate(interpolation_weights_vector_v((nlat+1)*nlon,n_avg_points))
     
     ! executing the actual interpolation
-    printf("Calculating interpolation indices and weights ...\n")
+    write(*,*) "Calculating interpolation indices and weights ..."
     
-    !$omp parallel do private(ji)
-    do (int i = 0 i < nlat ++i)
-      do (int j = 0 j < nlon ++j)
-        allocate(distance_vector = malloc(no_of_points_per_layer_input_model))
-        for (int k = 0 k < no_of_points_per_layer_input_model ++k)
-          distance_vector(k) = calculate_distance_h(&latitudes_lgame(i,j),longitudes_lgame(i,j),latitudes_input_model(k),longitudes_input_model(k),one)
+    !$omp parallel do private(ji,jk,jm)
+    do ji=1,nlat
+      do jk=1,nlon
+        allocate(distance_vector(n_points_per_layer_input))
+        do jm=1,n_points_per_layer_input
+          distance_vector(jm) = calculate_distance_h(latitudes_lgame(ji,jk),longitudes_lgame(ji,jk), &
+                                                    latitudes_input_model(jm),longitudes_input_model(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
-        do (int k = 0 k < n_avg_points ++k)
-          interpolation_indices_scalar(j*nlat + i,k) = find_min_index(distance_vector,no_of_points_per_layer_input_model)
-          interpolation_weights_scalar(j*nlat + i,k) = 1._wp/distance_vector(interpolation_indices_scalar(j*nlat + i,k))**interpol_exp
-          distance_vector(interpolation_indices_scalar(j*nlat + i,k)) = 2._wp*M_PI
-          sum_of_weights = sum_of_weights + interpolation_weights_scalar(j*nlat + i,k)
+        do jm=1,n_avg_points
+          interpolation_indices_scalar((jk-1)*nlat+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_weights_scalar((jk-1)*nlat+ji,jm) = 1._wp/ &
+                                      distance_vector(interpolation_indices_scalar((jk-1)*nlat+ji,jm))**interpol_exp
+          distance_vector(interpolation_indices_scalar((jk-1)*nlat+ji,jm)) = 2._wp*M_PI
+          sum_of_weights = sum_of_weights + interpolation_weights_scalar((jk-1)*nlat+ji,jm)
         enddo
         deallocate(distance_vector)
-        do (int k = 0 k < n_avg_points ++k)
-          interpolation_weights_scalar(j*nlat + i,k) = interpolation_weights_scalar(j*nlat + i,k)/sum_of_weights
+        do jm=1,n_avg_points
+          interpolation_weights_scalar((jk-1)*nlat+ji,jm) = interpolation_weights_scalar((jk-1)*nlat+ji,jm)/sum_of_weights
         enddo
       enddo
     enddo
     !$omp end parallel do
     
-    !$omp parallel do private(ji)
-    do (int i = 0 i < nlat ++i)
-      do (int j = 0 j < nlon+1 ++j)
-        allocate(distance_vector = malloc(no_of_points_per_layer_input_model))
-        do (int k = 0 k < no_of_points_per_layer_input_model ++k)
-          distance_vector(k) = calculate_distance_h(&latitudes_lgame_wind_u(i,j),longitudes_lgame_wind_u(i,j),latitudes_input_model(k),longitudes_input_model(k),1._wp)
+    !$omp parallel do private(ji,jk,jm)
+    do ji=1,nlat
+      do jk=1,nlon+1
+        allocate(distance_vector(n_points_per_layer_input))
+        do jm=1,n_points_per_layer_input
+          distance_vector(jm) = calculate_distance_h(latitudes_lgame_wind_u(ji,jk), &
+                                longitudes_lgame_wind_u(ji,jk),latitudes_input_model(jm),longitudes_input_model(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
-        do (int k = 0 k < n_avg_points ++k)
-          interpolation_indices_vector_u(j*nlat + i,k) = find_min_index(distance_vector,no_of_points_per_layer_input_model)
-          interpolation_weights_vector_u(j*nlat + i,k) = 1._wp/distance_vector(interpolation_indices_vector_u(j*nlat + i,k))**interpol_exp
-          distance_vector(interpolation_indices_vector_u(j*nlat + i,k)) = 2._wp*M_PI
-          sum_of_weights = sum_of_weights + interpolation_weights_vector_u(j*nlat + i,k)
+        do jm=1,n_avg_points
+          interpolation_indices_vector_u((jk-1)*nlat+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_weights_vector_u((jk-1)*nlat+ji,jm) = 1._wp/ &
+                                        distance_vector(interpolation_indices_vector_u((jk-1)*nlat+ji,jm))**interpol_exp
+          distance_vector(interpolation_indices_vector_u((jk-1)*nlat+ji,jm)) = 2._wp*M_PI
+          sum_of_weights = sum_of_weights + interpolation_weights_vector_u((jk-1)*nlat+ji,jm)
         enddo
         deallocate(distance_vector)
-        do (int k = 0 k < n_avg_points ++k)
-          interpolation_weights_vector_u(j*nlat + i,k) = interpolation_weights_vector_u(j*nlat + i,k)/sum_of_weights
+        do jm=1,n_avg_points
+          interpolation_weights_vector_u((jk-1)*nlat+ji,jm) = interpolation_weights_vector_u((jk-1)*nlat+ji,jm)/sum_of_weights
         enddo
       enddo
     enddo
     !$omp end parallel do
     
-    !$omp parallel do private(ji,jk)
+    !$omp parallel do private(ji,jk,jm)
     do ji=1,nlat+1
       do jk=1,nlon
-      allocate(distance_vector = malloc(no_of_points_per_layer_input_model))
-        do (int k = 0 k < no_of_points_per_layer_input_model ++k)
-          distance_vector(k) = calculate_distance_h(&latitudes_lgame_wind_v(i,j),longitudes_lgame_wind_v(i,j),latitudes_input_model(k),longitudes_input_model(k),1._wp)
+      allocate(distance_vector(n_points_per_layer_input))
+        do jm=1,n_points_per_layer_input
+          distance_vector(jm) = calculate_distance_h(latitudes_lgame_wind_v(ji,jk),longitudes_lgame_wind_v(ji,jk), &
+                                                     latitudes_input_model(jm),longitudes_input_model(jm),1._wp)
         enddo
-        double sum_of_weights = 0._wp
-        do (int k = 0 k < n_avg_points ++k)
-          interpolation_indices_vector_v(j*(nlat+1) + i,k) = find_min_index(distance_vector,no_of_points_per_layer_input_model)
-          interpolation_weights_vector_v(j*(nlat+1) + i,k) = 1._wp/distance_vector(interpolation_indices_vector_v(j*(nlat+1) + i,k))**interpol_exp
-          distance_vector(interpolation_indices_vector_v(j*(nlat+1) + i,k)) = 2._wp*M_PI
-          sum_of_weights = sum_of_weights + interpolation_weights_vector_v(j*(nlat+1) + i,k)
+        sum_of_weights = 0._wp
+        do jm=1,n_avg_points
+          interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm) = 1._wp/distance_vector( &
+                                                       interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm))**interpol_exp
+          distance_vector(interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm)) = 2._wp*M_PI
+          sum_of_weights = sum_of_weights + interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm)
         enddo
         deallocate(distance_vector)
-        do (int k = 0 k < n_avg_points ++k)
-          interpolation_weights_vector_v(j*(nlat+1) + i,k) = interpolation_weights_vector_v(j*(nlat+1) + i,k)/sum_of_weights
+        do jm=1,n_avg_points
+          interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm) &
+          = interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm)/sum_of_weights
         enddo
       enddo
     enddo
@@ -345,29 +345,23 @@ program control
     deallocate(longitudes_lgame_wind_v)
     
     ! writing the result to a NetCDF file
-    char output_file_pre(200)
-    sprintf(output_file_pre,"%s/interpolation_files/icon-d22lgame_%s",real2game_root_dir,lgame_grid)
-    char output_file(strlen(output_file_pre) + 1)
-    strcpy(output_file,output_file_pre)
+    output_file = trim(real2game_root_dir) // "/interpolation_files/icon-d22lgame_" // trim(lgame_grid)
     write(*,*) "Starting to write to output file ..."
-    int interpolation_indices_scalar_id,interpolation_weights_scalar_id,interpolation_indices_vector_u_id,interpolation_weights_vector_u_id,
-    interpolation_indices_vector_v_id,interpolation_weights_vector_v_id,scalar_dimid,u_dimid,v_dimid,avg_dimid
-    int dim_vector(2)
-    call nc_check(nf90_create(output_file,NC_CLOBBER,ncid))
+    call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
     call nc_check(nf90_def_dim(ncid,"scalar_index",nlat*nlon,scalar_dimid))
     call nc_check(nf90_def_dim(ncid,"u_index",nlat*(nlon+1),u_dimid))
     call nc_check(nf90_def_dim(ncid,"v_index",(nlat+1)*nlon,v_dimid))
     call nc_check(nf90_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
     dim_vector(1) = scalar_dimid
     dim_vector(2) = avg_dimid
-    call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NC_INT,2,dim_vector,interpolation_indices_scalar_id))
-    call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NC_DOUBLE,2,dim_vector,interpolation_weights_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector,interpolation_indices_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector,interpolation_weights_scalar_id))
     dim_vector(1) = u_dimid
-    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_u",NC_INT,2,dim_vector,interpolation_indices_vector_u_id))
-    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_u",NC_DOUBLE,2,dim_vector,interpolation_weights_vector_u_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_u",NF90_INT,dim_vector,interpolation_indices_vector_u_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_u",NF90_REAL,dim_vector,interpolation_weights_vector_u_id))
     dim_vector(1) = v_dimid
-    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_v",NC_INT,2,dim_vector,interpolation_indices_vector_v_id))
-    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_v",NC_DOUBLE,2,dim_vector,interpolation_weights_vector_v_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_v",NF90_INT,dim_vector,interpolation_indices_vector_v_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_v",NF90_REAL,dim_vector,interpolation_weights_vector_v_id))
     call nc_check(nf90_enddef(ncid))
     call nc_check(nf90_put_var(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar))
     call nc_check(nf90_put_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar))
