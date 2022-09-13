@@ -160,7 +160,7 @@ program control
     !$omp parallel do private(ji,jk,sum_of_weights,distance_vector)
     do ji=1,n_vectors_h
       do jk=1,n_points_per_layer_input
-        distance_vector(jk) =  calculate_distance_h(latitudes_game_wind(ji),longitudes_game_wind(ji), &
+        distance_vector(jk) = calculate_distance_h(latitudes_game_wind(ji),longitudes_game_wind(ji), &
                                                     latitudes_input_model(jk),longitudes_input_model(jk),1._wp)
       enddo
       sum_of_weights = 0._wp

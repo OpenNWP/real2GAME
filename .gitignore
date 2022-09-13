@@ -1,4 +1,5 @@
 build
 *.nc
 input
+*.grib2
 interpolation_creator/interpolation_creator
