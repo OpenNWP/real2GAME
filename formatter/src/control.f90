@@ -209,7 +209,7 @@ program control
   ! Defining the dimensions.
   call nc_check(nf90_def_dim(ncid,"h_index",n_points_per_layer_input,h_dimid))
   call nc_check(nf90_def_dim(ncid,"v_index",n_layers_input,v_dimid))
-  call nc_check(nf90_def_dim(ncid,"sst_index",N_SST_POINTS,sst_dimid))
+  call nc_check(nf90_def_dim(ncid,"sst_index",n_sst_points,sst_dimid))
   dim_vector(1) = h_dimid
   dim_vector(2) = v_dimid
   call nc_check(nf90_def_var(ncid,"z_surface",NF90_REAL,h_dimid,z_surf_id))
