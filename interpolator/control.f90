@@ -216,6 +216,11 @@ program control
   allocate(temperature_out(n_scalars))
   allocate(spec_hum_out(n_scalars))
   
+  !$omp parallel workshare
+  temperature_out = 0._wp
+  spec_hum_out = 0._wp
+  !$omp end parallel workshare
+  
   !$omp parallel do private(ji,jk,jl,layer_index,h_index,closest_value,other_value,df,dz,gradient,delta_z)
   do ji=1,n_scalars
     layer_index = (ji-1)/n_scalars_h
@@ -226,23 +231,23 @@ program control
       ! computing linear vertical interpolation
       ! vertical distance vector
       do jl=1,n_layers_input
-        vector_to_minimize(jl) = abs(z_coords_game(ji)- z_coords_input_model(interpolation_indices_scalar(h_index,jk),jl))
+        vector_to_minimize(jl) = abs(z_coords_game(ji) - z_coords_input_model(interpolation_indices_scalar(h_index,jk),jl))
       enddo
       
       ! closest vertical index
-      closest_index = 1+find_min_index(vector_to_minimize,n_layers_input)
+      closest_index = find_min_index(vector_to_minimize,n_layers_input)
       
       ! value at the closest vertical index
       closest_value = temperature_in(interpolation_indices_scalar(h_index,jk),closest_index)
       
-      other_index = closest_index - 1
+      other_index = closest_index-1
       if (z_coords_game(ji)<z_coords_input_model(interpolation_indices_scalar(h_index,jk),closest_index)) then
-        other_index = closest_index + 1
+        other_index = closest_index+1
       endif
       
       ! avoiding array excess
       if (other_index==n_layers_input+1) then
-        other_index = closest_index - 1
+        other_index = closest_index-1
       endif
       
       ! the value at the second point used for vertical interpolation
@@ -277,6 +282,10 @@ program control
   
   ! surface pressure interpolation
   allocate(pressure_lowest_layer_out(n_scalars_h))
+  !$omp parallel workshare
+  pressure_lowest_layer_out = 0._wp
+  !$omp end parallel workshare
+  
   !$omp parallel do private(ji,jk)
   do ji=1,n_scalars_h
     do jk=1,n_avg_points
@@ -314,14 +323,15 @@ program control
       exner(ji) = (density_moist_out(ji)*r_d*temperature_v(ji)/p_0)**(r_d/c_d_p)
     else
       ! solving a quadratic equation for the Exner pressure
-      b = -0.5_wp*exner(ji+n_scalars_h)/temperature_v(ji + n_scalars_h) &
-      *(temperature_v(ji) - temperature_v(ji + n_scalars_h) &
-      + 2._wp/c_d_p*(gravity_potential_game(ji) - gravity_potential_game(ji + n_scalars_h)))
-      c = exner(ji+n_scalars_h)**2*temperature_v(ji)/temperature_v(ji + n_scalars_h)
+      b = -0.5_wp*exner(ji+n_scalars_h)/temperature_v(ji+n_scalars_h) &
+      *(temperature_v(ji) - temperature_v(ji+n_scalars_h) &
+      + 2._wp/c_d_p*(gravity_potential_game(ji) - gravity_potential_game(ji+n_scalars_h)))
+      c = exner(ji+n_scalars_h)**2*temperature_v(ji)/temperature_v(ji+n_scalars_h)
       exner(ji) = b + (b**2 + c)**0.5_wp
       density_moist_out(ji) = p_0*exner(ji)**(c_d_p/r_d)/(r_d*temperature_v(ji))
     endif
   enddo
+  
   deallocate(temperature_v)
   deallocate(pressure_lowest_layer_out)
   deallocate(gravity_potential_game)
@@ -335,6 +345,9 @@ program control
   
   write(*,*) "Starting the wind interpolation ..."
   allocate(wind_out(n_vectors))
+  !$omp parallel workshare
+  wind_out = 0._wp
+  !$omp end parallel workshare
   ! loop over all horizontal vector points
   !$omp parallel do private(ji,jk,jl,h_index,layer_index,vector_index,closest_index,other_index,closest_value, &
   !$omp other_value,df,dz,gradient,delta_z,u_local,v_local)
@@ -355,17 +368,17 @@ program control
                                     - z_coords_input_model(interpolation_indices_vector(h_index,jk),jl))
       enddo
       ! closest vertical index
-      closest_index = 1+find_min_index(vector_to_minimize,n_layers_input)
+      closest_index = find_min_index(vector_to_minimize,n_layers_input)
       ! value at the closest vertical index
       closest_value = u_wind_in(interpolation_indices_vector(h_index,jk),closest_index)
     
-      other_index = closest_index - 1
+      other_index = closest_index-1
       if (z_coords_game_wind(vector_index) < z_coords_input_model(interpolation_indices_vector(h_index,jk),closest_index)) then
-        other_index = closest_index + 1
+        other_index = closest_index+1
       endif
       ! avoiding array excess
       if (other_index==n_layers_input+1) then
-        other_index = closest_index - 1
+        other_index = closest_index-1
       endif
     
       ! the value at the second point used for vertical interpolation
@@ -416,7 +429,7 @@ program control
     do jk=1,n_sst_points
       distance_vector(jk) = calculate_distance_h(latitudes_sst(jk),longitudes_sst(jk),latitudes_game(ji),longitudes_game(ji),1._wp)
     enddo
-    min_index = 1+find_min_index(distance_vector,n_sst_points)
+    min_index = find_min_index(distance_vector,n_sst_points)
     sst_out(ji) = sst_in(min_index)
   enddo
   !$omp end parallel do

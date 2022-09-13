@@ -138,7 +138,7 @@ program control
     write(*,*) "Calculating interpolation indices and weights ..."
     
     allocate(distance_vector(n_points_per_layer_input))
-    !$omp parallel do private(ji,jk,distance_vector)
+    !$omp parallel do private(ji,jk,distance_vector,sum_of_weights)
     do ji=1,n_scalars_h
       do jk=1,n_points_per_layer_input
         distance_vector(jk) = calculate_distance_h(latitudes_game(ji),longitudes_game(ji), &
@@ -146,7 +146,7 @@ program control
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
-        interpolation_indices_scalar(ji,jk) = 1+find_min_index(distance_vector,n_points_per_layer_input)
+        interpolation_indices_scalar(ji,jk) = find_min_index(distance_vector,n_points_per_layer_input)
         interpolation_weights_scalar(ji,jk) = 1._wp/distance_vector(interpolation_indices_scalar(ji,jk))**interpol_exp
         distance_vector(interpolation_indices_scalar(ji,jk)) = 2._wp*M_PI
         sum_of_weights = sum_of_weights + interpolation_weights_scalar(ji,jk)
@@ -165,7 +165,7 @@ program control
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
-        interpolation_indices_vector(ji,jk) = 1+find_min_index(distance_vector,n_points_per_layer_input)
+        interpolation_indices_vector(ji,jk) = find_min_index(distance_vector,n_points_per_layer_input)
         interpolation_weights_vector(ji,jk) = 1._wp/distance_vector(interpolation_indices_vector(ji,jk))**interpol_exp
         distance_vector(interpolation_indices_vector(ji,jk)) = 2._wp*M_PI
         sum_of_weights = sum_of_weights + interpolation_weights_vector(ji,jk)
@@ -265,7 +265,7 @@ program control
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_scalar((jk-1)*nlat+ji,jm) = 1+find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_indices_scalar((jk-1)*nlat+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
           interpolation_weights_scalar((jk-1)*nlat+ji,jm) = 1._wp/ &
                                       distance_vector(interpolation_indices_scalar((jk-1)*nlat+ji,jm))**interpol_exp
           distance_vector(interpolation_indices_scalar((jk-1)*nlat+ji,jm)) = 2._wp*M_PI
@@ -287,7 +287,7 @@ program control
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_vector_u((jk-1)*nlat+ji,jm) = 1+find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_indices_vector_u((jk-1)*nlat+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
           interpolation_weights_vector_u((jk-1)*nlat+ji,jm) = 1._wp/ &
                                         distance_vector(interpolation_indices_vector_u((jk-1)*nlat+ji,jm))**interpol_exp
           distance_vector(interpolation_indices_vector_u((jk-1)*nlat+ji,jm)) = 2._wp*M_PI
@@ -309,7 +309,7 @@ program control
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm) = 1+find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
           interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm) = 1._wp/distance_vector( &
                                                        interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm))**interpol_exp
           distance_vector(interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm)) = 2._wp*M_PI

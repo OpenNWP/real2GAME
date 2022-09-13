@@ -65,8 +65,6 @@ module mo_shared
       endif
     enddo
     
-    find_min_index = find_min_index - 1
-    
   end function find_min_index
   
   subroutine nc_check(i_status)
