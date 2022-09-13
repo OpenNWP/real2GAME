@@ -221,7 +221,7 @@ program control
   spec_hum_out = 0._wp
   !$omp end parallel workshare
   
-  !$omp parallel do private(ji,jk,jl,layer_index,h_index,closest_value,other_value,df,dz,gradient,delta_z)
+  !$omp parallel do private(ji,jk,jl,vector_to_minimize,layer_index,h_index,closest_value,other_value,df,dz,gradient,delta_z)
   do ji=1,n_scalars
     layer_index = (ji-1)/n_scalars_h
     h_index = ji - layer_index*n_scalars_h
@@ -277,9 +277,9 @@ program control
   enddo
   !$omp end parallel do
   ! these array are now interpolated and not needed any further
+  
   deallocate(spec_hum_in)
   deallocate(temperature_in)
-  
   ! surface pressure interpolation
   allocate(pressure_lowest_layer_out(n_scalars_h))
   !$omp parallel workshare
@@ -349,7 +349,7 @@ program control
   wind_out = 0._wp
   !$omp end parallel workshare
   ! loop over all horizontal vector points
-  !$omp parallel do private(ji,jk,jl,h_index,layer_index,vector_index,closest_index,other_index,closest_value, &
+  !$omp parallel do private(ji,jk,jl,vector_to_minimize,h_index,layer_index,vector_index,closest_index,other_index,closest_value, &
   !$omp other_value,df,dz,gradient,delta_z,u_local,v_local)
   do ji=1,n_h_vectors
     layer_index = (ji-1)/n_vectors_h
