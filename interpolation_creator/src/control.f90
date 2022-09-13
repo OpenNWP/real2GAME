@@ -157,7 +157,7 @@ program control
     enddo
     !$omp end parallel do
   
-    !$omp parallel do private(ji,jk,distance_vector)
+    !$omp parallel do private(ji,jk,sum_of_weights,distance_vector)
     do ji=1,n_vectors_h
       do jk=1,n_points_per_layer_input
         distance_vector(jk) =  calculate_distance_h(latitudes_game_wind(ji),longitudes_game_wind(ji), &
@@ -256,7 +256,7 @@ program control
     ! executing the actual interpolation
     write(*,*) "Calculating interpolation indices and weights ..."
     
-    !$omp parallel do private(ji,jk,jm,distance_vector)
+    !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
     do ji=1,nlat
       do jk=1,nlon
         do jm=1,n_points_per_layer_input
@@ -300,7 +300,7 @@ program control
     enddo
     !$omp end parallel do
     
-    !$omp parallel do private(ji,jk,jm,distance_vector)
+    !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
     do ji=1,nlat+1
       do jk=1,nlon
         do jm=1,n_points_per_layer_input
