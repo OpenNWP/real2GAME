@@ -80,7 +80,7 @@ program control
   call codes_close_file(jfile)
   
   ! transforming the latitude coordinates of the input model from degrees to radians
-  !$omp parallel do
+  !$omp parallel do private(ji)
   do ji=1,n_points_per_layer_input
     latitudes_input_model(ji) = 2._wp*M_PI*latitudes_input_model(ji)/360._wp
   enddo
