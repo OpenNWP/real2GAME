@@ -86,8 +86,8 @@ program control
   write(*,*) "Grid file: ",trim(geo_prop_file)
   write(*,*) "Reading grid file ..."
   call nc_check(nf90_open(trim(geo_prop_file),NF90_NOWRITE,ncid))
-  call nc_check(nf90_inq_varid(ncid,"latitude_scalar",latitudes_game_id))
-  call nc_check(nf90_inq_varid(ncid,"longitude_scalar",longitudes_game_id))
+  call nc_check(nf90_inq_varid(ncid,"lat_c",latitudes_game_id))
+  call nc_check(nf90_inq_varid(ncid,"lon_c",longitudes_game_id))
   call nc_check(nf90_inq_varid(ncid,"z_scalar",z_coords_game_id))
   call nc_check(nf90_inq_varid(ncid,"direction",directions_id))
   call nc_check(nf90_inq_varid(ncid,"z_vector",z_coords_game_wind_id))
