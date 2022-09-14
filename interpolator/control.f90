@@ -71,7 +71,7 @@ program control
   call get_command_argument(10,background_state_file)
   call get_command_argument(11,real2game_root_dir)
   
-  write(*,*) "Background state file:",trim(background_state_file)
+  write(*,*) "Background state file: ",trim(background_state_file)
   
   ! Allocating memory for the grid properties.
   allocate(latitudes_game(n_scalars_h))
@@ -83,7 +83,7 @@ program control
   ! Reading the grid properties.
   geo_prop_file = trim(model_home_dir) // "/grid_generator/grids/RES" // trim(int2string(res_id)) // "_L" // &
                   trim(int2string(n_layers)) // "_ORO" // trim(int2string(oro_id)) // ".nc"
-  write(*,*) "Grid file:",trim(geo_prop_file)
+  write(*,*) "Grid file: ",trim(geo_prop_file)
   write(*,*) "Reading grid file ..."
   call nc_check(nf90_open(trim(geo_prop_file),NF90_NOWRITE,ncid))
   call nc_check(nf90_inq_varid(ncid,"latitude_scalar",latitudes_game_id))
@@ -469,7 +469,7 @@ program control
   ! writing the result to a netCDF file
   ! -----------------------------------
   
-  write(*,*) "Output file:",trim(output_file)
+  write(*,*) "Output file: ",trim(output_file)
   write(*,*) "Writing result to output file ..."
   call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
   call nc_check(nf90_def_dim(ncid,"densities_index",6*n_scalars,densities_dimid))
