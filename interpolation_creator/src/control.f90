@@ -278,7 +278,7 @@ program control
     enddo
     !$omp end parallel do
     
-    !$omp parallel do private(ji,jk,jm,distance_vector)
+    !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
     do ji=1,nlat
       do jk=1,nlon+1
         do jm=1,n_points_per_layer_input
