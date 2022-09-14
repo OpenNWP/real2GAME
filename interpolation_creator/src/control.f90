@@ -12,10 +12,10 @@ program control
   
   implicit none
   
-  integer               :: ji,jk,jm,oro_id,model_target_id,nlat,nlon,ncid,latitudes_game_id,latitudes_game_wind_id, &
-                           longitudes_game_id,longitudes_game_wind_id,latitudes_lgame_id,longitudes_lgame_id, &
-                           longitudes_lgame_wind_u_id,latitudes_lgame_wind_u_id,longitudes_lgame_wind_v_id, &
-                           latitudes_lgame_wind_v_id,dim_vector(2),interpolation_indices_scalar_id, &
+  integer               :: ji,jk,jm,oro_id,model_target_id,nlat,nlon,ncid,lat_game_id,lat_game_wind_id, &
+                           lon_game_id,lon_game_wind_id,lat_lgame_id,lon_lgame_id, &
+                           lon_lgame_wind_u_id,lat_lgame_wind_u_id,lon_lgame_wind_v_id, &
+                           lat_lgame_wind_v_id,dim_vector(2),interpolation_indices_scalar_id, &
                            interpolation_weights_scalar_id,interpolation_indices_vector_u_id, &
                            interpolation_weights_vector_u_id,interpolation_indices_vector_v_id, &
                            interpolation_weights_vector_v_id,scalar_dimid,u_dimid,v_dimid,avg_dimid, &
@@ -24,11 +24,11 @@ program control
   real(wp)              :: sum_of_weights,interpol_exp
   integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:), &
                            interpolation_indices_vector_u(:,:),interpolation_indices_vector_v(:,:)
-  real(wp), allocatable :: latitudes_input_model(:),longitudes_input_model(:),latitudes_game(:),longitudes_game(:), &
-                           latitudes_game_wind(:),longitudes_game_wind(:),interpolation_weights_scalar(:,:), &
-                           interpolation_weights_vector(:,:),distance_vector(:),latitudes_lgame(:,:), &
-                           longitudes_lgame(:,:),latitudes_lgame_wind_u(:,:),longitudes_lgame_wind_u(:,:), &
-                           latitudes_lgame_wind_v(:,:),longitudes_lgame_wind_v(:,:), &
+  real(wp), allocatable :: lat_input_model(:),lon_input_model(:),lat_game(:),lon_game(:), &
+                           lat_game_wind(:),lon_game_wind(:),interpolation_weights_scalar(:,:), &
+                           interpolation_weights_vector(:,:),distance_vector(:),lat_lgame(:,:), &
+                           lon_lgame(:,:),lat_lgame_wind_u(:,:),lon_lgame_wind_u(:,:), &
+                           lat_lgame_wind_v(:,:),lon_lgame_wind_v(:,:), &
                            interpolation_weights_vector_u(:,:),interpolation_weights_vector_v(:,:)
   character(len=4)      :: year_string,nlat_string,nlon_string,n_layers_string
   character(len=8)      :: interpol_exp_string
@@ -65,8 +65,8 @@ program control
   n_scalars_h = n_pentagons+n_hexagons
   n_vectors_h = (5*n_pentagons/2 + 6/2*n_hexagons)
 
-  allocate(latitudes_input_model(n_points_per_layer_input))
-  allocate(longitudes_input_model(n_points_per_layer_input))
+  allocate(lat_input_model(n_points_per_layer_input))
+  allocate(lon_input_model(n_points_per_layer_input))
   
   ! Properties of the input model's grid.
   ! latitudes of the grid
@@ -75,14 +75,14 @@ program control
     
   call codes_open_file(jfile,trim(lat_obs_file),"r")
   call codes_grib_new_from_file(jfile,jgrib)
-  call codes_get(jgrib,"values",latitudes_input_model)
+  call codes_get(jgrib,"values",lat_input_model)
   call codes_release(jgrib)
   call codes_close_file(jfile)
   
   ! transforming the latitude coordinates of the input model from degrees to radians
   !$omp parallel do private(ji)
   do ji=1,n_points_per_layer_input
-    latitudes_input_model(ji) = 2._wp*M_PI*latitudes_input_model(ji)/360._wp
+    lat_input_model(ji) = 2._wp*M_PI*lat_input_model(ji)/360._wp
   enddo
   !$omp end parallel do
   
@@ -92,14 +92,14 @@ program control
   
   call codes_open_file(jfile,trim(lon_obs_file),"r")
   call codes_grib_new_from_file(jfile,jgrib)
-  call codes_get(jgrib,"values",longitudes_input_model)
+  call codes_get(jgrib,"values",lon_input_model)
   call codes_release(jgrib)
   call codes_close_file(jfile)
   
   ! transforming the longitude coordinates of the input model from degrees to radians
   !$omp parallel do private(ji)
   do ji=1,n_points_per_layer_input
-    longitudes_input_model(ji) = 2._wp*M_PI*longitudes_input_model(ji)/360._wp
+    lon_input_model(ji) = 2._wp*M_PI*lon_input_model(ji)/360._wp
   enddo
   !$omp end parallel do
   
@@ -107,24 +107,24 @@ program control
   if (model_target_id==1) then
   
     ! reading the horizontal coordinates of the grid of GAME
-    allocate(latitudes_game(n_scalars_h))
-    allocate(longitudes_game(n_scalars_h))
-    allocate(latitudes_game_wind(n_vectors_h))
-    allocate(longitudes_game_wind(n_vectors_h))
+    allocate(lat_game(n_scalars_h))
+    allocate(lon_game(n_scalars_h))
+    allocate(lat_game_wind(n_vectors_h))
+    allocate(lon_game_wind(n_vectors_h))
     geo_pro_file = trim(model_home_dir) // "/grid_generator/grids/RES" // trim(int2string(res_id)) //"_L" &
                    // trim(int2string(n_layers)) // "_ORO" // trim(int2string(oro_id)) // ".nc"
     write(*,*) "Grid file: ",trim(geo_pro_file)
     write(*,*) "Reading grid file of GAME ..."
     call nc_check(nf90_open(geo_pro_file,NF90_NOWRITE,ncid))
      
-    call nc_check(nf90_inq_varid(ncid,"latitude_scalar",latitudes_game_id))
-    call nc_check(nf90_inq_varid(ncid,"longitude_scalar",longitudes_game_id))
-    call nc_check(nf90_inq_varid(ncid,"latitude_vector",latitudes_game_wind_id))
-    call nc_check(nf90_inq_varid(ncid,"longitude_vector",longitudes_game_wind_id))
-    call nc_check(nf90_get_var(ncid,latitudes_game_id,latitudes_game))
-    call nc_check(nf90_get_var(ncid,longitudes_game_id,longitudes_game))
-    call nc_check(nf90_get_var(ncid,latitudes_game_wind_id,latitudes_game_wind))
-    call nc_check(nf90_get_var(ncid,longitudes_game_wind_id,longitudes_game_wind))
+    call nc_check(nf90_inq_varid(ncid,"lat_c",lat_game_id))
+    call nc_check(nf90_inq_varid(ncid,"lon_c",lon_game_id))
+    call nc_check(nf90_inq_varid(ncid,"lat_e",lat_game_wind_id))
+    call nc_check(nf90_inq_varid(ncid,"lon_e",lon_game_wind_id))
+    call nc_check(nf90_get_var(ncid,lat_game_id,lat_game))
+    call nc_check(nf90_get_var(ncid,lon_game_id,lon_game))
+    call nc_check(nf90_get_var(ncid,lat_game_wind_id,lat_game_wind))
+    call nc_check(nf90_get_var(ncid,lon_game_wind_id,lon_game_wind))
     call nc_check(nf90_close(ncid))
     write(*,*) "Grid file of GAME read."
   
@@ -141,8 +141,8 @@ program control
     !$omp parallel do private(ji,jk,distance_vector,sum_of_weights)
     do ji=1,n_scalars_h
       do jk=1,n_points_per_layer_input
-        distance_vector(jk) = calculate_distance_h(latitudes_game(ji),longitudes_game(ji), &
-                                                   latitudes_input_model(jk),longitudes_input_model(jk),1._wp)
+        distance_vector(jk) = calculate_distance_h(lat_game(ji),lon_game(ji), &
+                                                   lat_input_model(jk),lon_input_model(jk),1._wp)
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
@@ -160,8 +160,8 @@ program control
     !$omp parallel do private(ji,jk,sum_of_weights,distance_vector)
     do ji=1,n_vectors_h
       do jk=1,n_points_per_layer_input
-        distance_vector(jk) = calculate_distance_h(latitudes_game_wind(ji),longitudes_game_wind(ji), &
-                                                    latitudes_input_model(jk),longitudes_input_model(jk),1._wp)
+        distance_vector(jk) = calculate_distance_h(lat_game_wind(ji),lon_game_wind(ji), &
+                                                   lat_input_model(jk),lon_input_model(jk),1._wp)
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
@@ -179,12 +179,12 @@ program control
     write(*,*) "Calculating interpolation indices and weights finished."
     
     ! freeing memory we do not need further
-    deallocate(latitudes_input_model)
-    deallocate(longitudes_input_model)
-    deallocate(latitudes_game)
-    deallocate(longitudes_game)
-    deallocate(latitudes_game_wind)
-    deallocate(longitudes_game_wind)
+    deallocate(lat_input_model)
+    deallocate(lon_input_model)
+    deallocate(lat_game)
+    deallocate(lon_game)
+    deallocate(lat_game_wind)
+    deallocate(lon_game_wind)
     
     ! writing the result to a netCDF file
     output_file = trim(real2game_root_dir) // "/interpolation_files/icon-global2game" // trim(int2string(res_id)) // ".nc"
@@ -219,29 +219,29 @@ program control
   if (model_target_id==2) then
   
     ! reading the horizontal coordinates of the grid of L-GAME
-    allocate(latitudes_lgame(nlon,nlat))
-    allocate(longitudes_lgame(nlon,nlat))
-    allocate(latitudes_lgame_wind_u(nlon,nlat+1))
-    allocate(longitudes_lgame_wind_u(nlon,nlat+1))
-    allocate(latitudes_lgame_wind_v(nlon+1,nlat))
-    allocate(longitudes_lgame_wind_v(nlon+1,nlat))
+    allocate(lat_lgame(nlon,nlat))
+    allocate(lon_lgame(nlon,nlat))
+    allocate(lat_lgame_wind_u(nlon,nlat+1))
+    allocate(lon_lgame_wind_u(nlon,nlat+1))
+    allocate(lat_lgame_wind_v(nlon+1,nlat))
+    allocate(lon_lgame_wind_v(nlon+1,nlat))
     geo_pro_file = trim(model_home_dir) // "/grids/" // trim(lgame_grid)
     write(*,*) "Grid file:",geo_pro_file
     write(*,*) "Reading grid file of L-GAME ..."
     call nc_check(nf90_open(geo_pro_file,NF90_NOWRITE,ncid))
     
-    call nc_check(nf90_inq_varid(ncid,"lat_geo",latitudes_lgame_id))
-    call nc_check(nf90_inq_varid(ncid,"lon_geo",longitudes_lgame_id))
-    call nc_check(nf90_inq_varid(ncid,"lat_geo_u",latitudes_lgame_wind_u_id))
-    call nc_check(nf90_inq_varid(ncid,"lon_geo_u",longitudes_lgame_wind_u_id))
-    call nc_check(nf90_inq_varid(ncid,"lat_geo_v",latitudes_lgame_wind_v_id))
-    call nc_check(nf90_inq_varid(ncid,"lon_geo_v",longitudes_lgame_wind_v_id))
-    call nc_check(nf90_get_var(ncid,latitudes_lgame_id,latitudes_lgame))
-    call nc_check(nf90_get_var(ncid,longitudes_lgame_id,longitudes_lgame))
-    call nc_check(nf90_get_var(ncid,latitudes_lgame_wind_u_id,latitudes_lgame_wind_u))
-    call nc_check(nf90_get_var(ncid,longitudes_lgame_wind_u_id,longitudes_lgame_wind_u))
-    call nc_check(nf90_get_var(ncid,latitudes_lgame_wind_v_id,latitudes_lgame_wind_v))
-    call nc_check(nf90_get_var(ncid,longitudes_lgame_wind_v_id,longitudes_lgame_wind_v))
+    call nc_check(nf90_inq_varid(ncid,"lat_geo",lat_lgame_id))
+    call nc_check(nf90_inq_varid(ncid,"lon_geo",lon_lgame_id))
+    call nc_check(nf90_inq_varid(ncid,"lat_geo_u",lat_lgame_wind_u_id))
+    call nc_check(nf90_inq_varid(ncid,"lon_geo_u",lon_lgame_wind_u_id))
+    call nc_check(nf90_inq_varid(ncid,"lat_geo_v",lat_lgame_wind_v_id))
+    call nc_check(nf90_inq_varid(ncid,"lon_geo_v",lon_lgame_wind_v_id))
+    call nc_check(nf90_get_var(ncid,lat_lgame_id,lat_lgame))
+    call nc_check(nf90_get_var(ncid,lon_lgame_id,lon_lgame))
+    call nc_check(nf90_get_var(ncid,lat_lgame_wind_u_id,lat_lgame_wind_u))
+    call nc_check(nf90_get_var(ncid,lon_lgame_wind_u_id,lon_lgame_wind_u))
+    call nc_check(nf90_get_var(ncid,lat_lgame_wind_v_id,lat_lgame_wind_v))
+    call nc_check(nf90_get_var(ncid,lon_lgame_wind_v_id,lon_lgame_wind_v))
     call nc_check(nf90_close(ncid))
     write(*,*) "Grid file of L-GAME read."
     
@@ -260,8 +260,8 @@ program control
     do ji=1,nlat
       do jk=1,nlon
         do jm=1,n_points_per_layer_input
-          distance_vector(jm) = calculate_distance_h(latitudes_lgame(ji,jk),longitudes_lgame(ji,jk), &
-                                                    latitudes_input_model(jm),longitudes_input_model(jm),1._wp)
+          distance_vector(jm) = calculate_distance_h(lat_lgame(ji,jk),lon_lgame(ji,jk), &
+                                                     lat_input_model(jm),lon_input_model(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
@@ -282,8 +282,8 @@ program control
     do ji=1,nlat
       do jk=1,nlon+1
         do jm=1,n_points_per_layer_input
-          distance_vector(jm) = calculate_distance_h(latitudes_lgame_wind_u(ji,jk), &
-                                longitudes_lgame_wind_u(ji,jk),latitudes_input_model(jm),longitudes_input_model(jm),1._wp)
+          distance_vector(jm) = calculate_distance_h(lat_lgame_wind_u(ji,jk), &
+                                lon_lgame_wind_u(ji,jk),lat_input_model(jm),lon_input_model(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
@@ -304,8 +304,8 @@ program control
     do ji=1,nlat+1
       do jk=1,nlon
         do jm=1,n_points_per_layer_input
-          distance_vector(jm) = calculate_distance_h(latitudes_lgame_wind_v(ji,jk),longitudes_lgame_wind_v(ji,jk), &
-                                                     latitudes_input_model(jm),longitudes_input_model(jm),1._wp)
+          distance_vector(jm) = calculate_distance_h(lat_lgame_wind_v(ji,jk),lon_lgame_wind_v(ji,jk), &
+                                                     lat_input_model(jm),lon_input_model(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
@@ -326,14 +326,14 @@ program control
     write(*,*) "Calculating interpolation indices and weights finished."
     
     ! freeing memory we do not need further
-    deallocate(latitudes_input_model)
-    deallocate(longitudes_input_model)
-    deallocate(latitudes_lgame)
-    deallocate(longitudes_lgame)
-    deallocate(latitudes_lgame_wind_u)
-    deallocate(longitudes_lgame_wind_u)
-    deallocate(latitudes_lgame_wind_v)
-    deallocate(longitudes_lgame_wind_v)
+    deallocate(lat_input_model)
+    deallocate(lon_input_model)
+    deallocate(lat_lgame)
+    deallocate(lon_lgame)
+    deallocate(lat_lgame_wind_u)
+    deallocate(lon_lgame_wind_u)
+    deallocate(lat_lgame_wind_v)
+    deallocate(lon_lgame_wind_v)
     
     ! writing the result to a NetCDF file
     output_file = trim(real2game_root_dir) // "/interpolation_files/icon-d22lgame_" // trim(lgame_grid)
