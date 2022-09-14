@@ -15,7 +15,7 @@ program control
                            lat_sst_id,lon_sst_id,sst_id,dim_vector(2),layers_vector(n_layers_input),jfile,jgrib
   real(wp), allocatable :: z_height_amsl_one_layer(:),temperature_one_layer(:),spec_hum_one_layer(:), &
                            u_one_layer(:),v_one_layer(:),z_height_amsl(:,:),temperature(:,:),spec_hum(:,:), &
-                           u_wind(:,:),v_wind(:,:),latitudes_sst(:),longitudes_sst(:),sst(:),surface_height(:), &
+                           u_wind(:,:),v_wind(:,:),lat_sst(:),lon_sst(:),sst(:),surface_height(:), &
                            pressure_surface(:)
   character(len=4)      :: year_string
   character(len=2)      :: month_string,day_string,hour_string
@@ -179,8 +179,8 @@ program control
   call codes_close_file(jfile)
   
   ! reading the SST
-  allocate(latitudes_sst(n_sst_points))
-  allocate(longitudes_sst(n_sst_points))
+  allocate(lat_sst(n_sst_points))
+  allocate(lon_sst(n_sst_points))
   allocate(sst(n_sst_points))
   
   sst_file = trim(real2game_root_dir) // "/input/rtgssthr_grb_0.5.grib2"
@@ -188,16 +188,16 @@ program control
   call codes_open_file(jfile,trim(sst_file),"r")
   call codes_grib_new_from_file(jfile,jgrib)
   call codes_get(jgrib,"values",sst)
-  call codes_get(jgrib,"latitudes",latitudes_sst)
-  call codes_get(jgrib,"longitudes",longitudes_sst)
+  call codes_get(jgrib,"latitudes",lat_sst)
+  call codes_get(jgrib,"longitudes",lon_sst)
   call codes_release(jgrib)
   call codes_close_file(jfile)
   
   ! transforming the coordinates of the SST grid from degrees to radians
   !$omp parallel do private(ji)
   do ji=1,n_sst_points
-    latitudes_sst(ji) = 2._wp*M_PI*latitudes_sst(ji)/360._wp
-    longitudes_sst(ji) = 2._wp*M_PI*longitudes_sst(ji)/360._wp
+    lat_sst(ji) = 2._wp*M_PI*lat_sst(ji)/360._wp
+    lon_sst(ji) = 2._wp*M_PI*lon_sst(ji)/360._wp
   enddo
   !$omp end parallel do
     
@@ -231,8 +231,8 @@ program control
   call nc_check(nf90_put_var(ncid,spec_hum_id,spec_hum))
   call nc_check(nf90_put_var(ncid,u_id,u_wind))
   call nc_check(nf90_put_var(ncid,v_id,v_wind))
-  call nc_check(nf90_put_var(ncid,lat_sst_id,latitudes_sst))
-  call nc_check(nf90_put_var(ncid,lon_sst_id,longitudes_sst))
+  call nc_check(nf90_put_var(ncid,lat_sst_id,lat_sst))
+  call nc_check(nf90_put_var(ncid,lon_sst_id,lon_sst))
   call nc_check(nf90_put_var(ncid,sst_id,sst))
   call nc_check(nf90_close(ncid))
     
@@ -245,8 +245,8 @@ program control
   deallocate(temperature)
   deallocate(spec_hum)
   deallocate(sst)
-  deallocate(latitudes_sst)
-  deallocate(longitudes_sst)
+  deallocate(lat_sst)
+  deallocate(lon_sst)
 
 end program control
 

@@ -35,7 +35,7 @@ program control
   real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_coords_game(:),directions(:),z_coords_game_wind(:), &
                            gravity_potential_game(:),densities_background(:),tke(:),t_soil(:),z_coords_input_model(:,:), &
                            temperature_in(:,:),spec_hum_in(:,:),u_wind_in(:,:),v_wind_in(:,:),z_surf_in(:), &
-                           p_surf_in(:),latitudes_sst(:),longitudes_sst(:),sst_in(:),interpolation_weights_scalar(:,:), &
+                           p_surf_in(:),lat_sst(:),lon_sst(:),sst_in(:),interpolation_weights_scalar(:,:), &
                            interpolation_weights_vector(:,:),temperature_out(:),spec_hum_out(:),pressure_lowest_layer_out(:), &
                            density_moist_out(:),temperature_v(:),distance_vector(:),densities(:),exner(:),wind_out(:),sst_out(:)
   integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:)
@@ -114,7 +114,7 @@ program control
   call nc_check(nf90_open(background_state_file,NF90_NOWRITE,ncid))
   call nc_check(nf90_inq_varid(ncid,"densities",densities_background_id))
   ltke_avail = .false.
-  if (nf90_inq_varid(ncid,"tke",tke_id) == 0) then
+  if (nf90_inq_varid(ncid,"tke",tke_id)==0) then
     ltke_avail = .true.
     call nc_check(nf90_inq_varid(ncid,"tke",tke_id))
     write(*,*) "TKE found in background state file."
@@ -147,8 +147,8 @@ program control
   allocate(v_wind_in(n_points_per_layer_input,n_layers_input))
   allocate(z_surf_in(n_points_per_layer_input))
   allocate(p_surf_in(n_points_per_layer_input))
-  allocate(latitudes_sst(n_sst_points))
-  allocate(longitudes_sst(n_sst_points))
+  allocate(lat_sst(n_sst_points))
+  allocate(lon_sst(n_sst_points))
   allocate(sst_in(n_sst_points))
   
   ! determining the name of the input file
@@ -175,8 +175,8 @@ program control
   call nc_check(nf90_get_var(ncid,v_id,v_wind_in))
   call nc_check(nf90_get_var(ncid,z_surf_id,z_surf_in))
   call nc_check(nf90_get_var(ncid,sp_id,p_surf_in))
-  call nc_check(nf90_get_var(ncid,lat_sst_id,latitudes_sst))
-  call nc_check(nf90_get_var(ncid,lon_sst_id,longitudes_sst))
+  call nc_check(nf90_get_var(ncid,lat_sst_id,lat_sst))
+  call nc_check(nf90_get_var(ncid,lon_sst_id,lon_sst))
   call nc_check(nf90_get_var(ncid,sst_id,sst_in))
   call nc_check(nf90_close(ncid))
   write(*,*) "Input read."
@@ -427,15 +427,15 @@ program control
   !$omp parallel do private(ji,jk,distance_vector,min_index)
   do ji=1,n_scalars_h
     do jk=1,n_sst_points
-      distance_vector(jk) = calculate_distance_h(latitudes_sst(jk),longitudes_sst(jk),latitudes_game(ji),longitudes_game(ji),1._wp)
+      distance_vector(jk) = calculate_distance_h(lat_sst(jk),lon_sst(jk),latitudes_game(ji),longitudes_game(ji),1._wp)
     enddo
     min_index = find_min_index(distance_vector,n_sst_points)
     sst_out(ji) = sst_in(min_index)
   enddo
   !$omp end parallel do
   deallocate(distance_vector)
-  deallocate(latitudes_sst)
-  deallocate(longitudes_sst)
+  deallocate(lat_sst)
+  deallocate(lon_sst)
   deallocate(sst_in)
   deallocate(latitudes_game)
   deallocate(longitudes_game)
