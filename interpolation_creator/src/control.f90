@@ -20,7 +20,7 @@ program control
                            interpolation_weights_vector_u_id,interpolation_indices_vector_v_id, &
                            interpolation_weights_vector_v_id,scalar_dimid,u_dimid,v_dimid,avg_dimid, &
                            vector_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id, &
-                           res_id,n_layers,n_pentagons,n_hexagons,n_scalars_h,n_vectors_h
+                           res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_vectors_h
   real(wp)              :: sum_of_weights,interpol_exp
   integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:), &
                            interpolation_indices_vector_u(:,:),interpolation_indices_vector_v(:,:)
@@ -62,7 +62,7 @@ program control
   ! grid properties
   n_pentagons = 12
   n_hexagons = 10*(2**(2*res_id)-1)
-  n_scalars_h = n_pentagons+n_hexagons
+  n_cells = n_pentagons+n_hexagons
   n_vectors_h = (5*n_pentagons/2 + 6/2*n_hexagons)
 
   allocate(lat_input_model(n_points_per_layer_input))
@@ -107,8 +107,8 @@ program control
   if (model_target_id==1) then
   
     ! reading the horizontal coordinates of the grid of GAME
-    allocate(lat_game(n_scalars_h))
-    allocate(lon_game(n_scalars_h))
+    allocate(lat_game(n_cells))
+    allocate(lon_game(n_cells))
     allocate(lat_game_wind(n_vectors_h))
     allocate(lon_game_wind(n_vectors_h))
     geo_pro_file = trim(model_home_dir) // "/grid_generator/grids/RES" // trim(int2string(res_id)) //"_L" &
@@ -129,8 +129,8 @@ program control
     write(*,*) "Grid file of GAME read."
   
     ! allocating memory for the result arrays
-    allocate(interpolation_indices_scalar(n_scalars_h,n_avg_points))
-    allocate(interpolation_weights_scalar(n_scalars_h,n_avg_points))
+    allocate(interpolation_indices_scalar(n_cells,n_avg_points))
+    allocate(interpolation_weights_scalar(n_cells,n_avg_points))
     allocate(interpolation_indices_vector(n_vectors_h,n_avg_points))
     allocate(interpolation_weights_vector(n_vectors_h,n_avg_points))
     
@@ -139,7 +139,7 @@ program control
     
     allocate(distance_vector(n_points_per_layer_input))
     !$omp parallel do private(ji,jk,distance_vector,sum_of_weights)
-    do ji=1,n_scalars_h
+    do ji=1,n_cells
       do jk=1,n_points_per_layer_input
         distance_vector(jk) = calculate_distance_h(lat_game(ji),lon_game(ji), &
                                                    lat_input_model(jk),lon_input_model(jk),1._wp)
@@ -190,7 +190,7 @@ program control
     output_file = trim(real2game_root_dir) // "/interpolation_files/icon-global2game" // trim(int2string(res_id)) // ".nc"
     write(*,*) "Starting to write to output file ..."
     call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
-    call nc_check(nf90_def_dim(ncid,"scalar_index",n_scalars_h,scalar_dimid))
+    call nc_check(nf90_def_dim(ncid,"cell_index",n_cells,scalar_dimid))
     call nc_check(nf90_def_dim(ncid,"vector_index",n_vectors_h,vector_dimid))
     call nc_check(nf90_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
     dim_vector(1) = scalar_dimid
@@ -339,7 +339,7 @@ program control
     output_file = trim(real2game_root_dir) // "/interpolation_files/icon-d22lgame_" // trim(lgame_grid)
     write(*,*) "Starting to write to output file ..."
     call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
-    call nc_check(nf90_def_dim(ncid,"scalar_index",nlat*nlon,scalar_dimid))
+    call nc_check(nf90_def_dim(ncid,"cell_index",nlat*nlon,scalar_dimid))
     call nc_check(nf90_def_dim(ncid,"u_index",nlat*(nlon+1),u_dimid))
     call nc_check(nf90_def_dim(ncid,"v_index",(nlat+1)*nlon,v_dimid))
     call nc_check(nf90_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))

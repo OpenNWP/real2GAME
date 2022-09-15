@@ -29,7 +29,7 @@ program control
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id,densities_background_id, &
                            tke_id,t_soil_id,vector_index,min_index,densities_dimid,scalar_dimid, &
                            vector_dimid,scalar_h_dimid,single_double_dimid,densities_id,temperature_id,wind_id,soil_dimid, &
-                           res_id,oro_id,n_pentagons,n_hexagons,n_scalars_h,n_scalars,n_vectors_h,n_layers,n_h_vectors, &
+                           res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_scalars,n_vectors_h,n_layers,n_h_vectors, &
                            n_levels,n_v_vectors,n_vectors_per_layer,n_vectors,nsoillays
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
   real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_coords_game(:),directions(:),z_coords_game_wind(:), &
@@ -51,13 +51,13 @@ program control
   ! grid properties
   n_pentagons = 12
   n_hexagons = 10*(2**(2*res_id)-1)
-  n_scalars_h = n_pentagons+n_hexagons
-  n_scalars = n_layers*n_scalars_h
+  n_cells = n_pentagons+n_hexagons
+  n_scalars = n_layers*n_cells
   n_vectors_h = (5*n_pentagons/2 + 6/2*n_hexagons)
   n_h_vectors = n_layers*n_vectors_h
   n_levels = n_layers+1
-  n_v_vectors = n_levels*n_scalars_h
-  n_vectors_per_layer = n_vectors_h+n_scalars_h
+  n_v_vectors = n_levels*n_cells
+  n_vectors_per_layer = n_vectors_h+n_cells
   n_vectors = n_h_vectors+n_v_vectors
   call get_command_argument(3,nsoillays_string)
   read(nsoillays_string,*) nsoillays
@@ -74,8 +74,8 @@ program control
   write(*,*) "Background state file: ",trim(background_state_file)
   
   ! Allocating memory for the grid properties.
-  allocate(latitudes_game(n_scalars_h))
-  allocate(longitudes_game(n_scalars_h))
+  allocate(latitudes_game(n_cells))
+  allocate(longitudes_game(n_cells))
   allocate(z_coords_game(n_scalars))
   allocate(directions(n_vectors_h))
   allocate(z_coords_game_wind(n_vectors))
@@ -107,7 +107,7 @@ program control
   ! These are the arrays of the background state.
   allocate(densities_background(6*n_scalars))
   allocate(tke(n_scalars))
-  allocate(t_soil(nsoillays*n_scalars_h))
+  allocate(t_soil(nsoillays*n_cells))
   
   ! Reading the background state.
   write(*,*) "Reading background state ..."
@@ -182,8 +182,8 @@ program control
   write(*,*) "Input read."
   
   ! memory alloction for the interpolation indices and weights
-  allocate(interpolation_indices_scalar(n_scalars_h,n_avg_points))
-  allocate(interpolation_weights_scalar(n_scalars_h,n_avg_points))
+  allocate(interpolation_indices_scalar(n_cells,n_avg_points))
+  allocate(interpolation_weights_scalar(n_cells,n_avg_points))
   allocate(interpolation_indices_vector(n_vectors_h,n_avg_points))
   allocate(interpolation_weights_vector(n_vectors_h,n_avg_points))
   
@@ -223,8 +223,8 @@ program control
   
   !$omp parallel do private(ji,jk,jl,vector_to_minimize,layer_index,h_index,closest_value,other_value,df,dz,gradient,delta_z)
   do ji=1,n_scalars
-    layer_index = (ji-1)/n_scalars_h
-    h_index = ji - layer_index*n_scalars_h
+    layer_index = (ji-1)/n_cells
+    h_index = ji - layer_index*n_cells
     
     ! loop over all points over which the averaging is executed
     do jk=1,n_avg_points
@@ -281,19 +281,19 @@ program control
   deallocate(spec_hum_in)
   deallocate(temperature_in)
   ! surface pressure interpolation
-  allocate(pressure_lowest_layer_out(n_scalars_h))
+  allocate(pressure_lowest_layer_out(n_cells))
   !$omp parallel workshare
   pressure_lowest_layer_out = 0._wp
   !$omp end parallel workshare
   
   !$omp parallel do private(ji,jk)
-  do ji=1,n_scalars_h
+  do ji=1,n_cells
     do jk=1,n_avg_points
       pressure_lowest_layer_out(ji) = pressure_lowest_layer_out(ji) &
       ! horizontal component of the interpolation
       + interpolation_weights_scalar(ji,jk)*p_surf_in(interpolation_indices_scalar(ji,jk)) &
       ! vertical component of the interpolation according to the barometric height formula
-      *exp(-(z_coords_game(n_scalars-n_scalars_h+ji) - z_surf_in(interpolation_indices_scalar(ji,jk)))/scale_height)
+      *exp(-(z_coords_game(n_scalars-n_cells+ji) - z_surf_in(interpolation_indices_scalar(ji,jk)))/scale_height)
     enddo
   enddo
   !$omp end parallel do
@@ -316,17 +316,17 @@ program control
   ! the Exner pressure is just a temporarily needed helper variable here to integrate the hydrostatic equation
   allocate(exner(n_scalars))
   do ji=n_scalars,1,-1
-    layer_index = (ji-1)/n_scalars_h
-    h_index = ji - layer_index*n_scalars_h
+    layer_index = (ji-1)/n_cells
+    h_index = ji - layer_index*n_cells
     if (layer_index==n_layers-1) then
       density_moist_out(ji) = pressure_lowest_layer_out(h_index)/(r_d*temperature_v(ji))
       exner(ji) = (density_moist_out(ji)*r_d*temperature_v(ji)/p_0)**(r_d/c_d_p)
     else
       ! solving a quadratic equation for the Exner pressure
-      b = -0.5_wp*exner(ji+n_scalars_h)/temperature_v(ji+n_scalars_h) &
-      *(temperature_v(ji) - temperature_v(ji+n_scalars_h) &
-      + 2._wp/c_d_p*(gravity_potential_game(ji) - gravity_potential_game(ji+n_scalars_h)))
-      c = exner(ji+n_scalars_h)**2*temperature_v(ji)/temperature_v(ji+n_scalars_h)
+      b = -0.5_wp*exner(ji+n_cells)/temperature_v(ji+n_cells) &
+      *(temperature_v(ji) - temperature_v(ji+n_cells) &
+      + 2._wp/c_d_p*(gravity_potential_game(ji) - gravity_potential_game(ji+n_cells)))
+      c = exner(ji+n_cells)**2*temperature_v(ji)/temperature_v(ji+n_cells)
       exner(ji) = b + (b**2 + c)**0.5_wp
       density_moist_out(ji) = p_0*exner(ji)**(c_d_p/r_d)/(r_d*temperature_v(ji))
     endif
@@ -354,7 +354,7 @@ program control
   do ji=1,n_h_vectors
     layer_index = (ji-1)/n_vectors_h
     h_index = ji - layer_index*n_vectors_h
-    vector_index = n_scalars_h + layer_index*n_vectors_per_layer + h_index
+    vector_index = n_cells + layer_index*n_vectors_per_layer + h_index
      
     ! the u- and v-components of the wind at the grid point of GAME
     u_local = 0._wp
@@ -422,10 +422,10 @@ program control
   ! ------------------------
   
   write(*,*) "Interpolating the SST to the model grid ..."
-  allocate(sst_out(n_scalars_h))
+  allocate(sst_out(n_cells))
   allocate(distance_vector(n_sst_points))
   !$omp parallel do private(ji,jk,distance_vector,min_index)
-  do ji=1,n_scalars_h
+  do ji=1,n_cells
     do jk=1,n_sst_points
       distance_vector(jk) = calculate_distance_h(lat_sst(jk),lon_sst(jk),latitudes_game(ji),longitudes_game(ji),1._wp)
     enddo
@@ -475,8 +475,8 @@ program control
   call nc_check(nf90_def_dim(ncid,"densities_index",6*n_scalars,densities_dimid))
   call nc_check(nf90_def_dim(ncid,"vector_index",n_vectors,vector_dimid))
   call nc_check(nf90_def_dim(ncid,"scalar_index",n_scalars,scalar_dimid))
-  call nc_check(nf90_def_dim(ncid,"soil_index",nsoillays*n_scalars_h,soil_dimid))
-  call nc_check(nf90_def_dim(ncid,"scalar_h_index",n_scalars_h,scalar_h_dimid))
+  call nc_check(nf90_def_dim(ncid,"soil_index",nsoillays*n_cells,soil_dimid))
+  call nc_check(nf90_def_dim(ncid,"scalar_h_index",n_cells,scalar_h_dimid))
   call nc_check(nf90_def_dim(ncid,"single_double_dimid_index",1,single_double_dimid))
   call nc_check(nf90_def_var(ncid,"densities",NF90_REAL,densities_dimid,densities_id))
   call nc_check(nf90_put_att(ncid,densities_id,"units","kg/m^3"))
