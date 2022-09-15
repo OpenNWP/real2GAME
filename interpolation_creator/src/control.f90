@@ -20,7 +20,7 @@ program control
                            interpolation_weights_vector_u_id,interpolation_indices_vector_v_id, &
                            interpolation_weights_vector_v_id,scalar_dimid,u_dimid,v_dimid,avg_dimid, &
                            vector_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id, &
-                           res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_vectors_h
+                           res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_edges
   real(wp)              :: sum_of_weights,interpol_exp
   integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:), &
                            interpolation_indices_vector_u(:,:),interpolation_indices_vector_v(:,:)
@@ -63,7 +63,7 @@ program control
   n_pentagons = 12
   n_hexagons = 10*(2**(2*res_id)-1)
   n_cells = n_pentagons+n_hexagons
-  n_vectors_h = (5*n_pentagons/2 + 6/2*n_hexagons)
+  n_edges = (5*n_pentagons/2 + 6/2*n_hexagons)
 
   allocate(lat_input_model(n_points_per_layer_input))
   allocate(lon_input_model(n_points_per_layer_input))
@@ -109,8 +109,8 @@ program control
     ! reading the horizontal coordinates of the grid of GAME
     allocate(lat_game(n_cells))
     allocate(lon_game(n_cells))
-    allocate(lat_game_wind(n_vectors_h))
-    allocate(lon_game_wind(n_vectors_h))
+    allocate(lat_game_wind(n_edges))
+    allocate(lon_game_wind(n_edges))
     geo_pro_file = trim(model_home_dir) // "/grid_generator/grids/RES" // trim(int2string(res_id)) //"_L" &
                    // trim(int2string(n_layers)) // "_ORO" // trim(int2string(oro_id)) // ".nc"
     write(*,*) "Grid file: ",trim(geo_pro_file)
@@ -131,8 +131,8 @@ program control
     ! allocating memory for the result arrays
     allocate(interpolation_indices_scalar(n_cells,n_avg_points))
     allocate(interpolation_weights_scalar(n_cells,n_avg_points))
-    allocate(interpolation_indices_vector(n_vectors_h,n_avg_points))
-    allocate(interpolation_weights_vector(n_vectors_h,n_avg_points))
+    allocate(interpolation_indices_vector(n_edges,n_avg_points))
+    allocate(interpolation_weights_vector(n_edges,n_avg_points))
     
     ! executing the actual interpolation
     write(*,*) "Calculating interpolation indices and weights ..."
@@ -158,7 +158,7 @@ program control
     !$omp end parallel do
   
     !$omp parallel do private(ji,jk,sum_of_weights,distance_vector)
-    do ji=1,n_vectors_h
+    do ji=1,n_edges
       do jk=1,n_points_per_layer_input
         distance_vector(jk) = calculate_distance_h(lat_game_wind(ji),lon_game_wind(ji), &
                                                    lat_input_model(jk),lon_input_model(jk),1._wp)
@@ -191,7 +191,7 @@ program control
     write(*,*) "Starting to write to output file ..."
     call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
     call nc_check(nf90_def_dim(ncid,"cell_index",n_cells,scalar_dimid))
-    call nc_check(nf90_def_dim(ncid,"vector_index",n_vectors_h,vector_dimid))
+    call nc_check(nf90_def_dim(ncid,"vector_index",n_edges,vector_dimid))
     call nc_check(nf90_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
     dim_vector(1) = scalar_dimid
     dim_vector(2) = avg_dimid

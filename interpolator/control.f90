@@ -29,7 +29,7 @@ program control
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id,densities_background_id, &
                            tke_id,t_soil_id,vector_index,min_index,densities_dimid,scalar_dimid, &
                            vector_dimid,scalar_h_dimid,single_double_dimid,densities_id,temperature_id,wind_id,soil_dimid, &
-                           res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_scalars,n_vectors_h,n_layers,n_h_vectors, &
+                           res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_scalars,n_edges,n_layers,n_h_vectors, &
                            n_levels,n_v_vectors,n_vectors_per_layer,n_vectors,nsoillays
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
   real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_coords_game(:),directions(:),z_coords_game_wind(:), &
@@ -53,11 +53,11 @@ program control
   n_hexagons = 10*(2**(2*res_id)-1)
   n_cells = n_pentagons+n_hexagons
   n_scalars = n_layers*n_cells
-  n_vectors_h = (5*n_pentagons/2 + 6/2*n_hexagons)
-  n_h_vectors = n_layers*n_vectors_h
+  n_edges = (5*n_pentagons/2 + 6/2*n_hexagons)
+  n_h_vectors = n_layers*n_edges
   n_levels = n_layers+1
   n_v_vectors = n_levels*n_cells
-  n_vectors_per_layer = n_vectors_h+n_cells
+  n_vectors_per_layer = n_edges+n_cells
   n_vectors = n_h_vectors+n_v_vectors
   call get_command_argument(3,nsoillays_string)
   read(nsoillays_string,*) nsoillays
@@ -77,7 +77,7 @@ program control
   allocate(latitudes_game(n_cells))
   allocate(longitudes_game(n_cells))
   allocate(z_coords_game(n_scalars))
-  allocate(directions(n_vectors_h))
+  allocate(directions(n_edges))
   allocate(z_coords_game_wind(n_vectors))
   allocate(gravity_potential_game(n_scalars))
   ! Reading the grid properties.
@@ -184,8 +184,8 @@ program control
   ! memory alloction for the interpolation indices and weights
   allocate(interpolation_indices_scalar(n_cells,n_avg_points))
   allocate(interpolation_weights_scalar(n_cells,n_avg_points))
-  allocate(interpolation_indices_vector(n_vectors_h,n_avg_points))
-  allocate(interpolation_weights_vector(n_vectors_h,n_avg_points))
+  allocate(interpolation_indices_vector(n_edges,n_avg_points))
+  allocate(interpolation_weights_vector(n_edges,n_avg_points))
   
   write(*,*) "Reading the interpolation indices and weights."
   
@@ -352,8 +352,8 @@ program control
   !$omp parallel do private(ji,jk,jl,vector_to_minimize,h_index,layer_index,vector_index,closest_index,other_index,closest_value, &
   !$omp other_value,df,dz,gradient,delta_z,u_local,v_local)
   do ji=1,n_h_vectors
-    layer_index = (ji-1)/n_vectors_h
-    h_index = ji - layer_index*n_vectors_h
+    layer_index = (ji-1)/n_edges
+    h_index = ji - layer_index*n_edges
     vector_index = n_cells + layer_index*n_vectors_per_layer + h_index
      
     ! the u- and v-components of the wind at the grid point of GAME
