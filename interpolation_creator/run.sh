@@ -6,6 +6,7 @@
 real2game_root_dir=/home/max/code/real2GAME # the home directory of real2GAME
 model_home_dir=/home/max/code/GAME # the home directory of GAME or L-GAME
 model_target_id=1 # 1: GAME 2: L-GAME
+model_source_id=1 # 1: ICON-global, 2: GAME, 3: ICON-D2
 res_id=5 # resolution ID of the GAME grid
 n_layers=26 # number of layers of the GAME grid file to use
 nlat=35 # number of latitude points of the L-GAME grid
