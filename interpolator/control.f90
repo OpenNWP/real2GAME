@@ -110,6 +110,7 @@ program control
   ! These are the arrays of the background state.
   allocate(tke(n_scalars))
   allocate(t_soil(n_cells,nsoillays))
+  allocate(densities_background(n_scalars,n_constituents))
   
   ! Reading the background state.
   write(*,*) "Reading background state ..."
