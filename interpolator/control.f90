@@ -22,12 +22,12 @@ program control
   
   logical               :: ltke_avail,lt_soil_avail
   integer               :: ji,jk,jl,latitudes_game_id,longitudes_game_id,z_coords_game_id,z_coords_game_wind_id, &
-                           gravity_potential_game_id,constituent_dimid,cell_dimid, &
+                           gravity_potential_game_id,constituent_dimid,cell_dimid,n_constituents, &
                            directions_id,ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,& 
-                           interpolation_indices_vector_id,dimids_vector_2(2), &
+                           interpolation_indices_vector_id,dimids_vector_2(2),n_condensed_constituents, &
                            interpolation_weights_vector_id,layer_index,h_index,closest_index,other_index, sp_id,z_surf_id, &
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id,densities_background_id, &
-                           tke_id,t_soil_id,vector_index,min_index,scalar_dimid, &
+                           tke_id,t_soil_id,vector_index,min_index,scalar_dimid,jc, &
                            vector_dimid,single_double_dimid,densities_id,temperature_id,wind_id,soil_layer_dimid, &
                            res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_scalars,n_edges,n_layers,n_h_vectors, &
                            n_levels,n_v_vectors,n_vectors_per_layer,n_vectors,nsoillays
@@ -60,6 +60,8 @@ program control
   n_v_vectors = n_levels*n_cells
   n_vectors_per_layer = n_edges+n_cells
   n_vectors = n_h_vectors+n_v_vectors
+  n_condensed_constituents = 4
+  n_constituents = 6
   call get_command_argument(3,nsoillays_string)
   read(nsoillays_string,*) nsoillays
   call get_command_argument(4,year_string)
@@ -446,19 +448,21 @@ program control
   ! --------------------
   
   ! clouds and precipitation are set equal to the background state
-  allocate(densities_out(n_scalars,6))
-  !$omp parallel do private(ji)
+  allocate(densities_out(n_scalars,n_constituents))
+  !$omp parallel do private(ji,jc)
   do ji=1,n_scalars
     ! setting the mass densities of the result
     ! condensate densities are not assimilated
-    densities_out(ji,1) = densities_background(ji,1)
-    densities_out(ji,2) = densities_background(ji,2)
-    densities_out(ji,3) = densities_background(ji,3)
-    densities_out(ji,4) = densities_background(ji,4)
-    densities_out(ji,5) = density_moist_out(ji)
-    densities_out(ji,6) = spec_hum_out(ji)*density_moist_out(ji)
-    if (densities_out(ji,6)<0._wp) then
-      densities_out(ji,6) = 0._wp
+    do jc=1,n_condensed_constituents
+      densities_out(ji,jc) = densities_background(ji,jc)
+      densities_out(ji,jc) = densities_background(ji,jc)
+      densities_out(ji,jc) = densities_background(ji,jc)
+      densities_out(ji,jc) = densities_background(ji,jc)
+    enddo
+    densities_out(ji,n_condensed_constituents+1) = density_moist_out(ji)
+    densities_out(ji,n_condensed_constituents+2) = spec_hum_out(ji)*density_moist_out(ji)
+    if (densities_out(ji,n_condensed_constituents+2)<0._wp) then
+      densities_out(ji,n_condensed_constituents+2) = 0._wp
     endif
   enddo
   !$omp end parallel do
