@@ -22,18 +22,18 @@ program control
   
   logical               :: ltke_avail,lt_soil_avail
   integer               :: ji,jk,jl,latitudes_game_id,longitudes_game_id,z_coords_game_id,z_coords_game_wind_id, &
-                           gravity_potential_game_id,constituent_dimid, &
+                           gravity_potential_game_id,constituent_dimid,cell_dimid, &
                            directions_id,ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,& 
                            interpolation_indices_vector_id,dimids_vector_2(2), &
                            interpolation_weights_vector_id,layer_index,h_index,closest_index,other_index, sp_id,z_surf_id, &
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id,densities_background_id, &
                            tke_id,t_soil_id,vector_index,min_index,scalar_dimid, &
-                           vector_dimid,scalar_h_dimid,single_double_dimid,densities_id,temperature_id,wind_id,soil_dimid, &
+                           vector_dimid,single_double_dimid,densities_id,temperature_id,wind_id,soil_layer_dimid, &
                            res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_scalars,n_edges,n_layers,n_h_vectors, &
                            n_levels,n_v_vectors,n_vectors_per_layer,n_vectors,nsoillays
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
   real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_coords_game(:),directions(:),z_coords_game_wind(:), &
-                           gravity_potential_game(:),densities_background(:,:),tke(:),t_soil(:),z_coords_input_model(:,:), &
+                           gravity_potential_game(:),densities_background(:,:),tke(:),t_soil(:,:),z_coords_input_model(:,:), &
                            temperature_in(:,:),spec_hum_in(:,:),u_wind_in(:,:),v_wind_in(:,:),z_surf_in(:), &
                            p_surf_in(:),lat_sst(:),lon_sst(:),sst_in(:),interpolation_weights_scalar(:,:), &
                            interpolation_weights_vector(:,:),temperature_out(:),spec_hum_out(:),pressure_lowest_layer_out(:), &
@@ -107,7 +107,7 @@ program control
   
   ! These are the arrays of the background state.
   allocate(tke(n_scalars))
-  allocate(t_soil(nsoillays*n_cells))
+  allocate(t_soil(n_cells,nsoillays))
   
   ! Reading the background state.
   write(*,*) "Reading background state ..."
@@ -122,7 +122,7 @@ program control
     write(*,*) "TKE not found in background state file."
   endif
   lt_soil_avail = .false.
-  if (nf90_inq_varid(ncid,"t_soil",t_soil_id) == 0) then
+  if (nf90_inq_varid(ncid,"t_soil",t_soil_id)==0) then
     lt_soil_avail = .true.
     call nc_check(nf90_inq_varid(ncid,"t_soil",t_soil_id))
     write(*,*) "Soil temperature found in background state file."
@@ -472,11 +472,11 @@ program control
   write(*,*) "Output file: ",trim(output_file)
   write(*,*) "Writing result to output file ..."
   call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
+  call nc_check(nf90_def_dim(ncid,"cell_index",n_cells,cell_dimid))
   call nc_check(nf90_def_dim(ncid,"vector_index",n_vectors,vector_dimid))
   call nc_check(nf90_def_dim(ncid,"scalar_index",n_scalars,scalar_dimid))
   call nc_check(nf90_def_dim(ncid,"constituent_index",6,constituent_dimid))
-  call nc_check(nf90_def_dim(ncid,"soil_index",nsoillays*n_cells,soil_dimid))
-  call nc_check(nf90_def_dim(ncid,"scalar_h_index",n_cells,scalar_h_dimid))
+  call nc_check(nf90_def_dim(ncid,"soil_layer_index",nsoillays,soil_layer_dimid))
   call nc_check(nf90_def_dim(ncid,"single_double_dimid_index",1,single_double_dimid))
   dimids_vector_2(1) = scalar_dimid
   dimids_vector_2(2) = constituent_dimid
@@ -486,14 +486,16 @@ program control
   call nc_check(nf90_put_att(ncid,temperature_id,"units","K"))
   call nc_check(nf90_def_var(ncid,"wind",NF90_REAL,vector_dimid,wind_id))
   call nc_check(nf90_put_att(ncid,wind_id,"units","m/s"))
-  call nc_check(nf90_def_var(ncid,"sst",NF90_REAL,scalar_h_dimid,sst_id))
+  call nc_check(nf90_def_var(ncid,"sst",NF90_REAL,cell_dimid,sst_id))
   call nc_check(nf90_put_att(ncid,sst_id,"units","K"))
   if (ltke_avail) then
     call nc_check(nf90_def_var(ncid,"tke",NF90_REAL,scalar_dimid,tke_id))
     call nc_check(nf90_put_att(ncid,tke_id,"units","J/kg"))
   endif
   if (lt_soil_avail) then
-    call nc_check(nf90_def_var(ncid,"t_soil",NF90_REAL,soil_dimid,t_soil_id))
+    dimids_vector_2(1) = cell_dimid
+    dimids_vector_2(2) = soil_layer_dimid
+    call nc_check(nf90_def_var(ncid,"t_soil",NF90_REAL,dimids_vector_2,t_soil_id))
     call nc_check(nf90_put_att(ncid,t_soil_id,"units","K"))
   endif
   call nc_check(nf90_enddef(ncid))
