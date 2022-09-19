@@ -22,22 +22,23 @@ program control
   
   logical               :: ltke_avail,lt_soil_avail
   integer               :: ji,jk,jl,latitudes_game_id,longitudes_game_id,z_coords_game_id,z_coords_game_wind_id, &
-                           gravity_potential_game_id, &
+                           gravity_potential_game_id,constituent_dimid, &
                            directions_id,ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,& 
-                           interpolation_indices_vector_id, &
+                           interpolation_indices_vector_id,dimids_vector_2(2), &
                            interpolation_weights_vector_id,layer_index,h_index,closest_index,other_index, sp_id,z_surf_id, &
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id,densities_background_id, &
-                           tke_id,t_soil_id,vector_index,min_index,densities_dimid,scalar_dimid, &
+                           tke_id,t_soil_id,vector_index,min_index,scalar_dimid, &
                            vector_dimid,scalar_h_dimid,single_double_dimid,densities_id,temperature_id,wind_id,soil_dimid, &
                            res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_scalars,n_edges,n_layers,n_h_vectors, &
                            n_levels,n_v_vectors,n_vectors_per_layer,n_vectors,nsoillays
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
   real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_coords_game(:),directions(:),z_coords_game_wind(:), &
-                           gravity_potential_game(:),densities_background(:),tke(:),t_soil(:),z_coords_input_model(:,:), &
+                           gravity_potential_game(:),densities_background(:,:),tke(:),t_soil(:),z_coords_input_model(:,:), &
                            temperature_in(:,:),spec_hum_in(:,:),u_wind_in(:,:),v_wind_in(:,:),z_surf_in(:), &
                            p_surf_in(:),lat_sst(:),lon_sst(:),sst_in(:),interpolation_weights_scalar(:,:), &
                            interpolation_weights_vector(:,:),temperature_out(:),spec_hum_out(:),pressure_lowest_layer_out(:), &
-                           density_moist_out(:),temperature_v(:),distance_vector(:),densities(:),exner(:),wind_out(:),sst_out(:)
+                           density_moist_out(:),temperature_v(:),distance_vector(:),densities_out(:,:),exner(:),wind_out(:), &
+                           sst_out(:)
   integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:)
   character(len=4)      :: year_string,n_layers_string
   character(len=2)      :: month_string,day_string,hour_string,res_id_string,nsoillays_string,oro_id_string
@@ -105,7 +106,6 @@ program control
   output_file = trim(model_home_dir) // "/nwp_init/" // year_string // month_string // day_string // hour_string // ".nc"
   
   ! These are the arrays of the background state.
-  allocate(densities_background(6*n_scalars))
   allocate(tke(n_scalars))
   allocate(t_soil(nsoillays*n_cells))
   
@@ -446,19 +446,19 @@ program control
   ! --------------------
   
   ! clouds and precipitation are set equal to the background state
-  allocate(densities(6*n_scalars))
+  allocate(densities_out(n_scalars,6))
   !$omp parallel do private(ji)
   do ji=1,n_scalars
     ! setting the mass densities of the result
     ! condensate densities are not assimilated
-    densities(ji) = densities_background(ji)
-    densities(n_scalars+ji) = densities_background(n_scalars+ji)
-    densities(2*n_scalars+ji) = densities_background(2*n_scalars+ji)
-    densities(3*n_scalars+ji) = densities_background(3*n_scalars+ji)
-    densities(4*n_scalars+ji) = density_moist_out(ji)
-    densities(5*n_scalars+ji) = spec_hum_out(ji)*density_moist_out(ji)
-    if (densities(5*n_scalars+ji)<0._wp) then
-      densities(5*n_scalars+ji) = 0._wp
+    densities_out(ji,1) = densities_background(ji,1)
+    densities_out(ji,2) = densities_background(ji,2)
+    densities_out(ji,3) = densities_background(ji,3)
+    densities_out(ji,4) = densities_background(ji,4)
+    densities_out(ji,5) = density_moist_out(ji)
+    densities_out(ji,6) = spec_hum_out(ji)*density_moist_out(ji)
+    if (densities_out(ji,6)<0._wp) then
+      densities_out(ji,6) = 0._wp
     endif
   enddo
   !$omp end parallel do
@@ -472,13 +472,15 @@ program control
   write(*,*) "Output file: ",trim(output_file)
   write(*,*) "Writing result to output file ..."
   call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
-  call nc_check(nf90_def_dim(ncid,"densities_index",6*n_scalars,densities_dimid))
   call nc_check(nf90_def_dim(ncid,"vector_index",n_vectors,vector_dimid))
   call nc_check(nf90_def_dim(ncid,"scalar_index",n_scalars,scalar_dimid))
+  call nc_check(nf90_def_dim(ncid,"constituent_index",6,constituent_dimid))
   call nc_check(nf90_def_dim(ncid,"soil_index",nsoillays*n_cells,soil_dimid))
   call nc_check(nf90_def_dim(ncid,"scalar_h_index",n_cells,scalar_h_dimid))
   call nc_check(nf90_def_dim(ncid,"single_double_dimid_index",1,single_double_dimid))
-  call nc_check(nf90_def_var(ncid,"densities",NF90_REAL,densities_dimid,densities_id))
+  dimids_vector_2(1) = scalar_dimid
+  dimids_vector_2(2) = constituent_dimid
+  call nc_check(nf90_def_var(ncid,"densities",NF90_REAL,dimids_vector_2,densities_id))
   call nc_check(nf90_put_att(ncid,densities_id,"units","kg/m^3"))
   call nc_check(nf90_def_var(ncid,"temperature",NF90_REAL,scalar_dimid,temperature_id))
   call nc_check(nf90_put_att(ncid,temperature_id,"units","K"))
@@ -495,7 +497,7 @@ program control
     call nc_check(nf90_put_att(ncid,t_soil_id,"units","K"))
   endif
   call nc_check(nf90_enddef(ncid))
-  call nc_check(nf90_put_var(ncid,densities_id,densities))
+  call nc_check(nf90_put_var(ncid,densities_id,densities_out))
   call nc_check(nf90_put_var(ncid,temperature_id,temperature_out))
   call nc_check(nf90_put_var(ncid,wind_id,wind_out))
   call nc_check(nf90_put_var(ncid,sst_id,sst_out))
@@ -509,7 +511,7 @@ program control
   write(*,*) "Result successfully written."
   
   ! freeing the stil occupied memory
-  deallocate(densities)
+  deallocate(densities_out)
   deallocate(temperature_out)
   deallocate(wind_out)
   deallocate(sst_out)
