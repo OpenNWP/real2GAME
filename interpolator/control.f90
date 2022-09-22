@@ -29,11 +29,11 @@ program control
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id,densities_background_id, &
                            tke_id,t_soil_id,min_index,dimids_vector_3(3), &
                            edge_dimid,single_double_dimid,densities_id,temperature_id,wind_h_id,wind_v_id,soil_layer_dimid, &
-                           res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_scalars,n_edges,n_layers,n_h_vectors,level_dimid, &
-                           n_levels,n_v_vectors,n_vectors_per_layer,n_vectors,nsoillays,layer_dimid
+                           res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_edges,n_layers,level_dimid, &
+                           n_levels,nsoillays,layer_dimid
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
   real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_game(:,:),directions(:),z_game_wind(:,:), &
-                           gravity_potential_game(:,:),densities_background(:,:,:),tke(:),t_soil(:,:),z_coords_input_model(:,:), &
+                           gravity_potential_game(:,:),densities_background(:,:,:),tke(:,:),t_soil(:,:),z_coords_input_model(:,:), &
                            temperature_in(:,:),spec_hum_in(:,:),u_wind_in(:,:),v_wind_in(:,:),z_surf_in(:), &
                            p_surf_in(:),lat_sst(:),lon_sst(:),sst_in(:),interpolation_weights_scalar(:,:), &
                            interpolation_weights_vector(:,:),temperature_out(:,:),spec_hum_out(:,:),pressure_lowest_layer_out(:), &
@@ -53,13 +53,8 @@ program control
   n_pentagons = 12
   n_hexagons = 10*(2**(2*res_id)-1)
   n_cells = n_pentagons+n_hexagons
-  n_scalars = n_layers*n_cells
   n_edges = (5*n_pentagons/2 + 6/2*n_hexagons)
-  n_h_vectors = n_layers*n_edges
   n_levels = n_layers+1
-  n_v_vectors = n_levels*n_cells
-  n_vectors_per_layer = n_edges+n_cells
-  n_vectors = n_h_vectors+n_v_vectors
   n_condensed_constituents = 4
   n_constituents = 6
   call get_command_argument(3,nsoillays_string)
@@ -108,7 +103,7 @@ program control
   output_file = trim(model_home_dir) // "/nwp_init/" // year_string // month_string // day_string // hour_string // ".nc"
   
   ! These are the arrays of the background state.
-  allocate(tke(n_scalars))
+  allocate(tke(n_cells,n_layers))
   allocate(t_soil(n_cells,nsoillays))
   allocate(densities_background(n_cells,n_layers,n_constituents))
   
