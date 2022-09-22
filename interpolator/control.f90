@@ -25,20 +25,20 @@ program control
                            gravity_potential_game_id,constituent_dimid,cell_dimid,n_constituents, &
                            directions_id,ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,& 
                            interpolation_indices_vector_id,dimids_vector_2(2),n_condensed_constituents, &
-                           interpolation_weights_vector_id,layer_index,h_index,closest_index,other_index, sp_id,z_surf_id, &
+                           interpolation_weights_vector_id,closest_index,other_index, sp_id,z_surf_id, &
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id,densities_background_id, &
-                           tke_id,t_soil_id,vector_index,min_index,scalar_dimid, &
-                           vector_dimid,single_double_dimid,densities_id,temperature_id,wind_id,soil_layer_dimid, &
-                           res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_scalars,n_edges,n_layers,n_h_vectors, &
-                           n_levels,n_v_vectors,n_vectors_per_layer,n_vectors,nsoillays
+                           tke_id,t_soil_id,min_index,dimids_vector_3(3), &
+                           edge_dimid,single_double_dimid,densities_id,temperature_id,wind_h_id,wind_v_id,soil_layer_dimid, &
+                           res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_scalars,n_edges,n_layers,n_h_vectors,level_dimid, &
+                           n_levels,n_v_vectors,n_vectors_per_layer,n_vectors,nsoillays,layer_dimid
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
-  real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_game(:,:),directions(:),z_game_wind(:), &
+  real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_game(:,:),directions(:),z_game_wind(:,:), &
                            gravity_potential_game(:,:),densities_background(:,:,:),tke(:),t_soil(:,:),z_coords_input_model(:,:), &
                            temperature_in(:,:),spec_hum_in(:,:),u_wind_in(:,:),v_wind_in(:,:),z_surf_in(:), &
                            p_surf_in(:),lat_sst(:),lon_sst(:),sst_in(:),interpolation_weights_scalar(:,:), &
                            interpolation_weights_vector(:,:),temperature_out(:,:),spec_hum_out(:,:),pressure_lowest_layer_out(:), &
                            density_moist_out(:,:),temperature_v(:,:),distance_vector(:),densities_out(:,:,:),exner(:,:), &
-                           wind_out(:),sst_out(:)
+                           wind_out_h(:,:),wind_out_v(:,:),sst_out(:)
   integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:)
   character(len=4)      :: year_string,n_layers_string
   character(len=2)      :: month_string,day_string,hour_string,res_id_string,nsoillays_string,oro_id_string
@@ -81,7 +81,7 @@ program control
   allocate(longitudes_game(n_cells))
   allocate(z_game(n_cells,n_layers))
   allocate(directions(n_edges))
-  allocate(z_game_wind(n_vectors))
+  allocate(z_game_wind(n_edges,n_layers))
   allocate(gravity_potential_game(n_cells,n_layers))
   ! Reading the grid properties.
   geo_prop_file = trim(model_home_dir) // "/grid_generator/grids/RES" // trim(int2string(res_id)) // "_L" // &
@@ -93,7 +93,7 @@ program control
   call nc_check(nf90_inq_varid(ncid,"lon_c",longitudes_game_id))
   call nc_check(nf90_inq_varid(ncid,"z_scalar",z_game_id))
   call nc_check(nf90_inq_varid(ncid,"direction",directions_id))
-  call nc_check(nf90_inq_varid(ncid,"z_vector",z_game_wind_id))
+  call nc_check(nf90_inq_varid(ncid,"z_vector_v",z_game_wind_id))
   call nc_check(nf90_inq_varid(ncid,"gravity_potential",gravity_potential_game_id))
   call nc_check(nf90_get_var(ncid,latitudes_game_id,latitudes_game))
   call nc_check(nf90_get_var(ncid,longitudes_game_id,longitudes_game))
@@ -318,24 +318,26 @@ program control
   
   ! the Exner pressure is just a temporarily needed helper variable here to integrate the hydrostatic equation
   allocate(exner(n_cells,n_layers))
-  do ji=n_scalars,1,-1
-    layer_index = (ji-1)/n_cells
-    h_index = ji - layer_index*n_cells
-    if (layer_index==n_layers-1) then
-      density_moist_out(h_index,layer_index+1) = pressure_lowest_layer_out(h_index)/(r_d*temperature_v(h_index,layer_index+1))
-      exner(h_index,layer_index+1) = (density_moist_out(h_index,layer_index+1) &
-                                     *r_d*temperature_v(h_index,layer_index+1)/p_0)**(r_d/c_d_p)
-    else
-      ! solving a quadratic equation for the Exner pressure
-      b = -0.5_wp*exner(h_index,layer_index+2)/temperature_v(h_index,layer_index+2) &
-      *(temperature_v(h_index,layer_index+1) - temperature_v(h_index,layer_index+2) &
-      + 2._wp/c_d_p*(gravity_potential_game(h_index,layer_index+1)-gravity_potential_game(h_index,layer_index+2)))
-      c = exner(h_index,layer_index+2)**2*temperature_v(h_index,layer_index+1)/temperature_v(h_index,layer_index+2)
-      exner(h_index,layer_index+1) = b + (b**2 + c)**0.5_wp
-      density_moist_out(h_index,layer_index+1) = p_0*exner(h_index,layer_index+1)**(c_d_p/r_d) &
-                                                 /(r_d*temperature_v(h_index,layer_index+1))
-    endif
+  !$omp parallel do private(ji,jl)
+  do ji=1,n_cells
+    do jl=1,n_layers
+      if (jl==n_layers) then
+        density_moist_out(ji,jl) = pressure_lowest_layer_out(ji)/(r_d*temperature_v(ji,jl))
+        exner(ji,jl) = (density_moist_out(ji,jl) &
+                                       *r_d*temperature_v(ji,jl)/p_0)**(r_d/c_d_p)
+      else
+        ! solving a quadratic equation for the Exner pressure
+        b = -0.5_wp*exner(ji,jl+1)/temperature_v(ji,jl+1) &
+        *(temperature_v(ji,jl) - temperature_v(ji,jl+1) &
+        + 2._wp/c_d_p*(gravity_potential_game(ji,jl)-gravity_potential_game(ji,jl+1)))
+        c = exner(ji,jl+1)**2*temperature_v(ji,jl)/temperature_v(ji,jl+1)
+        exner(ji,jl) = b + (b**2 + c)**0.5_wp
+        density_moist_out(ji,jl) = p_0*exner(ji,jl)**(c_d_p/r_d) &
+                                                   /(r_d*temperature_v(ji,jl))
+      endif
+    enddo
   enddo
+  !$omp end parallel do
   
   deallocate(temperature_v)
   deallocate(pressure_lowest_layer_out)
@@ -349,68 +351,71 @@ program control
   ! ------------------
   
   write(*,*) "Starting the wind interpolation ..."
-  allocate(wind_out(n_vectors))
+  allocate(wind_out_h(n_edges,n_layers))
+  allocate(wind_out_v(n_cells,n_levels))
   !$omp parallel workshare
-  wind_out = 0._wp
+  wind_out_h = 0._wp
+  wind_out_v = 0._wp
   !$omp end parallel workshare
   ! loop over all horizontal vector points
-  !$omp parallel do private(ji,jm,jl,vector_to_minimize,h_index,layer_index,vector_index,closest_index,other_index,closest_value, &
+  !$omp parallel do private(ji,jl,jm,jn,vector_to_minimize,closest_index,other_index,closest_value, &
   !$omp other_value,df,dz,gradient,delta_z,u_local,v_local)
-  do ji=1,n_h_vectors
-    layer_index = (ji-1)/n_edges
-    h_index = ji - layer_index*n_edges
-    vector_index = n_cells + layer_index*n_vectors_per_layer + h_index
-     
-    ! the u- and v-components of the wind at the grid point of GAME
-    u_local = 0._wp
-    v_local = 0._wp
-    ! loop over all horizontal points that are used for averaging
-    do jm=1,n_avg_points
-      ! computing linear vertical interpolation
-      ! vertical distance vector
-      do jl=1,n_layers_input
-        vector_to_minimize(jl) = abs(z_game_wind(vector_index) &
-                                    - z_coords_input_model(interpolation_indices_vector(h_index,jm),jl))
-      enddo
-      ! closest vertical index
-      closest_index = find_min_index(vector_to_minimize,n_layers_input)
-      ! value at the closest vertical index
-      closest_value = u_wind_in(interpolation_indices_vector(h_index,jm),closest_index)
+  do ji=1,n_edges
+    do jl=1,n_layers
     
-      other_index = closest_index-1
-      if (z_game_wind(vector_index) < z_coords_input_model(interpolation_indices_vector(h_index,jm),closest_index)) then
-        other_index = closest_index+1
-      endif
-      ! avoiding array excess
-      if (other_index==n_layers_input+1) then
+      ! the u- and v-components of the wind at the grid point of GAME
+      u_local = 0._wp
+      v_local = 0._wp
+      ! loop over all horizontal points that are used for averaging
+      do jm=1,n_avg_points
+        ! computing linear vertical interpolation
+        ! vertical distance vector
+        do jn=1,n_layers_input
+          vector_to_minimize(jn) = abs(z_game_wind(ji,jl) &
+                                      - z_coords_input_model(interpolation_indices_vector(ji,jm),jn))
+        enddo
+        ! closest vertical index
+        closest_index = find_min_index(vector_to_minimize,n_layers_input)
+        ! value at the closest vertical index
+        closest_value = u_wind_in(interpolation_indices_vector(ji,jm),closest_index)
+      
         other_index = closest_index-1
-      endif
+        if (z_game_wind(ji,jl)<z_coords_input_model(interpolation_indices_vector(ji,jm),closest_index)) then
+          other_index = closest_index+1
+        endif
+        ! avoiding array excess
+        if (other_index==n_layers_input+1) then
+          other_index = closest_index-1
+        endif
+      
+        ! the value at the second point used for vertical interpolation
+        other_value = u_wind_in(interpolation_indices_vector(ji,jm),other_index)
+      
+        ! computing the vertical gradient of u in the input model
+        df = closest_value - other_value
+        dz = z_coords_input_model(interpolation_indices_vector(ji,jm),closest_index) &
+             - z_coords_input_model(interpolation_indices_vector(ji,jm),other_index)
+        gradient = df/dz
+      
+        delta_z = z_game_wind(ji,jl) - z_coords_input_model(interpolation_indices_vector(ji,jm),closest_index)
+      
+        u_local = u_local + interpolation_weights_vector(ji,jm)*(closest_value + gradient*delta_z)
+      
+        ! vertical interpolation of v
+        closest_value = v_wind_in(interpolation_indices_vector(ji,jm),closest_index)
+        other_value = v_wind_in(interpolation_indices_vector(ji,jm),other_index)
+        ! computing the vertical gradient of v in the input model
+        df = closest_value - other_value
+        gradient = df/dz
+        
+        v_local = v_local + interpolation_weights_vector(ji,jm)*(closest_value + gradient*delta_z)
+        
+      enddo
     
-      ! the value at the second point used for vertical interpolation
-      other_value = u_wind_in(interpolation_indices_vector(h_index,jm),other_index)
+      ! projection onto the direction of the vector in GAME
+      wind_out_h(ji,jl) = u_local*cos(directions(ji)) + v_local*sin(directions(ji))
     
-      ! computing the vertical gradient of u in the input model
-      df = closest_value - other_value
-      dz = z_coords_input_model(interpolation_indices_vector(h_index,jm),closest_index) &
-           - z_coords_input_model(interpolation_indices_vector(h_index,jm),other_index)
-      gradient = df/dz
-    
-      delta_z = z_game_wind(vector_index) - z_coords_input_model(interpolation_indices_vector(h_index,jm),closest_index)
-    
-      u_local = u_local + interpolation_weights_vector(h_index,jm)*(closest_value + gradient*delta_z)
-    
-      ! vertical interpolation of v
-      closest_value = v_wind_in(interpolation_indices_vector(h_index,jm),closest_index)
-      other_value = v_wind_in(interpolation_indices_vector(h_index,jm),other_index)
-      ! computing the vertical gradient of v in the input model
-      df = closest_value - other_value
-      gradient = df/dz
-    
-      v_local = v_local + interpolation_weights_vector(h_index,jm)*(closest_value + gradient*delta_z)
     enddo
-    
-    ! projection onto the direction of the vector in GAME
-    wind_out(vector_index) = u_local*cos(directions(h_index)) + v_local*sin(directions(h_index))
   enddo
   !$omp end parallel do
   deallocate(u_wind_in)
@@ -468,36 +473,67 @@ program control
   write(*,*) "Output file: ",trim(output_file)
   write(*,*) "Writing result to output file ..."
   call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
+  
+  ! declaring dimensions
   call nc_check(nf90_def_dim(ncid,"cell_index",n_cells,cell_dimid))
-  call nc_check(nf90_def_dim(ncid,"vector_index",n_vectors,vector_dimid))
-  call nc_check(nf90_def_dim(ncid,"scalar_index",n_scalars,scalar_dimid))
+  call nc_check(nf90_def_dim(ncid,"edge_index",n_edges,edge_dimid))
+  call nc_check(nf90_def_dim(ncid,"layer_index",n_layers,layer_dimid))
+  call nc_check(nf90_def_dim(ncid,"level_index",n_levels,level_dimid))
   call nc_check(nf90_def_dim(ncid,"constituent_index",6,constituent_dimid))
   call nc_check(nf90_def_dim(ncid,"soil_layer_index",nsoillays,soil_layer_dimid))
   call nc_check(nf90_def_dim(ncid,"single_double_dimid_index",1,single_double_dimid))
-  dimids_vector_2(1) = scalar_dimid
-  dimids_vector_2(2) = constituent_dimid
-  call nc_check(nf90_def_var(ncid,"densities",NF90_REAL,dimids_vector_2,densities_id))
+  
+  ! defining variables
+  ! mass densities
+  dimids_vector_3(1) = cell_dimid
+  dimids_vector_3(2) = layer_dimid
+  dimids_vector_3(3) = constituent_dimid
+  call nc_check(nf90_def_var(ncid,"densities",NF90_REAL,dimids_vector_3,densities_id))
   call nc_check(nf90_put_att(ncid,densities_id,"units","kg/m^3"))
-  call nc_check(nf90_def_var(ncid,"temperature",NF90_REAL,scalar_dimid,temperature_id))
+  
+  ! temperature
+  dimids_vector_2(1) = cell_dimid
+  dimids_vector_2(2) = layer_dimid
+  call nc_check(nf90_def_var(ncid,"temperature",NF90_REAL,dimids_vector_2,temperature_id))
   call nc_check(nf90_put_att(ncid,temperature_id,"units","K"))
-  call nc_check(nf90_def_var(ncid,"wind",NF90_REAL,vector_dimid,wind_id))
-  call nc_check(nf90_put_att(ncid,wind_id,"units","m/s"))
+  
+  ! horizontal wind
+  dimids_vector_2(1) = edge_dimid
+  dimids_vector_2(2) = layer_dimid
+  call nc_check(nf90_def_var(ncid,"wind_h",NF90_REAL,dimids_vector_2,wind_h_id))
+  call nc_check(nf90_put_att(ncid,wind_h_id,"units","m/s"))
+  
+  ! vertical wind
+  dimids_vector_2(1) = cell_dimid
+  dimids_vector_2(2) = level_dimid
+  call nc_check(nf90_def_var(ncid,"wind_v",NF90_REAL,dimids_vector_2,wind_v_id))
+  call nc_check(nf90_put_att(ncid,wind_v_id,"units","m/s"))
+  
+  ! SST
   call nc_check(nf90_def_var(ncid,"sst",NF90_REAL,cell_dimid,sst_id))
   call nc_check(nf90_put_att(ncid,sst_id,"units","K"))
+  
+  ! TKE
   if (ltke_avail) then
-    call nc_check(nf90_def_var(ncid,"tke",NF90_REAL,scalar_dimid,tke_id))
+    dimids_vector_2(1) = cell_dimid
+    dimids_vector_2(2) = layer_dimid
+    call nc_check(nf90_def_var(ncid,"tke",NF90_REAL,dimids_vector_2,tke_id))
     call nc_check(nf90_put_att(ncid,tke_id,"units","J/kg"))
   endif
+  
+  ! soil temperature
   if (lt_soil_avail) then
     dimids_vector_2(1) = cell_dimid
     dimids_vector_2(2) = soil_layer_dimid
     call nc_check(nf90_def_var(ncid,"t_soil",NF90_REAL,dimids_vector_2,t_soil_id))
     call nc_check(nf90_put_att(ncid,t_soil_id,"units","K"))
   endif
+  
   call nc_check(nf90_enddef(ncid))
   call nc_check(nf90_put_var(ncid,densities_id,densities_out))
   call nc_check(nf90_put_var(ncid,temperature_id,temperature_out))
-  call nc_check(nf90_put_var(ncid,wind_id,wind_out))
+  call nc_check(nf90_put_var(ncid,wind_h_id,wind_out_h))
+  call nc_check(nf90_put_var(ncid,wind_v_id,wind_out_v))
   call nc_check(nf90_put_var(ncid,sst_id,sst_out))
   if (ltke_avail) then
     call nc_check(nf90_put_var(ncid,tke_id,tke))
@@ -511,7 +547,8 @@ program control
   ! freeing the stil occupied memory
   deallocate(densities_out)
   deallocate(temperature_out)
-  deallocate(wind_out)
+  deallocate(wind_out_h)
+  deallocate(wind_out_v)
   deallocate(sst_out)
   deallocate(tke)
   deallocate(t_soil)
