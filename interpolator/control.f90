@@ -313,7 +313,7 @@ program control
   
   ! the Exner pressure is just a temporarily needed helper variable here to integrate the hydrostatic equation
   allocate(exner(n_cells,n_layers))
-  !$omp parallel do private(ji,jl)
+  !$omp parallel do private(ji,jl,b,c)
   do ji=1,n_cells
     do jl=1,n_layers
       if (jl==n_layers) then
