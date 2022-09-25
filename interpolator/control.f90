@@ -88,7 +88,7 @@ program control
   call nc_check(nf90_inq_varid(ncid,"lon_c",longitudes_game_id))
   call nc_check(nf90_inq_varid(ncid,"z_scalar",z_game_id))
   call nc_check(nf90_inq_varid(ncid,"direction",directions_id))
-  call nc_check(nf90_inq_varid(ncid,"z_vector_v",z_game_wind_id))
+  call nc_check(nf90_inq_varid(ncid,"z_vector_h",z_game_wind_id))
   call nc_check(nf90_inq_varid(ncid,"gravity_potential",gravity_potential_game_id))
   call nc_check(nf90_get_var(ncid,latitudes_game_id,latitudes_game))
   call nc_check(nf90_get_var(ncid,longitudes_game_id,longitudes_game))
