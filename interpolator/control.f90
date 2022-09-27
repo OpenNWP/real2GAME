@@ -315,20 +315,17 @@ program control
   allocate(exner(n_cells,n_layers))
   !$omp parallel do private(ji,jl,b,c)
   do ji=1,n_cells
-    do jl=1,n_layers
+    do jl=n_layers,1,-1
       if (jl==n_layers) then
         density_moist_out(ji,jl) = pressure_lowest_layer_out(ji)/(r_d*temperature_v(ji,jl))
-        exner(ji,jl) = (density_moist_out(ji,jl) &
-                                       *r_d*temperature_v(ji,jl)/p_0)**(r_d/c_d_p)
+        exner(ji,jl) = (density_moist_out(ji,jl)*r_d*temperature_v(ji,jl)/p_0)**(r_d/c_d_p)
       else
         ! solving a quadratic equation for the Exner pressure
-        b = -0.5_wp*exner(ji,jl+1)/temperature_v(ji,jl+1) &
-        *(temperature_v(ji,jl) - temperature_v(ji,jl+1) &
+        b = -0.5_wp*exner(ji,jl+1)/temperature_v(ji,jl+1)*(temperature_v(ji,jl) - temperature_v(ji,jl+1) &
         + 2._wp/c_d_p*(gravity_potential_game(ji,jl)-gravity_potential_game(ji,jl+1)))
         c = exner(ji,jl+1)**2*temperature_v(ji,jl)/temperature_v(ji,jl+1)
         exner(ji,jl) = b + (b**2 + c)**0.5_wp
-        density_moist_out(ji,jl) = p_0*exner(ji,jl)**(c_d_p/r_d) &
-                                                   /(r_d*temperature_v(ji,jl))
+        density_moist_out(ji,jl) = p_0*exner(ji,jl)**(c_d_p/r_d)/(r_d*temperature_v(ji,jl))
       endif
     enddo
   enddo
