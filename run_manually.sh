@@ -17,17 +17,20 @@ model_target_id=1 # 1: GAME, 2: L-GAME
 # END OF USUAL INPUT SECTION
 
 # sanity checks
-if [ $model_source_id -le 0 ] || [ $model_source_id -ge 4 ] then
+if [ $model_source_id -le 0 ] || [ $model_source_id -ge 4 ]
+then
   echo "It must be 1 <= model_src_id <= 3."
   echo "Aborting."
   exit
 fi
-if [ $model_target_id -le 0 ] || [ $model_target_id -ge 3 ] then
+if [ $model_target_id -le 0 ] || [ $model_target_id -ge 3 ]
+then
   echo "It must be 1 <= model_target_id <= 2."
   echo "Aborting."
   exit
 fi
-if [ $model_target_id -e 1 ] && [ $model_source_id -ne 1 ] then
+if [ $model_target_id -eq 1 ] && [ $model_source_id -ne 1 ]
+then
   echo "GAME can only be initialized based on ICON-Global."
   echo "Aborting."
   exit
