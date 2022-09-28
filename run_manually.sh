@@ -11,8 +11,27 @@ oro_id=1
 background_file=/home/max/code/GAME/nwp_init/standard_oro1.nc
 real2game_home_dir=/home/max/code/real2GAME
 omp_num_threads=1
+model_src_id=1 # 1: ICON-Global, 2: GAME, 3: ICON-D2
+model_target_id=1 # 1: GAME, 2: L-GAME
 
 # END OF USUAL INPUT SECTION
+
+# sanity checks
+if [ $model_src_id -le 0 ] || [ $model_src_id -ge 4 ] then
+  echo "It must be 1 <= model_src_id <= 3."
+  echo "Aborting."
+  exit
+fi
+if [ $model_target_id -le 0 ] || [ $model_target_id -ge 3 ] then
+  echo "It must be 1 <= model_target_id <= 2."
+  echo "Aborting."
+  exit
+fi
+if [ $model_target_id -e 1 ] && [ $model_src_id -ne 1 ] then
+  echo "GAME can only be initialized based on ICON-Global."
+  echo "Aborting."
+  exit
+fi
 
 # setting the time of the analysis
 analysis_delay_min=175
