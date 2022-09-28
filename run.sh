@@ -15,11 +15,11 @@ omp_num_threads=${BASH_ARGV[8]}
 res_id=${BASH_ARGV[9]}
 n_layers=${BASH_ARGV[10]}
 nsoillays=${BASH_ARGV[11]}
-model_src_id=${BASH_ARGV[12]} # 1: ICON-Global, 2: GAME, 3: ICON-D2
+model_source_id=${BASH_ARGV[12]} # 1: ICON-Global, 2: GAME, 3: ICON-D2
 model_target_id=${BASH_ARGV[13]} # 1: GAME, 2: L-GAME
 
 # sanity checks
-if [ $model_src_id -le 0 ] || [ $model_src_id -ge 4 ] then
+if [ $model_source_id -le 0 ] || [ $model_source_id -ge 4 ] then
   echo "It must be 1 <= model_src_id <= 3."
   echo "Aborting."
   exit
@@ -29,7 +29,7 @@ if [ $model_target_id -le 0 ] || [ $model_target_id -ge 3 ] then
   echo "Aborting."
   exit
 fi
-if [ $model_target_id -e 1 ] && [ $model_src_id -ne 1 ] then
+if [ $model_target_id -e 1 ] && [ $model_source_id -ne 1 ] then
   echo "GAME can only be initialized based on ICON-Global."
   echo "Aborting."
   exit
