@@ -10,6 +10,23 @@ analysis_delay_min=175
 cycle=(0 6 12 18) # the UTC times of the analyses
 url_base="https://opendata.dwd.de/weather/nwp/icon/grib"
 
+# sanity checks
+if [ $model_src_id -le 0 ] || [ $model_src_id -ge 4 ] then
+  echo "It must be 1 <= model_src_id <= 3."
+  echo "Aborting."
+  exit
+fi
+if [ $model_target_id -le 0 ] || [ $model_target_id -ge 3 ] then
+  echo "It must be 1 <= model_target_id <= 2."
+  echo "Aborting."
+  exit
+fi
+if [ $model_target_id -e 1 ] && [ $model_src_id -ne 1 ] then
+  echo "GAME can only be initialized based on ICON-Global."
+  echo "Aborting."
+  exit
+fi
+
 now=$(date +%s)
 now=$(($now - $analysis_delay_min*60))
 analysis_year=$(date --utc -d @$now +%Y)

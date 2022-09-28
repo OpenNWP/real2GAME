@@ -111,11 +111,6 @@ else
 fi
 
 # cleaning the input directory
-
-
-
-
-
 rm $real2game_home_dir/input/*
 
 
