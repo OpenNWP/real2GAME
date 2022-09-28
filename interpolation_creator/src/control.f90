@@ -37,6 +37,7 @@ program control
   character(len=128)    :: real2game_root_dir,model_home_dir,lgame_grid
   character(len=256)    :: lat_obs_file,lon_obs_file,geo_pro_file,output_file
   
+  
   ! shell arguments
   call get_command_argument(1,year_string)
   call get_command_argument(2,month_string)
@@ -216,7 +217,7 @@ program control
   endif
   
   ! L-GAME
-  if (model_target_id==2) then
+  if (model_target_id==3) then
   
     ! reading the horizontal coordinates of the grid of L-GAME
     allocate(lat_lgame(nlon,nlat))

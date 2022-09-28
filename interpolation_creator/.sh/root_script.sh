@@ -26,7 +26,7 @@ fi
 # Firstly, we have to download the grid data.
 
 # global ICON grid data download
-if [ $model_source_id -eq 0 ]
+if [ $model_source_id -eq 1 ]
 then
 
   # properties of the global ICON model
@@ -66,12 +66,12 @@ then
   url=$url_base"/"$analysis_hour"/clon/"$filename
   wget -q --directory-prefix=$real2game_root_dir/interpolation_creator $url
   bzip2 -d $real2game_root_dir/interpolation_creator/$filename
-
+  
   echo "ICON grid data downloaded."
 fi
 
 # ICON-D2 grid data download
-if [ $model_source_id -eq 1 ]
+if [ $model_source_id -eq 3 ]
 then
 
   # properties of the ICON-D2 model
@@ -115,7 +115,7 @@ then
 fi
 
 # Now we can execute the interpolation creator itself.
-./interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_source_id $model_target_id $nlat $nlon $interpol_exp $lgame_grid
+./build/interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_target_id $nlat $nlon $interpol_exp $lgame_grid $res_id $n_layers
 
 # deleting the ICON grid data
 rm icon*
