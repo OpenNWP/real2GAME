@@ -78,7 +78,7 @@ then
   analysis_delay_min=70
   cycle=(0 3 6 9 12 15 18 21) # the UTC times of the analyses
   url_base="https://opendata.dwd.de/weather/nwp/icon-d2/grib"
-
+  
   now=$(date +%s)
   now=$(($now - $analysis_delay_min*60))
   analysis_year=$(date --utc -d @$now +%Y)
@@ -115,7 +115,7 @@ then
 fi
 
 # Now we can execute the interpolation creator itself.
-./build/interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_target_id $nlat $nlon $interpol_exp $lgame_grid $res_id $n_layers
+./build/interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_target_id $nlat $nlon $interpol_exp $lgame_grid $res_id $n_layers $model_source_id
 
 # deleting the ICON grid data
 rm icon*

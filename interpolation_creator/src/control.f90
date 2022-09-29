@@ -20,7 +20,7 @@ program control
                            interpolation_weights_vector_u_id,interpolation_indices_vector_v_id, &
                            interpolation_weights_vector_v_id,scalar_dimid,u_dimid,v_dimid,avg_dimid, &
                            vector_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id, &
-                           res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_edges
+                           res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_edges,model_source_id
   real(wp)              :: sum_of_weights,interpol_exp
   integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:), &
                            interpolation_indices_vector_u(:,:),interpolation_indices_vector_v(:,:)
@@ -33,10 +33,9 @@ program control
   character(len=4)      :: year_string,nlat_string,nlon_string,n_layers_string
   character(len=8)      :: interpol_exp_string
   character(len=2)      :: month_string,day_string,hour_string,oro_id_string,model_target_id_string, &
-                           res_id_string
+                           res_id_string,model_source_id_string
   character(len=128)    :: real2game_root_dir,model_home_dir,lgame_grid
   character(len=256)    :: lat_obs_file,lon_obs_file,geo_pro_file,output_file
-  
   
   ! shell arguments
   call get_command_argument(1,year_string)
@@ -60,6 +59,9 @@ program control
   read(res_id_string,*) res_id
   call get_command_argument(14,n_layers_string)
   read(n_layers_string,*) n_layers
+  call get_command_argument(15,model_source_id_string)
+  read(model_source_id_string,*) model_source_id
+  
   ! grid properties
   n_pentagons = 12
   n_hexagons = 10*(2**(2*res_id)-1)
@@ -71,8 +73,16 @@ program control
   
   ! Properties of the input model's grid.
   ! latitudes of the grid
-  lat_obs_file = trim(real2game_root_dir) // "/interpolation_creator/icon_global_icosahedral_time-invariant_" // year_string &
-                 // month_string // day_string // hour_string // "_CLAT.grib2"
+  ! ICON-global
+  if (model_source_id==1) then
+    lat_obs_file = trim(real2game_root_dir) // "/interpolation_creator/icon_global_icosahedral_time-invariant_" // year_string &
+                   // month_string // day_string // hour_string // "_CLAT.grib2"
+  endif
+  ! ICON-D2
+  if (model_source_id==3) then
+    lat_obs_file = trim(real2game_root_dir) // "/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_" // year_string &
+                   // month_string // day_string // hour_string // "_000_0_clat.grib2"
+  endif
     
   call codes_open_file(jfile,trim(lat_obs_file),"r")
   call codes_grib_new_from_file(jfile,jgrib)
@@ -88,8 +98,16 @@ program control
   !$omp end parallel do
   
   ! longitudes of the grid
-  lon_obs_file = trim(real2game_root_dir) // "/interpolation_creator/icon_global_icosahedral_time-invariant_" // year_string &
-                 // month_string // day_string // hour_string // "_CLON.grib2"
+  ! ICON-global
+  if (model_source_id==1) then
+    lon_obs_file = trim(real2game_root_dir) // "/interpolation_creator/icon_global_icosahedral_time-invariant_" // year_string &
+                   // month_string // day_string // hour_string // "_CLON.grib2"
+  endif
+  ! ICON-D2
+  if (model_source_id==3) then
+    lon_obs_file = trim(real2game_root_dir) // "/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_" // year_string &
+                   // month_string // day_string // hour_string // "_000_0_clon.grib2"
+  endif
   
   call codes_open_file(jfile,trim(lon_obs_file),"r")
   call codes_grib_new_from_file(jfile,jgrib)
@@ -98,11 +116,9 @@ program control
   call codes_close_file(jfile)
   
   ! transforming the longitude coordinates of the input model from degrees to radians
-  !$omp parallel do private(ji)
-  do ji=1,n_points_per_layer_input
-    lon_input_model(ji) = 2._wp*M_PI*lon_input_model(ji)/360._wp
-  enddo
-  !$omp end parallel do
+  !$omp parallel workshare
+  lon_input_model = 2._wp*M_PI*lon_input_model/360._wp
+  !$omp end parallel workshare
   
   ! GAME
   if (model_target_id==1) then
@@ -217,7 +233,7 @@ program control
   endif
   
   ! L-GAME
-  if (model_target_id==3) then
+  if (model_target_id==2) then
   
     ! reading the horizontal coordinates of the grid of L-GAME
     allocate(lat_lgame(nlon,nlat))
