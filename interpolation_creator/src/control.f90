@@ -22,14 +22,15 @@ program control
                            vector_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id, &
                            res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_edges,model_source_id
   real(wp)              :: sum_of_weights,interpol_exp
-  integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:), &
-                           interpolation_indices_vector_u(:,:),interpolation_indices_vector_v(:,:)
+  integer,  allocatable :: interpolation_indices_scalar_game(:,:),interpolation_indices_vector(:,:), &
+                           interpolation_indices_vector_u(:,:,:),interpolation_indices_vector_v(:,:,:), &
+                           interpolation_indices_scalar_lgame(:,:,:)
   real(wp), allocatable :: lat_input_model(:),lon_input_model(:),lat_game(:),lon_game(:), &
-                           lat_game_wind(:),lon_game_wind(:),interpolation_weights_scalar(:,:), &
+                           lat_game_wind(:),lon_game_wind(:),interpolation_weights_scalar_game(:,:), &
                            interpolation_weights_vector(:,:),distance_vector(:),lat_lgame(:,:), &
                            lon_lgame(:,:),lat_lgame_wind_u(:,:),lon_lgame_wind_u(:,:), &
-                           lat_lgame_wind_v(:,:),lon_lgame_wind_v(:,:), &
-                           interpolation_weights_vector_u(:,:),interpolation_weights_vector_v(:,:)
+                           lat_lgame_wind_v(:,:),lon_lgame_wind_v(:,:),interpolation_weights_scalar_lgame(:,:,:), &
+                           interpolation_weights_vector_u(:,:,:),interpolation_weights_vector_v(:,:,:)
   character(len=4)      :: year_string,nlat_string,nlon_string,n_layers_string
   character(len=8)      :: interpol_exp_string
   character(len=2)      :: month_string,day_string,hour_string,oro_id_string,model_target_id_string, &
@@ -146,8 +147,8 @@ program control
     write(*,*) "Grid file of GAME read."
   
     ! allocating memory for the result arrays
-    allocate(interpolation_indices_scalar(n_cells,n_avg_points))
-    allocate(interpolation_weights_scalar(n_cells,n_avg_points))
+    allocate(interpolation_indices_scalar_game(n_cells,n_avg_points))
+    allocate(interpolation_weights_scalar_game(n_cells,n_avg_points))
     allocate(interpolation_indices_vector(n_edges,n_avg_points))
     allocate(interpolation_weights_vector(n_edges,n_avg_points))
     
@@ -163,13 +164,13 @@ program control
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
-        interpolation_indices_scalar(ji,jk) = find_min_index(distance_vector,n_points_per_layer_input)
-        interpolation_weights_scalar(ji,jk) = 1._wp/distance_vector(interpolation_indices_scalar(ji,jk))**interpol_exp
-        distance_vector(interpolation_indices_scalar(ji,jk)) = 2._wp*M_PI
-        sum_of_weights = sum_of_weights + interpolation_weights_scalar(ji,jk)
+        interpolation_indices_scalar_game(ji,jk) = find_min_index(distance_vector,n_points_per_layer_input)
+        interpolation_weights_scalar_game(ji,jk) = 1._wp/distance_vector(interpolation_indices_scalar_game(ji,jk))**interpol_exp
+        distance_vector(interpolation_indices_scalar_game(ji,jk)) = 2._wp*M_PI
+        sum_of_weights = sum_of_weights + interpolation_weights_scalar_game(ji,jk)
       enddo
       do jk=1,n_avg_points
-        interpolation_weights_scalar(ji,jk) = interpolation_weights_scalar(ji,jk)/sum_of_weights
+        interpolation_weights_scalar_game(ji,jk) = interpolation_weights_scalar_game(ji,jk)/sum_of_weights
       enddo
     enddo
     !$omp end parallel do
@@ -218,15 +219,15 @@ program control
     call nc_check(nf90_def_var(ncid,"interpolation_indices_vector",NF90_INT,dim_vector,interpolation_indices_vector_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_vector",NF90_REAL,dim_vector,interpolation_weights_vector_id))
     call nc_check(nf90_enddef(ncid))
-    call nc_check(nf90_put_var(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar))
-    call nc_check(nf90_put_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar))
+    call nc_check(nf90_put_var(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar_game))
+    call nc_check(nf90_put_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar_game))
     call nc_check(nf90_put_var(ncid,interpolation_indices_vector_id,interpolation_indices_vector))
     call nc_check(nf90_put_var(ncid,interpolation_weights_vector_id,interpolation_weights_vector))
     call nc_check(nf90_close(ncid))
       
     ! freeing the memory
-    deallocate(interpolation_indices_scalar)
-    deallocate(interpolation_weights_scalar)
+    deallocate(interpolation_indices_scalar_game)
+    deallocate(interpolation_weights_scalar_game)
     deallocate(interpolation_indices_vector)
     deallocate(interpolation_weights_vector)
     
@@ -263,12 +264,12 @@ program control
     write(*,*) "Grid file of L-GAME read."
     
     ! allocating memory for the result arrays
-    allocate(interpolation_indices_scalar(nlat*nlon,n_avg_points))
-    allocate(interpolation_weights_scalar(nlat*nlon,n_avg_points))
-    allocate(interpolation_indices_vector_u(nlat*(nlon+1),n_avg_points))
-    allocate(interpolation_weights_vector_u(nlat*(nlon+1),n_avg_points))
-    allocate(interpolation_indices_vector_v((nlat+1)*nlon,n_avg_points))
-    allocate(interpolation_weights_vector_v((nlat+1)*nlon,n_avg_points))
+    allocate(interpolation_indices_scalar_lgame(nlat,nlon,n_avg_points))
+    allocate(interpolation_weights_scalar_lgame(nlat,nlon,n_avg_points))
+    allocate(interpolation_indices_vector_u(nlat,nlon+1,n_avg_points))
+    allocate(interpolation_weights_vector_u(nlat,nlon+1,n_avg_points))
+    allocate(interpolation_indices_vector_v(nlat+1,nlon,n_avg_points))
+    allocate(interpolation_weights_vector_v(nlat+1,nlon,n_avg_points))
     
     ! executing the actual interpolation
     write(*,*) "Calculating interpolation indices and weights ..."
@@ -282,14 +283,14 @@ program control
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_scalar((jk-1)*nlat+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
-          interpolation_weights_scalar((jk-1)*nlat+ji,jm) = 1._wp/ &
-                                      distance_vector(interpolation_indices_scalar((jk-1)*nlat+ji,jm))**interpol_exp
-          distance_vector(interpolation_indices_scalar((jk-1)*nlat+ji,jm)) = 2._wp*M_PI
-          sum_of_weights = sum_of_weights + interpolation_weights_scalar((jk-1)*nlat+ji,jm)
+          interpolation_indices_scalar_lgame(ji,jk,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_weights_scalar_lgame(ji,jk,jm) = 1._wp/ &
+                                      distance_vector(interpolation_indices_scalar_lgame(ji,jk,jm))**interpol_exp
+          distance_vector(interpolation_indices_scalar_lgame(ji,jk,jm)) = 2._wp*M_PI
+          sum_of_weights = sum_of_weights + interpolation_weights_scalar_lgame(ji,jk,jm)
         enddo
         do jm=1,n_avg_points
-          interpolation_weights_scalar((jk-1)*nlat+ji,jm) = interpolation_weights_scalar((jk-1)*nlat+ji,jm)/sum_of_weights
+          interpolation_weights_scalar_lgame(ji,jk,jm) = interpolation_weights_scalar_lgame(ji,jk,jm)/sum_of_weights
         enddo
       enddo
     enddo
@@ -304,14 +305,13 @@ program control
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_vector_u((jk-1)*nlat+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
-          interpolation_weights_vector_u((jk-1)*nlat+ji,jm) = 1._wp/ &
-                                        distance_vector(interpolation_indices_vector_u((jk-1)*nlat+ji,jm))**interpol_exp
-          distance_vector(interpolation_indices_vector_u((jk-1)*nlat+ji,jm)) = 2._wp*M_PI
-          sum_of_weights = sum_of_weights + interpolation_weights_vector_u((jk-1)*nlat+ji,jm)
+          interpolation_indices_vector_u(ji,jk,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_weights_vector_u(ji,jk,jm) = 1._wp/distance_vector(interpolation_indices_vector_u(ji,jk,jm))**interpol_exp
+          distance_vector(interpolation_indices_vector_u(ji,jk,jm)) = 2._wp*M_PI
+          sum_of_weights = sum_of_weights + interpolation_weights_vector_u(ji,jk,jm)
         enddo
         do jm=1,n_avg_points
-          interpolation_weights_vector_u((jk-1)*nlat+ji,jm) = interpolation_weights_vector_u((jk-1)*nlat+ji,jm)/sum_of_weights
+          interpolation_weights_vector_u(ji,jk,jm) = interpolation_weights_vector_u(ji,jk,jm)/sum_of_weights
         enddo
       enddo
     enddo
@@ -326,15 +326,14 @@ program control
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm) = find_min_index(distance_vector,n_points_per_layer_input)
-          interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm) = 1._wp/distance_vector( &
-                                                       interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm))**interpol_exp
-          distance_vector(interpolation_indices_vector_v((jk-1)*(nlat+1)+ji,jm)) = 2._wp*M_PI
-          sum_of_weights = sum_of_weights + interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm)
+          interpolation_indices_vector_v(ji,jk,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_weights_vector_v(ji,jk,jm) = 1._wp/distance_vector(interpolation_indices_vector_v(ji,jk,jm))**interpol_exp
+          distance_vector(interpolation_indices_vector_v(ji,jk,jm)) = 2._wp*M_PI
+          sum_of_weights = sum_of_weights + interpolation_weights_vector_v(ji,jk,jm)
         enddo
         do jm=1,n_avg_points
-          interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm) &
-          = interpolation_weights_vector_v((jk-1)*(nlat+1)+ji,jm)/sum_of_weights
+          interpolation_weights_vector_v(ji,jk,jm) &
+          = interpolation_weights_vector_v(ji,jk,jm)/sum_of_weights
         enddo
       enddo
     enddo
@@ -371,8 +370,8 @@ program control
     call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_v",NF90_INT,dim_vector,interpolation_indices_vector_v_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_v",NF90_REAL,dim_vector,interpolation_weights_vector_v_id))
     call nc_check(nf90_enddef(ncid))
-    call nc_check(nf90_put_var(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar))
-    call nc_check(nf90_put_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar))
+    call nc_check(nf90_put_var(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar_lgame))
+    call nc_check(nf90_put_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar_lgame))
     call nc_check(nf90_put_var(ncid,interpolation_indices_vector_u_id,interpolation_indices_vector_u))
     call nc_check(nf90_put_var(ncid,interpolation_weights_vector_u_id,interpolation_weights_vector_u))
     call nc_check(nf90_put_var(ncid,interpolation_indices_vector_v_id,interpolation_indices_vector_v))
@@ -380,8 +379,8 @@ program control
     call nc_check(nf90_close(ncid))
     
     ! freeing the memory
-    deallocate(interpolation_indices_scalar)
-    deallocate(interpolation_weights_scalar)
+    deallocate(interpolation_indices_scalar_lgame)
+    deallocate(interpolation_weights_scalar_lgame)
     deallocate(interpolation_indices_vector_u)
     deallocate(interpolation_weights_vector_u)
     deallocate(interpolation_indices_vector_v)
