@@ -15,12 +15,13 @@ program control
   integer               :: ji,jk,jm,oro_id,model_target_id,ny,nx,ncid,lat_game_id,lat_game_wind_id, &
                            lon_game_id,lon_game_wind_id,lat_lgame_id,lon_lgame_id, &
                            lon_lgame_wind_u_id,lat_lgame_wind_u_id,lon_lgame_wind_v_id, &
-                           lat_lgame_wind_v_id,dim_vector(2),interpolation_indices_scalar_id, &
+                           lat_lgame_wind_v_id,dim_vector_2(2),interpolation_indices_scalar_id, &
                            interpolation_weights_scalar_id,interpolation_indices_vector_u_id, &
                            interpolation_weights_vector_u_id,interpolation_indices_vector_v_id, &
-                           interpolation_weights_vector_v_id,scalar_dimid,u_dimid,v_dimid,avg_dimid, &
+                           interpolation_weights_vector_v_id,scalar_dimid,avg_dimid, &
                            vector_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id, &
-                           res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_edges,model_source_id
+                           res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_edges,model_source_id,dim_vector_3(3), &
+                           y_dimid,x_dimid,yp1_dimid,xp1_dimid
   real(wp)              :: sum_of_weights,interpol_exp
   integer,  allocatable :: interpolation_indices_scalar_game(:,:),interpolation_indices_vector(:,:), &
                            interpolation_indices_vector_u(:,:,:),interpolation_indices_vector_v(:,:,:), &
@@ -211,13 +212,13 @@ program control
     call nc_check(nf90_def_dim(ncid,"cell_index",n_cells,scalar_dimid))
     call nc_check(nf90_def_dim(ncid,"vector_index",n_edges,vector_dimid))
     call nc_check(nf90_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
-    dim_vector(1) = scalar_dimid
-    dim_vector(2) = avg_dimid
-    call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector,interpolation_indices_scalar_id))
-    call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector,interpolation_weights_scalar_id))
-    dim_vector(1) = vector_dimid
-    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector",NF90_INT,dim_vector,interpolation_indices_vector_id))
-    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector",NF90_REAL,dim_vector,interpolation_weights_vector_id))
+    dim_vector_2(1) = scalar_dimid
+    dim_vector_2(2) = avg_dimid
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector_2,interpolation_indices_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector_2,interpolation_weights_scalar_id))
+    dim_vector_2(1) = vector_dimid
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector",NF90_INT,dim_vector_2,interpolation_indices_vector_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector",NF90_REAL,dim_vector_2,interpolation_weights_vector_id))
     call nc_check(nf90_enddef(ncid))
     call nc_check(nf90_put_var(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar_game))
     call nc_check(nf90_put_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar_game))
@@ -355,20 +356,23 @@ program control
     output_file = trim(real2game_root_dir) // "/interpolation_files/icon-d22lgame_" // trim(lgame_grid)
     write(*,*) "Starting to write to output file ..."
     call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
-    call nc_check(nf90_def_dim(ncid,"cell_index",ny*nx,scalar_dimid))
-    call nc_check(nf90_def_dim(ncid,"u_index",ny*(nx+1),u_dimid))
-    call nc_check(nf90_def_dim(ncid,"v_index",(ny+1)*nx,v_dimid))
+    call nc_check(nf90_def_dim(ncid,"y_index",ny,y_dimid))
+    call nc_check(nf90_def_dim(ncid,"x_index",nx,x_dimid))
+    call nc_check(nf90_def_dim(ncid,"yp1_index",ny+1,yp1_dimid))
+    call nc_check(nf90_def_dim(ncid,"xp1_index",nx+1,xp1_dimid))
     call nc_check(nf90_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
-    dim_vector(1) = scalar_dimid
-    dim_vector(2) = avg_dimid
-    call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector,interpolation_indices_scalar_id))
-    call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector,interpolation_weights_scalar_id))
-    dim_vector(1) = u_dimid
-    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_u",NF90_INT,dim_vector,interpolation_indices_vector_u_id))
-    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_u",NF90_REAL,dim_vector,interpolation_weights_vector_u_id))
-    dim_vector(1) = v_dimid
-    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_v",NF90_INT,dim_vector,interpolation_indices_vector_v_id))
-    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_v",NF90_REAL,dim_vector,interpolation_weights_vector_v_id))
+    dim_vector_3(1) = y_dimid
+    dim_vector_3(2) = x_dimid
+    dim_vector_3(3) = avg_dimid
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector_3,interpolation_indices_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector_3,interpolation_weights_scalar_id))
+    dim_vector_2(2) = xp1_dimid
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_u",NF90_INT,dim_vector_3,interpolation_indices_vector_u_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_u",NF90_REAL,dim_vector_3,interpolation_weights_vector_u_id))
+    dim_vector_3(1) = yp1_dimid
+    dim_vector_3(2) = x_dimid
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_v",NF90_INT,dim_vector_3,interpolation_indices_vector_v_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_v",NF90_REAL,dim_vector_3,interpolation_weights_vector_v_id))
     call nc_check(nf90_enddef(ncid))
     call nc_check(nf90_put_var(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar_lgame))
     call nc_check(nf90_put_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar_lgame))
