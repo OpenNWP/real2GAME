@@ -230,8 +230,7 @@ program control
         ! computing linear vertical interpolation
         ! vertical distance vector
         do jn=1,n_layers_input
-          vector_to_minimize(jn) = abs(z_game(ji,jn) - &
-                                   z_coords_input_model(interpolation_indices_scalar(ji,jm),jn))
+          vector_to_minimize(jn) = abs(z_game(ji,jl) - z_coords_input_model(interpolation_indices_scalar(ji,jm),jn))
         enddo
         
         ! closest vertical index
@@ -347,10 +346,13 @@ program control
   write(*,*) "Starting the wind interpolation ..."
   allocate(wind_out_h(n_edges,n_layers))
   allocate(wind_out_v(n_cells,n_levels))
+  
+  ! setting the whole wind field to zero
   !$omp parallel workshare
   wind_out_h = 0._wp
   wind_out_v = 0._wp
   !$omp end parallel workshare
+  
   ! loop over all horizontal vector points
   !$omp parallel do private(ji,jl,jm,jn,vector_to_minimize,closest_index,other_index,closest_value, &
   !$omp other_value,df,dz,gradient,delta_z,u_local,v_local)
@@ -365,8 +367,7 @@ program control
         ! computing linear vertical interpolation
         ! vertical distance vector
         do jn=1,n_layers_input
-          vector_to_minimize(jn) = abs(z_game_wind(ji,jl) &
-                                      - z_coords_input_model(interpolation_indices_vector(ji,jm),jn))
+          vector_to_minimize(jn) = abs(z_game_wind(ji,jl) - z_coords_input_model(interpolation_indices_vector(ji,jm),jn))
         enddo
         ! closest vertical index
         closest_index = find_min_index(vector_to_minimize,n_layers_input)
