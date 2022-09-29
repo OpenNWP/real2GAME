@@ -221,7 +221,8 @@ program control
   spec_hum_out = 0._wp
   !$omp end parallel workshare
   
-  !$omp parallel do private(ji,jl,jm,jn,vector_to_minimize,closest_value,other_value,df,dz,gradient,delta_z)
+  !$omp parallel do private(ji,jl,jm,jn,vector_to_minimize,closest_index,closest_value,other_index,other_value,df,dz, &
+  !$omp gradient,delta_z)
   do ji=1,n_cells
     do jl=1,n_layers
     
