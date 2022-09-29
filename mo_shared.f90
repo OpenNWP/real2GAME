@@ -18,16 +18,17 @@ module mo_shared
   integer,  parameter :: pd = 12
   integer,  parameter :: rd = 37
   
-  integer,  parameter :: sp = selected_real_kind(ps,rs)     ! single precission
-  integer,  parameter :: dp = selected_real_kind(pd,rd)     ! real(wp) :: precission
+  integer,  parameter :: sp = selected_real_kind(ps,rs)                 ! single precission
+  integer,  parameter :: dp = selected_real_kind(pd,rd)                 ! real(wp) :: precission
   
-  integer,  parameter :: wp = dp                            ! working precission
+  integer,  parameter :: wp = dp                                        ! working precission
   
-  integer,  parameter :: n_layers_input = 12                ! number of levels from the input model that are used
-  integer,  parameter :: n_avg_points = 20                  ! number of points used for averaging
-  integer,  parameter :: n_sst_points = 259200              ! the number of points of the SST grid
-  integer,  parameter :: n_points_per_layer_input = 2949120 ! the number of points per layer of the input model
-  real(wp), parameter :: M_PI = 4._wp*atan(1._wp)           ! pi
+  integer,  parameter :: n_layers_input = 12                            ! number of levels from the input model that are used
+  integer,  parameter :: n_avg_points = 20                              ! number of points used for averaging
+  integer,  parameter :: n_sst_points = 259200                          ! the number of points of the SST grid
+  integer,  parameter :: n_points_per_layer_input_icon_global = 2949120 ! the number of points per layer of the global ICON model
+  integer,  parameter :: n_points_per_layer_input_icon_d2 = 1084249     ! the number of points per layer of the global ICON model
+  real(wp), parameter :: M_PI = 4._wp*atan(1._wp)                       ! pi
   
   contains
   

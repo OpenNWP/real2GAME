@@ -7,8 +7,8 @@ program control
   
   use netcdf
   use eccodes
-  use mo_shared, only: wp,n_points_per_layer_input,n_avg_points,M_PI, &
-                       nc_check,int2string,find_min_index,calculate_distance_h
+  use mo_shared, only: wp,n_avg_points,M_PI,nc_check,int2string,find_min_index,calculate_distance_h, &
+                       n_points_per_layer_input_icon_global,n_points_per_layer_input_icon_d2
   
   implicit none
   
@@ -21,7 +21,7 @@ program control
                            interpolation_weights_vector_v_id,scalar_dimid,avg_dimid, &
                            vector_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id, &
                            res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_edges,model_source_id,dim_vector_3(3), &
-                           y_dimid,x_dimid,yp1_dimid,xp1_dimid
+                           y_dimid,x_dimid,yp1_dimid,xp1_dimid,n_points_per_layer_input
   real(wp)              :: sum_of_weights,interpol_exp
   integer,  allocatable :: interpolation_indices_scalar_game(:,:),interpolation_indices_vector(:,:), &
                            interpolation_indices_vector_u(:,:,:),interpolation_indices_vector_v(:,:,:), &
@@ -69,9 +69,6 @@ program control
   n_hexagons = 10*(2**(2*res_id)-1)
   n_cells = n_pentagons+n_hexagons
   n_edges = (5*n_pentagons/2 + 6/2*n_hexagons)
-
-  allocate(lat_input_model(n_points_per_layer_input))
-  allocate(lon_input_model(n_points_per_layer_input))
   
   ! Properties of the input model's grid.
   ! latitudes of the grid
@@ -79,12 +76,17 @@ program control
   if (model_source_id==1) then
     lat_obs_file = trim(real2game_root_dir) // "/interpolation_creator/icon_global_icosahedral_time-invariant_" // year_string &
                    // month_string // day_string // hour_string // "_CLAT.grib2"
+    n_points_per_layer_input = n_points_per_layer_input_icon_global
   endif
   ! ICON-D2
   if (model_source_id==3) then
     lat_obs_file = trim(real2game_root_dir) // "/interpolation_creator/icon-d2_germany_icosahedral_time-invariant_" // year_string &
                    // month_string // day_string // hour_string // "_000_0_clat.grib2"
+    n_points_per_layer_input = n_points_per_layer_input_icon_d2
   endif
+  
+  allocate(lat_input_model(n_points_per_layer_input))
+  allocate(lon_input_model(n_points_per_layer_input))
     
   call codes_open_file(jfile,trim(lat_obs_file),"r")
   call codes_grib_new_from_file(jfile,jgrib)
@@ -134,7 +136,7 @@ program control
                    // trim(int2string(n_layers)) // "_ORO" // trim(int2string(oro_id)) // ".nc"
     write(*,*) "Grid file: ",trim(geo_pro_file)
     write(*,*) "Reading grid file of GAME ..."
-    call nc_check(nf90_open(geo_pro_file,NF90_NOWRITE,ncid))
+    call nc_check(nf90_open(trim(geo_pro_file),NF90_NOWRITE,ncid))
      
     call nc_check(nf90_inq_varid(ncid,"lat_c",lat_game_id))
     call nc_check(nf90_inq_varid(ncid,"lon_c",lon_game_id))
@@ -157,6 +159,7 @@ program control
     write(*,*) "Calculating interpolation indices and weights ..."
     
     allocate(distance_vector(n_points_per_layer_input))
+    
     !$omp parallel do private(ji,jk,distance_vector,sum_of_weights)
     do ji=1,n_cells
       do jk=1,n_points_per_layer_input
@@ -194,6 +197,8 @@ program control
       enddo
     enddo
     !$omp end parallel do
+    
+    deallocate(distance_vector)
     
     write(*,*) "Calculating interpolation indices and weights finished."
     
@@ -238,14 +243,14 @@ program control
   if (model_target_id==2) then
   
     ! reading the horizontal coordinates of the grid of L-GAME
-    allocate(lat_lgame(nx,ny))
-    allocate(lon_lgame(nx,ny))
-    allocate(lat_lgame_wind_u(nx,ny+1))
-    allocate(lon_lgame_wind_u(nx,ny+1))
-    allocate(lat_lgame_wind_v(nx+1,ny))
-    allocate(lon_lgame_wind_v(nx+1,ny))
+    allocate(lat_lgame(ny,nx))
+    allocate(lon_lgame(ny,nx))
+    allocate(lat_lgame_wind_u(ny,nx+1))
+    allocate(lon_lgame_wind_u(ny,nx+1))
+    allocate(lat_lgame_wind_v(ny+1,nx))
+    allocate(lon_lgame_wind_v(ny+1,nx))
     geo_pro_file = trim(model_home_dir) // "/grids/" // trim(lgame_grid)
-    write(*,*) "Grid file:",geo_pro_file
+    write(*,*) "Grid file:",trim(geo_pro_file)
     write(*,*) "Reading grid file of L-GAME ..."
     call nc_check(nf90_open(geo_pro_file,NF90_NOWRITE,ncid))
     
@@ -275,6 +280,7 @@ program control
     ! executing the actual interpolation
     write(*,*) "Calculating interpolation indices and weights ..."
     
+    allocate(distance_vector(n_points_per_layer_input))
     !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
     do ji=1,ny
       do jk=1,nx
@@ -333,12 +339,13 @@ program control
           sum_of_weights = sum_of_weights + interpolation_weights_vector_v(ji,jk,jm)
         enddo
         do jm=1,n_avg_points
-          interpolation_weights_vector_v(ji,jk,jm) &
-          = interpolation_weights_vector_v(ji,jk,jm)/sum_of_weights
+          interpolation_weights_vector_v(ji,jk,jm) = interpolation_weights_vector_v(ji,jk,jm)/sum_of_weights
         enddo
       enddo
     enddo
     !$omp end parallel do
+    
+    deallocate(distance_vector)
     
     write(*,*) "Calculating interpolation indices and weights finished."
     
@@ -366,11 +373,14 @@ program control
     dim_vector_3(3) = avg_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector_3,interpolation_indices_scalar_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector_3,interpolation_weights_scalar_id))
-    dim_vector_2(2) = xp1_dimid
+    dim_vector_3(1) = y_dimid
+    dim_vector_3(2) = xp1_dimid
+    dim_vector_3(3) = avg_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_u",NF90_INT,dim_vector_3,interpolation_indices_vector_u_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_u",NF90_REAL,dim_vector_3,interpolation_weights_vector_u_id))
     dim_vector_3(1) = yp1_dimid
     dim_vector_3(2) = x_dimid
+    dim_vector_3(3) = avg_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_v",NF90_INT,dim_vector_3,interpolation_indices_vector_v_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_v",NF90_REAL,dim_vector_3,interpolation_weights_vector_v_id))
     call nc_check(nf90_enddef(ncid))

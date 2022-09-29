@@ -6,8 +6,8 @@ program control
   ! This file coordinates the data interpolation process.
   
   use netcdf
-  use mo_shared, only: wp,n_layers_input,n_sst_points,n_points_per_layer_input,n_avg_points, &
-                       nc_check,int2string,find_min_index,calculate_distance_h
+  use mo_shared, only: wp,n_layers_input,n_sst_points,n_points_per_layer_input_icon_global,n_avg_points, &
+                       nc_check,int2string,find_min_index,calculate_distance_h,n_points_per_layer_input_icon_d2
   
   implicit none
   
@@ -30,7 +30,7 @@ program control
                            tke_id,t_soil_id,min_index,dimids_vector_3(3), &
                            edge_dimid,single_double_dimid,densities_id,temperature_id,wind_h_id,wind_v_id,soil_layer_dimid, &
                            res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_edges,n_layers,level_dimid, &
-                           n_levels,nsoillays,layer_dimid
+                           n_levels,nsoillays,layer_dimid,n_points_per_layer_input
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
   real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_game(:,:),directions(:),z_game_wind(:,:), &
                            gravity_potential_game(:,:),densities_background(:,:,:),tke(:,:),t_soil(:,:),z_coords_input_model(:,:), &
@@ -68,6 +68,8 @@ program control
   read(oro_id_string,*) oro_id
   call get_command_argument(10,background_state_file)
   call get_command_argument(11,real2game_root_dir)
+  
+  n_points_per_layer_input = n_points_per_layer_input_icon_global
   
   write(*,*) "Background state file: ",trim(background_state_file)
   

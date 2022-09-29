@@ -7,12 +7,14 @@ program control
 
   use netcdf
   use eccodes
-  use mo_shared, only: wp,n_layers_input,n_sst_points,n_points_per_layer_input,nc_check,int2string,M_PI
+  use mo_shared, only: wp,n_layers_input,n_sst_points,n_points_per_layer_input_icon_global,nc_check,int2string,M_PI, &
+                       n_points_per_layer_input_icon_d2
 
   implicit none
 
   integer               :: ji,jl,ncid,h_dimid,v_dimid,z_surf_id,sp_id,sst_dimid,t_id,spec_hum_id,z_id,u_id,v_id, &
-                           lat_sst_id,lon_sst_id,sst_id,dim_vector(2),layers_vector(n_layers_input),jfile,jgrib
+                           lat_sst_id,lon_sst_id,sst_id,dim_vector(2),layers_vector(n_layers_input),jfile,jgrib, &
+                           n_points_per_layer_input
   real(wp), allocatable :: z_height_amsl_one_layer(:),temperature_one_layer(:),spec_hum_one_layer(:), &
                            u_one_layer(:),v_one_layer(:),z_height_amsl(:,:),temperature(:,:),spec_hum(:,:), &
                            u_wind(:,:),v_wind(:,:),lat_sst(:),lon_sst(:),sst(:),surface_height(:), &
@@ -43,6 +45,8 @@ program control
   call get_command_argument(3,day_string)
   call get_command_argument(4,hour_string)
   call get_command_argument(5,real2game_root_dir)
+  
+  n_points_per_layer_input = n_points_per_layer_input_icon_global
   
   ! single-layer arrays from grib
   allocate(z_height_amsl_one_layer(n_points_per_layer_input))
