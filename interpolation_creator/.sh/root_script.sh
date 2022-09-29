@@ -115,7 +115,7 @@ then
 fi
 
 # Now we can execute the interpolation creator itself.
-./build/interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_target_id $nlat $nlon $interpol_exp $lgame_grid $res_id $n_layers $model_source_id
+./build/interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_target_id $ny $nx $interpol_exp $lgame_grid $res_id $n_layers $model_source_id
 
 # deleting the ICON grid data
 rm icon*
