@@ -18,8 +18,8 @@ program control
                            lat_lgame_wind_v_id,dim_vector_2(2),interpolation_indices_scalar_id, &
                            interpolation_weights_scalar_id,interpolation_indices_vector_u_id, &
                            interpolation_weights_vector_u_id,interpolation_indices_vector_v_id, &
-                           interpolation_weights_vector_v_id,scalar_dimid,avg_dimid, &
-                           vector_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id, &
+                           interpolation_weights_vector_v_id,cell_dimid,avg_dimid, &
+                           edge_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id, &
                            res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_edges,model_source_id,dim_vector_3(3), &
                            y_dimid,x_dimid,yp1_dimid,xp1_dimid,n_points_per_layer_input
   real(wp)              :: sum_of_weights,interpol_exp
@@ -214,14 +214,15 @@ program control
     output_file = trim(real2game_root_dir) // "/interpolation_files/icon-global2game" // trim(int2string(res_id)) // ".nc"
     write(*,*) "Starting to write to output file ..."
     call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
-    call nc_check(nf90_def_dim(ncid,"cell_index",n_cells,scalar_dimid))
-    call nc_check(nf90_def_dim(ncid,"vector_index",n_edges,vector_dimid))
+    call nc_check(nf90_def_dim(ncid,"cell_index",n_cells,cell_dimid))
+    call nc_check(nf90_def_dim(ncid,"vector_index",n_edges,edge_dimid))
     call nc_check(nf90_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
-    dim_vector_2(1) = scalar_dimid
+    dim_vector_2(1) = cell_dimid
     dim_vector_2(2) = avg_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector_2,interpolation_indices_scalar_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector_2,interpolation_weights_scalar_id))
-    dim_vector_2(1) = vector_dimid
+    dim_vector_2(1) = edge_dimid
+    dim_vector_2(2) = avg_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_vector",NF90_INT,dim_vector_2,interpolation_indices_vector_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_vector",NF90_REAL,dim_vector_2,interpolation_weights_vector_id))
     call nc_check(nf90_enddef(ncid))

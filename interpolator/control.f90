@@ -274,10 +274,10 @@ program control
         ! specific humidity
         spec_hum_out(ji,jl) = spec_hum_out(ji,jl) + interpolation_weights_scalar(ji,jm)*(closest_value + delta_z*gradient)
       enddo
-    ! avoiding negative humidities, which can occur through vertical extrapolation
-    if (spec_hum_out(ji,jl)<0._wp) then
-      spec_hum_out(ji,jl) = 0._wp
-    endif
+      ! avoiding negative humidities, which can occur through vertical extrapolation
+      if (spec_hum_out(ji,jl)<0._wp) then
+        spec_hum_out(ji,jl) = 0._wp
+      endif
     enddo
   enddo
   !$omp end parallel do
