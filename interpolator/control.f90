@@ -80,6 +80,14 @@ program control
   allocate(directions(n_edges))
   allocate(z_game_wind(n_edges,n_layers))
   allocate(gravity_potential_game(n_cells,n_layers))
+  !$omp parallel workshare
+  latitudes_game = 0._wp
+  longitudes_game = 0._wp
+  z_game = 0._wp
+  directions = 0._wp
+  z_game_wind = 0._wp
+  gravity_potential_game = 0._wp
+  !$omp end parallel workshare
   ! Reading the grid properties.
   geo_prop_file = trim(model_home_dir) // "/grid_generator/grids/RES" // trim(int2string(res_id)) // "_L" // &
                   trim(int2string(n_layers)) // "_ORO" // trim(int2string(oro_id)) // ".nc"
@@ -108,6 +116,11 @@ program control
   allocate(tke(n_cells,n_layers))
   allocate(t_soil(n_cells,nsoillays))
   allocate(densities_background(n_cells,n_layers,n_constituents))
+  !$omp parallel workshare
+  tke = 0._wp
+  t_soil = 0._wp
+  densities_background = 0._wp
+  !$omp end parallel workshare
   
   ! Reading the background state.
   write(*,*) "Reading background state ..."
@@ -150,6 +163,18 @@ program control
   allocate(lat_sst(n_sst_points))
   allocate(lon_sst(n_sst_points))
   allocate(sst_in(n_sst_points))
+  !$omp parallel workshare
+  z_coords_input_model = 0._wp
+  temperature_in = 0._wp
+  spec_hum_in = 0._wp
+  u_wind_in = 0._wp
+  v_wind_in = 0._wp
+  z_surf_in = 0._wp
+  p_surf_in = 0._wp
+  lat_sst = 0._wp
+  lon_sst = 0._wp
+  sst_in = 0._wp
+  !$omp end parallel workshare
   
   ! determining the name of the input file
   input_file = trim(real2game_root_dir) // "/input/obs_" // year_string // month_string // day_string // hour_string // ".nc"
@@ -186,6 +211,12 @@ program control
   allocate(interpolation_weights_scalar(n_cells,n_avg_points))
   allocate(interpolation_indices_vector(n_edges,n_avg_points))
   allocate(interpolation_weights_vector(n_edges,n_avg_points))
+  !$omp parallel workshare
+  interpolation_indices_scalar = 0
+  interpolation_weights_scalar = 0._wp
+  interpolation_indices_vector = 0
+  interpolation_weights_vector = 0._wp
+  !$omp end parallel workshare
   
   write(*,*) "Reading the interpolation indices and weights."
   
@@ -215,6 +246,10 @@ program control
   ! These are the arrays for the result of the interpolation process.
   allocate(temperature_out(n_cells,n_layers))
   allocate(spec_hum_out(n_cells,n_layers))
+  !$omp parallel workshare
+  temperature_out = 0._wp
+  spec_hum_out = 0._wp
+  !$omp end parallel workshare
   
   !$omp parallel workshare
   temperature_out = 0._wp
@@ -314,11 +349,18 @@ program control
   ! firstly setting the virtual temperature
   allocate(temperature_v(n_cells,n_layers))
   !$omp parallel workshare
+  density_moist_out = 0._wp
+  temperature_v = 0._wp
+  !$omp end parallel workshare
+  !$omp parallel workshare
   temperature_v = temperature_out*(1._wp + spec_hum_out*(m_d/m_v-1._wp))
   !$omp end parallel workshare
   
   ! the Exner pressure is just a temporarily needed helper variable here to integrate the hydrostatic equation
   allocate(exner(n_cells,n_layers))
+  !$omp parallel workshare
+  exner = 0._wp
+  !$omp end parallel workshare
   !$omp parallel do private(ji,jl,b,c)
   do ji=1,n_cells
     do jl=n_layers,1,-1
@@ -351,8 +393,6 @@ program control
   write(*,*) "Starting the wind interpolation ..."
   allocate(wind_out_h(n_edges,n_layers))
   allocate(wind_out_v(n_cells,n_levels))
-  
-  ! setting the whole wind field to zero
   !$omp parallel workshare
   wind_out_h = 0._wp
   wind_out_v = 0._wp
@@ -434,6 +474,10 @@ program control
   write(*,*) "Interpolating the SST to the model grid ..."
   allocate(sst_out(n_cells))
   allocate(distance_vector(n_sst_points))
+  !$omp parallel workshare
+  sst_out = 0._wp
+  distance_vector = 0._wp
+  !$omp end parallel workshare
   !$omp parallel do private(ji,jm,distance_vector,min_index)
   do ji=1,n_cells
     do jm=1,n_sst_points
@@ -457,6 +501,9 @@ program control
   
   ! setting the mass densities of the result
   allocate(densities_out(n_cells,n_layers,n_constituents))
+  !$omp parallel workshare
+  densities_out = 0._wp
+  !$omp end parallel workshare
   !$omp parallel workshare
   ! clouds and precipitation are set equal to the background state
   densities_out(:,:,1:n_condensed_constituents) = densities_background(:,:,1:n_condensed_constituents)
