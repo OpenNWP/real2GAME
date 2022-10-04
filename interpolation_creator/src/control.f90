@@ -87,6 +87,10 @@ program control
   
   allocate(lat_input_model(n_points_per_layer_input))
   allocate(lon_input_model(n_points_per_layer_input))
+  !$omp parallel workshare
+  lat_input_model = 0._wp
+  lon_input_model = 0._wp
+  !$omp end parallel workshare
     
   call codes_open_file(jfile,trim(lat_obs_file),"r")
   call codes_grib_new_from_file(jfile,jgrib)
@@ -132,6 +136,12 @@ program control
     allocate(lon_game(n_cells))
     allocate(lat_game_wind(n_edges))
     allocate(lon_game_wind(n_edges))
+    !$omp parallel workshare
+    lat_game = 0._wp
+    lon_game = 0._wp
+    lat_game_wind = 0._wp
+    lon_game_wind = 0._wp
+    !$omp end parallel workshare
     geo_pro_file = trim(model_home_dir) // "/grid_generator/grids/RES" // trim(int2string(res_id)) //"_L" &
                    // trim(int2string(n_layers)) // "_ORO" // trim(int2string(oro_id)) // ".nc"
     write(*,*) "Grid file: ",trim(geo_pro_file)
@@ -154,11 +164,20 @@ program control
     allocate(interpolation_weights_scalar_game(n_cells,n_avg_points))
     allocate(interpolation_indices_vector(n_edges,n_avg_points))
     allocate(interpolation_weights_vector(n_edges,n_avg_points))
+    !$omp parallel workshare
+    interpolation_indices_scalar_game = 0
+    interpolation_weights_scalar_game = 0._wp
+    interpolation_indices_vector = 0
+    interpolation_weights_vector = 0._wp
+    !$omp end parallel workshare
     
     ! executing the actual interpolation
     write(*,*) "Calculating interpolation indices and weights ..."
     
     allocate(distance_vector(n_points_per_layer_input))
+    !$omp parallel workshare
+    distance_vector = 0._wp
+    !$omp end parallel workshare
     
     !$omp parallel do private(ji,jk,distance_vector,sum_of_weights)
     do ji=1,n_cells
@@ -250,6 +269,14 @@ program control
     allocate(lon_lgame_wind_u(ny,nx+1))
     allocate(lat_lgame_wind_v(ny+1,nx))
     allocate(lon_lgame_wind_v(ny+1,nx))
+    !$omp parallel workshare
+    lat_lgame = 0._wp
+    lon_lgame = 0._wp
+    lat_lgame_wind_u = 0._wp
+    lon_lgame_wind_u = 0._wp
+    lat_lgame_wind_v = 0._wp
+    lon_lgame_wind_v = 0._wp
+    !$omp end parallel workshare
     geo_pro_file = trim(model_home_dir) // "/grids/" // trim(lgame_grid)
     write(*,*) "Grid file:",trim(geo_pro_file)
     write(*,*) "Reading grid file of L-GAME ..."
@@ -277,11 +304,22 @@ program control
     allocate(interpolation_weights_vector_u(ny,nx+1,n_avg_points))
     allocate(interpolation_indices_vector_v(ny+1,nx,n_avg_points))
     allocate(interpolation_weights_vector_v(ny+1,nx,n_avg_points))
+    !$omp parallel workshare
+    interpolation_indices_scalar_lgame = 0
+    interpolation_weights_scalar_lgame = 0._wp
+    interpolation_indices_vector_u = 0
+    interpolation_weights_vector_u = 0._wp
+    interpolation_indices_vector_v = 0
+    interpolation_weights_vector_v = 0._wp
+    !$omp end parallel workshare
     
     ! executing the actual interpolation
     write(*,*) "Calculating interpolation indices and weights ..."
     
     allocate(distance_vector(n_points_per_layer_input))
+    !$omp parallel workshare
+    distance_vector = 0._wp
+    !$omp end parallel workshare
     !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
     do ji=1,ny
       do jk=1,nx
