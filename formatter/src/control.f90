@@ -54,6 +54,13 @@ program control
   allocate(spec_hum_one_layer(n_points_per_layer_input))
   allocate(u_one_layer(n_points_per_layer_input))
   allocate(v_one_layer(n_points_per_layer_input))
+  !$omp parallel workshare
+  z_height_amsl_one_layer = 0._wp
+  temperature_one_layer = 0._wp
+  spec_hum_one_layer = 0._wp
+  u_one_layer = 0._wp
+  v_one_layer = 0._wp
+  !$omp end parallel workshare
   
   ! 2D-arrays for netCDF
   allocate(z_height_amsl(n_points_per_layer_input,n_layers_input))
@@ -61,6 +68,13 @@ program control
   allocate(spec_hum(n_points_per_layer_input,n_layers_input))
   allocate(u_wind(n_points_per_layer_input,n_layers_input))
   allocate(v_wind(n_points_per_layer_input,n_layers_input))
+  !$omp parallel workshare
+  z_height_amsl = 0._wp
+  temperature = 0._wp
+  spec_hum = 0._wp
+  u_wind = 0._wp
+  v_wind = 0._wp
+  !$omp end parallel workshare
   
   ! grib stuff
   
@@ -161,6 +175,9 @@ program control
   
   ! reading the surface height
   allocate(surface_height(n_points_per_layer_input))
+  !$omp parallel workshare
+  surface_height = 0._wp
+  !$omp end parallel workshare
   sfc_height_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_time-invariant_" // year_string // month_string // &
                     day_string // hour_string // "_HSURF.grib2"
   
@@ -172,6 +189,9 @@ program control
   
   ! reading the surface presure
   allocate(pressure_surface(n_points_per_layer_input))
+  !$omp parallel workshare
+  pressure_surface = 0._wp
+  !$omp end parallel workshare
   
   sfc_pres_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_single-level_" // year_string // month_string // &
                   day_string // hour_string // "_000_PS.grib2"
@@ -186,6 +206,11 @@ program control
   allocate(lat_sst(n_sst_points))
   allocate(lon_sst(n_sst_points))
   allocate(sst(n_sst_points))
+  !$omp parallel workshare
+  lat_sst = 0._wp
+  lon_sst = 0._wp
+  sst = 0._wp
+  !$omp end parallel workshare
   
   sst_file = trim(real2game_root_dir) // "/input/rtgssthr_grb_0.5.grib2"
   
