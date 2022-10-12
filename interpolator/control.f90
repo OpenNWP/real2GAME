@@ -3,7 +3,7 @@
 
 program control
 
-  ! This file coordinates the data interpolation process.
+  ! This program coordinates the data interpolation process.
   
   use netcdf
   use mo_shared, only: wp,n_layers_input,n_sst_points,n_points_per_layer_input_icon_global,n_avg_points, &
@@ -73,13 +73,15 @@ program control
   
   write(*,*) "Background state file: ",trim(background_state_file)
   
-  ! Allocating memory for the grid properties.
+  ! allocating memory for the grid properties
   allocate(latitudes_game(n_cells))
   allocate(longitudes_game(n_cells))
   allocate(z_game(n_cells,n_layers))
   allocate(directions(n_edges))
   allocate(z_game_wind(n_edges,n_layers))
   allocate(gravity_potential_game(n_cells,n_layers))
+  
+  ! initializing all array values with zeros
   !$omp parallel workshare
   latitudes_game = 0._wp
   longitudes_game = 0._wp
@@ -88,7 +90,8 @@ program control
   z_game_wind = 0._wp
   gravity_potential_game = 0._wp
   !$omp end parallel workshare
-  ! Reading the grid properties.
+  
+  ! reading the grid properties
   geo_prop_file = trim(model_home_dir) // "/grid_generator/grids/RES" // trim(int2string(res_id)) // "_L" // &
                   trim(int2string(n_layers)) // "_ORO" // trim(int2string(oro_id)) // ".nc"
   write(*,*) "Grid file: ",trim(geo_prop_file)
