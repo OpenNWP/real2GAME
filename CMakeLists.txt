@@ -14,6 +14,6 @@ interpolator/control.f90
 mo_shared.f90)
 add_definitions(-Wall)
 find_package(OpenMP)
-SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -Wall -Wpedantic -I/usr/include")
+SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -ftree-vectorize -funroll-loops -Wall -Wpedantic -I/usr/include")
 target_link_libraries(real2game m netcdff)
 enable_testing()
