@@ -15,4 +15,8 @@ src/control.f90
 find_package(OpenMP)
 SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -ftree-vectorize -funroll-loops -Wall -Wpedantic -I/usr/include \
 -I/usr/lib/x86_64-linux-gnu/fortran/gfortran-mod-15/ -I/usr/lib/aarch64-linux-gnu/fortran/gfortran-mod-15")
+# switching on boundary checking of arrays
+if(BOUNDS_CHECKS)
+  SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fbounds-check")
+endif()
 target_link_libraries(formatter m netcdff eccodes_f90)
