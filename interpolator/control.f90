@@ -7,20 +7,14 @@ program control
   
   use netcdf
   use mo_shared, only: wp,n_layers_input,n_sst_points,n_points_per_layer_input_icon_global,n_avg_points, &
-                       nc_check,int2string,find_min_index,calculate_distance_h,n_points_per_layer_input_icon_d2
+                       nc_check,int2string,find_min_index,calculate_distance_h,n_points_per_layer_input_icon_d2, &
+                       rel_humidity,M_PI,n_a,p_0,m_d,m_v,r_d,c_d_p,scale_height,t_0
   
   implicit none
   
-  ! constants
-  real(wp), parameter :: n_a =  6.02214076e23_wp   ! Avogadro's number
-  real(wp), parameter :: p_0 = 100000._wp          ! reference pressure
-  real(wp), parameter :: m_d = n_a*0.004810e-23_wp ! molar mass of dry air
-  real(wp), parameter :: m_v = n_a*0.002991e-23_wp ! molar mass of water
-  real(wp), parameter :: r_d = 287.057811_wp       ! specific gas constant of dry air
-  real(wp), parameter :: c_d_p = 1005._wp          ! isobaric specific heat capacity of dry air
-  real(wp), parameter :: scale_height = 8000._wp   ! scale_height
-  
-  logical               :: ltke_avail,lt_soil_avail
+  logical               :: ltke_avail             ! switch indicating if TKE (turbulent kinetic energy) is present in the background state
+  logical               :: lt_soil_avail          ! switch indicating if soil temperature is present in the background state
+  logical               :: lno_hydrometeors_found ! switch indicating if hydrometeors are missing from the background state
   integer               :: ji,jl,jm,jn,latitudes_game_id,longitudes_game_id,z_game_id,z_game_wind_id, &
                            gravity_potential_game_id,constituent_dimid,cell_dimid,n_constituents, &
                            directions_id,ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,& 
@@ -31,6 +25,8 @@ program control
                            edge_dimid,single_double_dimid,densities_id,temperature_id,wind_h_id,wind_v_id,soil_layer_dimid, &
                            res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_edges,n_layers,level_dimid, &
                            n_levels,nsoillays,layer_dimid,n_points_per_layer_input
+  real(wp)              :: rh                          ! relative humidity value
+  real(wp)              :: maximum_cloud_water_content ! maximum cloud water content in (kg cloud)/(kg dry air)
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
   real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_game(:,:),directions(:),z_game_wind(:,:), &
                            gravity_potential_game(:,:),densities_background(:,:,:),tke(:,:),t_soil(:,:),z_coords_input_model(:,:), &
@@ -513,6 +509,55 @@ program control
   densities_out(:,:,n_condensed_constituents+1) = density_moist_out
   densities_out(:,:,n_condensed_constituents+2) = spec_hum_out*density_moist_out
   !$omp end parallel workshare
+  
+  !$omp parallel workshare
+  lno_hydrometeors_found = minval(densities_out(:,:,1:n_condensed_constituents)) == 0._wp &
+                           .and. maxval(densities_out(:,:,1:n_condensed_constituents)) == 0._wp
+  !$omp end parallel workshare
+  ! If no hydrometeors are present in the background state, we add hydrometeors according to a very simple ansatz.
+  if (lno_hydrometeors_found) then
+    write(*,*) "No hydrometeors found in the background state."
+    
+    maximum_cloud_water_content = 0.2e-3_wp
+    
+    !$omp parallel do private(ji,jl,rh)
+    do ji=1,n_cells
+      do jl=1,n_layers
+        ! computing the relative humidity at the grid point
+        rh = rel_humidity(densities_out(ji,jl,n_condensed_constituents+2),temperature_out(ji,jl))
+        ! in the case of a relative humidity above 99.5 %, we add clouds and precipitation
+        if (rh>=0.995_wp) then
+          if (temperature_out(ji,jl)>=t_0) then
+            ! water clouds
+            densities_out(ji,jl,4) = maximum_cloud_water_content &
+            *(densities_out(ji,jl,n_condensed_constituents+1) - densities_out(ji,jl,n_condensed_constituents+2))
+            ! rain
+            densities_out(ji,jl,2) = 0.5_wp*densities_out(ji,jl,4)
+          else
+            ! ice clouds
+            densities_out(ji,jl,3) = maximum_cloud_water_content &
+            *(densities_out(ji,jl,n_condensed_constituents+1) - densities_out(ji,jl,n_condensed_constituents+2))
+            ! snow
+            densities_out(ji,jl,1) = 0.5_wp*densities_out(ji,jl,3)
+          endif
+        ! in the case of a relative humidity above 99 %, we add clouds
+        elseif (rh>=0.99_wp) then
+          if (temperature_out(ji,jl)>=t_0) then
+            ! water clouds
+            densities_out(ji,jl,4) = 0.5_wp*maximum_cloud_water_content &
+            *(densities_out(ji,jl,n_condensed_constituents+1) - densities_out(ji,jl,n_condensed_constituents+2))
+          else
+            ! ice clouds
+            densities_out(ji,jl,3) = 0.5_wp*maximum_cloud_water_content &
+            *(densities_out(ji,jl,n_condensed_constituents+1) - densities_out(ji,jl,n_condensed_constituents+2))
+          endif
+        endif
+      enddo
+    enddo
+    !$omp end parallel do
+    write(*,*) "Hydrometeors set."
+  endif
+  
   deallocate(density_moist_out)
   deallocate(spec_hum_out)
   deallocate(densities_background)

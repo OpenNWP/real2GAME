@@ -28,7 +28,17 @@ module mo_shared
   integer,  parameter :: n_sst_points = 259200                          ! the number of points of the SST grid
   integer,  parameter :: n_points_per_layer_input_icon_global = 2949120 ! the number of points per layer of the global ICON model
   integer,  parameter :: n_points_per_layer_input_icon_d2 = 1084249     ! the number of points per layer of the regional ICON-D2 model
+  ! constants
   real(wp), parameter :: M_PI = 4._wp*atan(1._wp)                       ! pi
+  real(wp), parameter :: n_a =  6.02214076e23_wp                        ! Avogadro's number
+  real(wp), parameter :: p_0 = 100000._wp                               ! reference pressure
+  real(wp), parameter :: m_d = n_a*0.004810e-23_wp                      ! molar mass of dry air
+  real(wp), parameter :: m_v = n_a*0.002991e-23_wp                      ! molar mass of water
+  real(wp), parameter :: r_d = 287.057811_wp                            ! specific gas constant of dry air
+  real(wp), parameter :: c_d_p = 1005._wp                               ! isobaric specific heat capacity of dry air
+  real(wp), parameter :: scale_height = 8000._wp                        ! scale_height
+  real(wp), parameter :: t_0 = 273.15_wp                                ! 273.15 K
+  real(wp), parameter :: r_v = 461.524879_wp                            ! specific gas constant of water vapour
   
   contains
   
@@ -98,6 +108,137 @@ module mo_shared
     int2string = adjustl(int2string)
     
   end function int2string
+  
+  function rel_humidity(abs_humidity,temperature)
+    
+    ! This function returns the relative humidity as a function of the absolute humidity in kg/m^3 and the temperature in K.
+    
+    real(wp), intent(in) :: abs_humidity ! absolute humidity (water vapour mass density (kg/m**3))
+    real(wp), intent(in) :: temperature  ! temperature (K)
+    real(wp)             :: rel_humidity ! result
+    
+    ! local variables
+    real(wp)             :: vapour_pressure     ! actual water vapour pressure
+    real(wp)             :: saturation_pressure ! saturation water vapour pressure
+    
+    ! calculation of the water vapour pressure according to the equation of state
+    vapour_pressure = abs_humidity*r_v*temperature
+    
+    if (temperature>t_0) then
+      saturation_pressure = saturation_pressure_over_water(temperature)
+    endif
+    if (temperature<=t_0) then
+      saturation_pressure = saturation_pressure_over_ice(temperature)
+    endif
+    
+    rel_humidity = vapour_pressure/saturation_pressure
+    
+  end function rel_humidity
+
+  function saturation_pressure_over_water(temperature)
+
+    ! This function returns the saturation pressure in Pa over liquid water as a function of the temperature in K.
+    ! It uses the formula by Huang: A Simple Accurate Formula for Calculating Saturation Vapor Pressure of Water and Ice, 2018, DOI: 10.1175/JAMC-D-17-0334.1.
+    
+    real(wp), intent(in) :: temperature                    ! temperature in Kelvin
+    real(wp)             :: saturation_pressure_over_water ! result
+    
+    ! local variables
+    real(wp)  :: temp_c ! temperature in degrees Celsius
+
+    temp_c = temperature - t_0
+    ! clipping too extreme values for this approximation
+    if (temp_c>100._wp) then
+      temp_c = 100._wp
+    endif
+    
+    if (temp_c>0._wp) then
+      saturation_pressure_over_water = exp(34.494_wp-4924.99_wp/(temp_c+237.1_wp))/(temp_c+105._wp)**1.57_wp
+    ! For super-cooled water we use the formula cited in Pruppacher and Klett (2010), p. 854, Eq. (A.4-1).
+    else
+      ! Clipping values that are too extreme for this approximation.
+      if (temp_c<-50._wp) then
+        temp_c = -50._wp
+      endif
+      saturation_pressure_over_water &
+      = 6.107799961_wp &
+      + 4.436518521e-1_wp*temp_c &
+      + 1.428945805e-2_wp*temp_c**2 &
+      + 2.650648471e-4_wp*temp_c**3 &
+      + 3.031240396e-6_wp*temp_c**4 &
+      + 2.034080948e-8_wp*temp_c**5 &
+      + 6.136820929e-11_wp*temp_c**6
+    endif
+
+  end function saturation_pressure_over_water
+  
+  function saturation_pressure_over_ice(temperature)
+    
+    ! This function returns the saturation pressure in Pa over ice as a function of the temperature in K.
+    ! It blends the two formulas of Huang and Murphy.
+    
+    real(wp), intent(in) :: temperature                  ! temperature in Kelvin
+    real(wp)             :: saturation_pressure_over_ice ! result
+    
+    ! local variables
+    real(wp) :: t_local      ! local copy of temperature
+    real(wp) :: temp_c       ! temperature in degrees Celsius
+    real(wp) :: huang_weight ! weight of the Huang formula
+
+    t_local = temperature
+
+    temp_c = t_local - t_0
+    
+    if (temp_c>=-80._wp) then
+      ! at temperatures > 0 degrees Celsius ice cannot exist in equilibrium which is why this is clipped
+      if (t_local>t_0) then
+        t_local = t_0
+      endif
+      saturation_pressure_over_ice = saturation_pressure_ice_huang(t_local)
+    elseif (temp_c>=-100._wp) then
+      huang_weight = (temp_c+100._wp)/20._wp
+      saturation_pressure_over_ice = huang_weight*saturation_pressure_ice_huang(t_local) &
+                                     + (1._wp-huang_weight)+saturation_pressure_ice_murphy(t_local)
+    else
+      ! clipping too extreme values for this approximation
+      if (t_local<110._wp) then
+        t_local = 110._wp
+      endif
+      saturation_pressure_over_ice = saturation_pressure_ice_murphy(t_local)
+    endif
+    
+  end function saturation_pressure_over_ice
+  
+  function saturation_pressure_ice_huang(temperature)
+  
+    ! This function computes the saturation pressure over ice.
+    ! It follows the formula by Huang: A Simple Accurate Formula for Calculating Saturation Vapor Pressure of Water and Ice, 2018, DOI: 10.1175/JAMC-D-17-0334.1.
+    
+    real(wp), intent(in) :: temperature                   ! temperature in Kelvin
+    real(wp)             :: saturation_pressure_ice_huang ! result
+    
+    ! local variables
+    real(wp) :: temp_c  ! temperature in degrees Celsius
+    
+    temp_c = temperature - t_0
+    
+    saturation_pressure_ice_huang = exp(43.494_wp-6545.8_wp/(temp_c+278._wp))/(temp_c+868._wp)**2
+  
+  end function saturation_pressure_ice_huang
+  
+  function saturation_pressure_ice_murphy(temperature)
+  
+    ! This function computes the saturation pressure over ice.
+    ! It follows Eq. (7) in Murphy DM, Koop T. Review of the vapour pressures of ice and supercooled water for atmospheric applications.
+    ! QUARTERLY JOURNAL OF THE ROYAL METEOROLOGICAL SOCIETY. 2005;131(608):1539-1565.
+
+    real(wp), intent(in) :: temperature                    ! temperature in Kelvin
+    real(wp)             :: saturation_pressure_ice_murphy ! result
+    
+    ! computing the result
+    saturation_pressure_ice_murphy = exp(9.550426_wp-5723.265_wp/temperature+3.53068_wp*log(temperature)-0.00728332_wp*temperature)
+  
+  end function saturation_pressure_ice_murphy
 
 end module mo_shared
 
