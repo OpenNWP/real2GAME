@@ -20,7 +20,7 @@ program control
                            directions_id,ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,& 
                            interpolation_indices_vector_id,dimids_vector_2(2),n_condensed_constituents, &
                            interpolation_weights_vector_id,closest_index,other_index, sp_id,z_surf_id, &
-                           z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id,densities_background_id, &
+                           z_coords_id,t_in_id,spec_hum_id,u_id,v_id,sst_id,densities_background_id, &
                            tke_id,t_soil_id,dimids_vector_3(3), &
                            edge_dimid,single_double_dimid,densities_id,temperature_id,wind_h_id,wind_v_id,soil_layer_dimid, &
                            res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_edges,n_layers,level_dimid, &
@@ -32,7 +32,7 @@ program control
   real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_game(:,:),directions(:),z_game_wind(:,:), &
                            gravity_potential_game(:,:),densities_background(:,:,:),tke(:,:),t_soil(:,:),z_coords_input_model(:,:), &
                            temperature_in(:,:),spec_hum_in(:,:),u_wind_in(:,:),v_wind_in(:,:),z_surf_in(:), &
-                           p_surf_in(:),lat_sst(:),lon_sst(:),sst_in(:), &
+                           p_surf_in(:),sst_in(:), &
                            temperature_out(:,:),spec_hum_out(:,:),pressure_lowest_layer_out(:), &
                            density_moist_out(:,:),temperature_v(:,:),distance_vector(:),densities_out(:,:,:),exner(:,:), &
                            wind_out_h(:,:),wind_out_v(:,:),sst_out(:)
@@ -161,8 +161,6 @@ program control
   allocate(v_wind_in(n_points_per_layer_input,n_layers_input))
   allocate(z_surf_in(n_points_per_layer_input))
   allocate(p_surf_in(n_points_per_layer_input))
-  allocate(lat_sst(n_sst_points))
-  allocate(lon_sst(n_sst_points))
   allocate(sst_in(n_sst_points))
   !$omp parallel workshare
   z_coords_input_model = 0._wp
@@ -172,8 +170,6 @@ program control
   v_wind_in = 0._wp
   z_surf_in = 0._wp
   p_surf_in = 0._wp
-  lat_sst = 0._wp
-  lon_sst = 0._wp
   sst_in = 0._wp
   !$omp end parallel workshare
   
@@ -191,8 +187,6 @@ program control
   call nc_check(nf90_inq_varid(ncid,"v_wind",v_id))
   call nc_check(nf90_inq_varid(ncid,"z_surface",z_surf_id))
   call nc_check(nf90_inq_varid(ncid,"pressure_surface",sp_id))
-  call nc_check(nf90_inq_varid(ncid,"lat_sst",lat_sst_id))
-  call nc_check(nf90_inq_varid(ncid,"lon_sst",lon_sst_id))
   call nc_check(nf90_inq_varid(ncid,"sst",sst_id))
   call nc_check(nf90_get_var(ncid,z_coords_id,z_coords_input_model))
   call nc_check(nf90_get_var(ncid,t_in_id,temperature_in))
@@ -201,8 +195,6 @@ program control
   call nc_check(nf90_get_var(ncid,v_id,v_wind_in))
   call nc_check(nf90_get_var(ncid,z_surf_id,z_surf_in))
   call nc_check(nf90_get_var(ncid,sp_id,p_surf_in))
-  call nc_check(nf90_get_var(ncid,lat_sst_id,lat_sst))
-  call nc_check(nf90_get_var(ncid,lon_sst_id,lon_sst))
   call nc_check(nf90_get_var(ncid,sst_id,sst_in))
   call nc_check(nf90_close(ncid))
   write(*,*) "Input read."
@@ -497,8 +489,6 @@ program control
   deallocate(interpolation_indices_sst)
   deallocate(interpolation_weights_sst)
   deallocate(distance_vector)
-  deallocate(lat_sst)
-  deallocate(lon_sst)
   deallocate(sst_in)
   deallocate(latitudes_game)
   deallocate(longitudes_game)
