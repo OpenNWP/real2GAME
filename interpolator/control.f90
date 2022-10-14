@@ -34,7 +34,7 @@ program control
                            temperature_in(:,:),spec_hum_in(:,:),u_wind_in(:,:),v_wind_in(:,:),z_surf_in(:), &
                            p_surf_in(:),sst_in(:), &
                            temperature_out(:,:),spec_hum_out(:,:),pressure_lowest_layer_out(:), &
-                           density_moist_out(:,:),temperature_v(:,:),distance_vector(:),densities_out(:,:,:),exner(:,:), &
+                           density_moist_out(:,:),temperature_v(:,:),densities_out(:,:,:),exner(:,:), &
                            wind_out_h(:,:),wind_out_v(:,:),sst_out(:)
   integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:),interpolation_indices_sst(:,:)
   real(wp), allocatable :: interpolation_weights_scalar(:,:),interpolation_weights_vector(:,:),interpolation_weights_sst(:,:)
@@ -474,10 +474,8 @@ program control
   
   write(*,*) "Interpolating the SST to the model grid ..."
   allocate(sst_out(n_cells))
-  allocate(distance_vector(n_sst_points))
   !$omp parallel workshare
   sst_out = 0._wp
-  distance_vector = 0._wp
   !$omp end parallel workshare
   !$omp parallel do private(ji,jm)
   do ji=1,n_cells
@@ -488,7 +486,6 @@ program control
   !$omp end parallel do
   deallocate(interpolation_indices_sst)
   deallocate(interpolation_weights_sst)
-  deallocate(distance_vector)
   deallocate(sst_in)
   deallocate(latitudes_game)
   deallocate(longitudes_game)
