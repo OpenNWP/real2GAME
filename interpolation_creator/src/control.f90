@@ -156,8 +156,8 @@ program control
   
   ! transforming the coordinates of the SST file from degrees to radians
   !$omp parallel workshare
-  lat_input_model = 2._wp*M_PI*lat_input_model/360._wp
-  lon_input_model = 2._wp*M_PI*lon_input_model/360._wp
+  lat_sst = 2._wp*M_PI*lat_sst/360._wp
+  lon_sst = 2._wp*M_PI*lon_sst/360._wp
   !$omp end parallel workshare
   
   ! GAME
