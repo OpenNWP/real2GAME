@@ -8,7 +8,7 @@ program control
   use netcdf
   use eccodes
   use mo_shared, only: wp,n_avg_points,M_PI,nc_check,int2string,find_min_index,calculate_distance_h, &
-                       n_points_per_layer_input_icon_global,n_points_per_layer_input_icon_d2
+                       n_points_per_layer_input_icon_global,n_points_per_layer_input_icon_d2,n_sst_points
   
   implicit none
   
@@ -22,10 +22,18 @@ program control
                            edge_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id, &
                            res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_edges,model_source_id,dim_vector_3(3), &
                            y_dimid,x_dimid,yp1_dimid,xp1_dimid,n_points_per_layer_input
+  integer               :: interpolation_indices_sst_id
+  integer               :: interpolation_weights_sst_id
   real(wp)              :: sum_of_weights,interpol_exp
   integer,  allocatable :: interpolation_indices_scalar_game(:,:),interpolation_indices_vector(:,:), &
                            interpolation_indices_vector_u(:,:,:),interpolation_indices_vector_v(:,:,:), &
                            interpolation_indices_scalar_lgame(:,:,:)
+  integer,  allocatable :: interpolation_indices_sst_game(:,:)
+  integer,  allocatable :: interpolation_indices_sst_lgame(:,:,:)
+  real(wp), allocatable :: interpolation_weights_sst_game(:,:)
+  real(wp), allocatable :: interpolation_weights_sst_lgame(:,:,:)
+  real(wp), allocatable :: lat_sst(:)
+  real(wp), allocatable :: lon_sst(:)
   real(wp), allocatable :: lat_input_model(:),lon_input_model(:),lat_game(:),lon_game(:), &
                            lat_game_wind(:),lon_game_wind(:),interpolation_weights_scalar_game(:,:), &
                            interpolation_weights_vector(:,:),distance_vector(:),lat_lgame(:,:), &
@@ -38,6 +46,7 @@ program control
                            res_id_string,model_source_id_string
   character(len=128)    :: real2game_root_dir,model_home_dir,lgame_grid
   character(len=256)    :: lat_obs_file,lon_obs_file,geo_pro_file,output_file
+  character(len=256)    :: sst_file
   
   ! shell arguments
   call get_command_argument(1,year_string)
@@ -99,11 +108,9 @@ program control
   call codes_close_file(jfile)
   
   ! transforming the latitude coordinates of the input model from degrees to radians
-  !$omp parallel do private(ji)
-  do ji=1,n_points_per_layer_input
-    lat_input_model(ji) = 2._wp*M_PI*lat_input_model(ji)/360._wp
-  enddo
-  !$omp end parallel do
+  !$omp parallel workshare
+  lat_input_model = 2._wp*M_PI*lat_input_model/360._wp
+  !$omp end parallel workshare
   
   ! longitudes of the grid
   ! ICON-global
@@ -125,6 +132,31 @@ program control
   
   ! transforming the longitude coordinates of the input model from degrees to radians
   !$omp parallel workshare
+  lon_input_model = 2._wp*M_PI*lon_input_model/360._wp
+  !$omp end parallel workshare
+  
+  ! SST points
+  allocate(lat_sst(n_sst_points))
+  allocate(lon_sst(n_sst_points))
+  !$omp parallel workshare
+  lat_sst = 0._wp
+  lon_sst = 0._wp
+  !$omp end parallel workshare
+  
+  ! SST filename
+  sst_file = trim(real2game_root_dir) // "/interpolation_creator/rtgssthr_grb_0.5.grib2"
+  
+  call codes_open_file(jfile,trim(sst_file),"r")
+  call codes_grib_new_from_file(jfile,jgrib)
+  call codes_get(jgrib,"values",lat_sst)
+  call codes_get(jgrib,"latitudes",lat_sst)
+  call codes_get(jgrib,"longitudes",lon_sst)
+  call codes_release(jgrib)
+  call codes_close_file(jfile)
+  
+  ! transforming the coordinates of the SST file from degrees to radians
+  !$omp parallel workshare
+  lat_input_model = 2._wp*M_PI*lat_input_model/360._wp
   lon_input_model = 2._wp*M_PI*lon_input_model/360._wp
   !$omp end parallel workshare
   
@@ -164,11 +196,15 @@ program control
     allocate(interpolation_weights_scalar_game(n_cells,n_avg_points))
     allocate(interpolation_indices_vector(n_edges,n_avg_points))
     allocate(interpolation_weights_vector(n_edges,n_avg_points))
+    allocate(interpolation_indices_sst_game(n_cells,n_avg_points))
+    allocate(interpolation_weights_sst_game(n_cells,n_avg_points))
     !$omp parallel workshare
     interpolation_indices_scalar_game = 0
     interpolation_weights_scalar_game = 0._wp
     interpolation_indices_vector = 0
     interpolation_weights_vector = 0._wp
+    interpolation_indices_sst_game = 0
+    interpolation_weights_sst_game = 0._wp
     !$omp end parallel workshare
     
     ! executing the actual interpolation
@@ -179,6 +215,7 @@ program control
     distance_vector = 0._wp
     !$omp end parallel workshare
     
+    ! cell centers
     !$omp parallel do private(ji,jk,distance_vector,sum_of_weights)
     do ji=1,n_cells
       do jk=1,n_points_per_layer_input
@@ -198,6 +235,7 @@ program control
     enddo
     !$omp end parallel do
   
+    ! edges
     !$omp parallel do private(ji,jk,sum_of_weights,distance_vector)
     do ji=1,n_edges
       do jk=1,n_points_per_layer_input
@@ -218,6 +256,30 @@ program control
     !$omp end parallel do
     
     deallocate(distance_vector)
+    allocate(distance_vector(n_sst_points))
+    
+    ! SST points
+    !$omp parallel do private(ji,jk,distance_vector,sum_of_weights)
+    do ji=1,n_cells
+      do jk=1,n_sst_points
+        distance_vector(jk) = calculate_distance_h(lat_game(ji),lon_game(ji),lat_sst(jk),lon_sst(jk),1._wp)
+      enddo
+      sum_of_weights = 0._wp
+      do jk=1,n_avg_points
+        interpolation_indices_sst_game(ji,jk) = find_min_index(distance_vector,n_sst_points)
+        interpolation_weights_sst_game(ji,jk) = 1._wp/distance_vector(interpolation_indices_sst_game(ji,jk))**interpol_exp
+        distance_vector(interpolation_indices_sst_game(ji,jk)) = 2._wp*M_PI
+        sum_of_weights = sum_of_weights + interpolation_weights_sst_game(ji,jk)
+      enddo
+      do jk=1,n_avg_points
+        interpolation_weights_sst_game(ji,jk) = interpolation_weights_sst_game(ji,jk)/sum_of_weights
+      enddo
+    enddo
+    !$omp end parallel do
+    
+    deallocate(distance_vector)
+    deallocate(lat_sst)
+    deallocate(lon_sst)
     
     write(*,*) "Calculating interpolation indices and weights finished."
     
@@ -240,6 +302,8 @@ program control
     dim_vector_2(2) = avg_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector_2,interpolation_indices_scalar_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector_2,interpolation_weights_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_sst",NF90_INT,dim_vector_2,interpolation_indices_sst_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_sst",NF90_REAL,dim_vector_2,interpolation_weights_sst_id))
     dim_vector_2(1) = edge_dimid
     dim_vector_2(2) = avg_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_vector",NF90_INT,dim_vector_2,interpolation_indices_vector_id))
@@ -249,6 +313,8 @@ program control
     call nc_check(nf90_put_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar_game))
     call nc_check(nf90_put_var(ncid,interpolation_indices_vector_id,interpolation_indices_vector))
     call nc_check(nf90_put_var(ncid,interpolation_weights_vector_id,interpolation_weights_vector))
+    call nc_check(nf90_put_var(ncid,interpolation_indices_sst_id,interpolation_indices_sst_game))
+    call nc_check(nf90_put_var(ncid,interpolation_weights_sst_id,interpolation_weights_sst_game))
     call nc_check(nf90_close(ncid))
       
     ! freeing the memory
@@ -256,6 +322,8 @@ program control
     deallocate(interpolation_weights_scalar_game)
     deallocate(interpolation_indices_vector)
     deallocate(interpolation_weights_vector)
+    deallocate(interpolation_indices_sst_game)
+    deallocate(interpolation_weights_sst_game)
     
   endif
   
@@ -304,6 +372,8 @@ program control
     allocate(interpolation_weights_vector_u(ny,nx+1,n_avg_points))
     allocate(interpolation_indices_vector_v(ny+1,nx,n_avg_points))
     allocate(interpolation_weights_vector_v(ny+1,nx,n_avg_points))
+    allocate(interpolation_indices_sst_lgame(ny,nx,n_avg_points))
+    allocate(interpolation_weights_sst_lgame(ny,nx,n_avg_points))
     !$omp parallel workshare
     interpolation_indices_scalar_lgame = 0
     interpolation_weights_scalar_lgame = 0._wp
@@ -311,6 +381,8 @@ program control
     interpolation_weights_vector_u = 0._wp
     interpolation_indices_vector_v = 0
     interpolation_weights_vector_v = 0._wp
+    interpolation_indices_sst_lgame = 0
+    interpolation_weights_sst_lgame = 0._wp
     !$omp end parallel workshare
     
     ! executing the actual interpolation
@@ -320,6 +392,8 @@ program control
     !$omp parallel workshare
     distance_vector = 0._wp
     !$omp end parallel workshare
+    
+    ! scalar points
     !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
     do ji=1,ny
       do jk=1,nx
@@ -342,6 +416,7 @@ program control
     enddo
     !$omp end parallel do
     
+    ! u vector points
     !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
     do ji=1,ny
       do jk=1,nx+1
@@ -363,6 +438,7 @@ program control
     enddo
     !$omp end parallel do
     
+    ! v vector points
     !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
     do ji=1,ny+1
       do jk=1,nx
@@ -384,7 +460,31 @@ program control
     enddo
     !$omp end parallel do
     
+    ! SST
+    !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
+    do ji=1,ny
+      do jk=1,nx
+        do jm=1,n_sst_points
+          distance_vector(jm) = calculate_distance_h(lat_lgame(ji,jk),lon_lgame(ji,jk),lat_sst(jm),lon_sst(jm),1._wp)
+        enddo
+        sum_of_weights = 0._wp
+        do jm=1,n_avg_points
+          interpolation_indices_sst_lgame(ji,jk,jm) = find_min_index(distance_vector,n_sst_points)
+          interpolation_weights_sst_lgame(ji,jk,jm) = 1._wp/ &
+                                      distance_vector(interpolation_indices_sst_lgame(ji,jk,jm))**interpol_exp
+          distance_vector(interpolation_indices_sst_lgame(ji,jk,jm)) = 2._wp*M_PI
+          sum_of_weights = sum_of_weights + interpolation_weights_sst_lgame(ji,jk,jm)
+        enddo
+        do jm=1,n_avg_points
+          interpolation_weights_sst_lgame(ji,jk,jm) = interpolation_weights_sst_lgame(ji,jk,jm)/sum_of_weights
+        enddo
+      enddo
+    enddo
+    !$omp end parallel do
+    
     deallocate(distance_vector)
+    deallocate(lat_sst)
+    deallocate(lon_sst)
     
     write(*,*) "Calculating interpolation indices and weights finished."
     
@@ -412,6 +512,8 @@ program control
     dim_vector_3(3) = avg_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector_3,interpolation_indices_scalar_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector_3,interpolation_weights_scalar_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_indices_sst",NF90_INT,dim_vector_3,interpolation_indices_sst_id))
+    call nc_check(nf90_def_var(ncid,"interpolation_weights_sst",NF90_REAL,dim_vector_3,interpolation_weights_sst_id))
     dim_vector_3(1) = y_dimid
     dim_vector_3(2) = xp1_dimid
     dim_vector_3(3) = avg_dimid
@@ -429,6 +531,8 @@ program control
     call nc_check(nf90_put_var(ncid,interpolation_weights_vector_u_id,interpolation_weights_vector_u))
     call nc_check(nf90_put_var(ncid,interpolation_indices_vector_v_id,interpolation_indices_vector_v))
     call nc_check(nf90_put_var(ncid,interpolation_weights_vector_v_id,interpolation_weights_vector_v))
+    call nc_check(nf90_put_var(ncid,interpolation_indices_sst_id,interpolation_indices_sst_lgame))
+    call nc_check(nf90_put_var(ncid,interpolation_weights_sst_id,interpolation_weights_sst_lgame))
     call nc_check(nf90_close(ncid))
     
     ! freeing the memory
@@ -438,6 +542,8 @@ program control
     deallocate(interpolation_weights_vector_u)
     deallocate(interpolation_indices_vector_v)
     deallocate(interpolation_weights_vector_v)
+    deallocate(interpolation_indices_sst_lgame)
+    deallocate(interpolation_weights_sst_lgame)
   
   endif
   

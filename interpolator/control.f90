@@ -21,21 +21,23 @@ program control
                            interpolation_indices_vector_id,dimids_vector_2(2),n_condensed_constituents, &
                            interpolation_weights_vector_id,closest_index,other_index, sp_id,z_surf_id, &
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,lat_sst_id,lon_sst_id,sst_id,densities_background_id, &
-                           tke_id,t_soil_id,min_index,dimids_vector_3(3), &
+                           tke_id,t_soil_id,dimids_vector_3(3), &
                            edge_dimid,single_double_dimid,densities_id,temperature_id,wind_h_id,wind_v_id,soil_layer_dimid, &
                            res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_edges,n_layers,level_dimid, &
                            n_levels,nsoillays,layer_dimid,n_points_per_layer_input
+  integer               :: interpolation_indices_sst_id,interpolation_weights_sst_id ! netCDF IDs of the interpolation indices and weights for the SST interpolation
   real(wp)              :: rh                          ! relative humidity value
   real(wp)              :: maximum_cloud_water_content ! maximum cloud water content in (kg cloud)/(kg dry air)
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
   real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_game(:,:),directions(:),z_game_wind(:,:), &
                            gravity_potential_game(:,:),densities_background(:,:,:),tke(:,:),t_soil(:,:),z_coords_input_model(:,:), &
                            temperature_in(:,:),spec_hum_in(:,:),u_wind_in(:,:),v_wind_in(:,:),z_surf_in(:), &
-                           p_surf_in(:),lat_sst(:),lon_sst(:),sst_in(:),interpolation_weights_scalar(:,:), &
-                           interpolation_weights_vector(:,:),temperature_out(:,:),spec_hum_out(:,:),pressure_lowest_layer_out(:), &
+                           p_surf_in(:),lat_sst(:),lon_sst(:),sst_in(:), &
+                           temperature_out(:,:),spec_hum_out(:,:),pressure_lowest_layer_out(:), &
                            density_moist_out(:,:),temperature_v(:,:),distance_vector(:),densities_out(:,:,:),exner(:,:), &
                            wind_out_h(:,:),wind_out_v(:,:),sst_out(:)
-  integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:)
+  integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:),interpolation_indices_sst(:,:)
+  real(wp), allocatable :: interpolation_weights_scalar(:,:),interpolation_weights_vector(:,:),interpolation_weights_sst(:,:)
   character(len=4)      :: year_string,n_layers_string
   character(len=2)      :: month_string,day_string,hour_string,res_id_string,nsoillays_string,oro_id_string
   character(len=128)    :: real2game_root_dir,model_home_dir
@@ -210,11 +212,15 @@ program control
   allocate(interpolation_weights_scalar(n_cells,n_avg_points))
   allocate(interpolation_indices_vector(n_edges,n_avg_points))
   allocate(interpolation_weights_vector(n_edges,n_avg_points))
+  allocate(interpolation_indices_sst(n_cells,n_avg_points))
+  allocate(interpolation_weights_sst(n_cells,n_avg_points))
   !$omp parallel workshare
   interpolation_indices_scalar = 0
   interpolation_weights_scalar = 0._wp
   interpolation_indices_vector = 0
   interpolation_weights_vector = 0._wp
+  interpolation_indices_sst = 0
+  interpolation_weights_sst = 0._wp
   !$omp end parallel workshare
   
   write(*,*) "Reading the interpolation indices and weights."
@@ -228,10 +234,14 @@ program control
   call nc_check(nf90_inq_varid(ncid,"interpolation_weights_scalar",interpolation_weights_scalar_id))
   call nc_check(nf90_inq_varid(ncid,"interpolation_indices_vector",interpolation_indices_vector_id))
   call nc_check(nf90_inq_varid(ncid,"interpolation_weights_vector",interpolation_weights_vector_id))
+  call nc_check(nf90_inq_varid(ncid,"interpolation_indices_sst",interpolation_indices_sst_id))
+  call nc_check(nf90_inq_varid(ncid,"interpolation_weights_sst",interpolation_weights_sst_id))
   call nc_check(nf90_get_var(ncid,interpolation_indices_scalar_id,interpolation_indices_scalar))
   call nc_check(nf90_get_var(ncid,interpolation_weights_scalar_id,interpolation_weights_scalar))
   call nc_check(nf90_get_var(ncid,interpolation_indices_vector_id,interpolation_indices_vector))
   call nc_check(nf90_get_var(ncid,interpolation_weights_vector_id,interpolation_weights_vector))
+  call nc_check(nf90_get_var(ncid,interpolation_indices_sst_id,interpolation_indices_sst))
+  call nc_check(nf90_get_var(ncid,interpolation_weights_sst_id,interpolation_weights_sst))
   call nc_check(nf90_close(ncid))
   write(*,*) "Interpolation indices and weights read."
   
@@ -477,15 +487,15 @@ program control
   sst_out = 0._wp
   distance_vector = 0._wp
   !$omp end parallel workshare
-  !$omp parallel do private(ji,jm,distance_vector,min_index)
+  !$omp parallel do private(ji,jm)
   do ji=1,n_cells
-    do jm=1,n_sst_points
-      distance_vector(jm) = calculate_distance_h(lat_sst(jm),lon_sst(jm),latitudes_game(ji),longitudes_game(ji),1._wp)
+    do jm=1,n_avg_points
+      sst_out(ji) = sst_out(ji) + interpolation_weights_sst(ji,jm)*sst_in(interpolation_indices_sst(ji,jm))
     enddo
-    min_index = find_min_index(distance_vector,n_sst_points)
-    sst_out(ji) = sst_in(min_index)
   enddo
   !$omp end parallel do
+  deallocate(interpolation_indices_sst)
+  deallocate(interpolation_weights_sst)
   deallocate(distance_vector)
   deallocate(lat_sst)
   deallocate(lon_sst)

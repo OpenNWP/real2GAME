@@ -114,12 +114,26 @@ then
   echo "ICON grid data downloaded."
 fi
 
+# downloading the SST grid data
+echo "Downloading SST grid data ..."
+now=$(date +%s)
+save_avail_time=$(bc <<< "$now - 1440*60")
+
+ana_day=$(date --utc -d @$save_avail_time +%Y%m%d)
+
+basic_url=https://nomads.ncep.noaa.gov/pub/data/nccf/com/nsst/prod/nsst.
+filename=rtgssthr_grb_0.5.grib2
+url=$basic_url$ana_day
+url=$url/$filename
+wget -q --directory-prefix=$real2game_root_dir/interpolation_creator $url
+echo "SST grid data downloaded."
+
 # Now we can execute the interpolation creator itself.
 ./build/interpolation_creator $analysis_year $analysis_month $analysis_day $analysis_hour $real2game_root_dir $model_home_dir $oro_id $model_target_id $ny $nx $interpol_exp $lgame_grid $res_id $n_layers $model_source_id
 
 # deleting the ICON grid data
 rm icon*
-
+rm rtgssthr_grb_0.5.grib2*
 
 
 
