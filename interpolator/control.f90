@@ -271,7 +271,7 @@ program control
         enddo
         
         ! closest vertical index
-        closest_index = find_min_index(vector_to_minimize,n_layers_input)
+        closest_index = find_min_index(vector_to_minimize)
         
         ! value at the closest vertical index
         closest_value = temperature_in(interpolation_indices_scalar(ji,jm),closest_index)
@@ -416,7 +416,7 @@ program control
           vector_to_minimize(jn) = abs(z_game_wind(ji,jl) - z_coords_input_model(interpolation_indices_vector(ji,jm),jn))
         enddo
         ! closest vertical index
-        closest_index = find_min_index(vector_to_minimize,n_layers_input)
+        closest_index = find_min_index(vector_to_minimize)
         ! value at the closest vertical index
         closest_value = u_wind_in(interpolation_indices_vector(ji,jm),closest_index)
       

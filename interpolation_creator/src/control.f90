@@ -224,7 +224,7 @@ program control
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
-        interpolation_indices_scalar_game(ji,jk) = find_min_index(distance_vector,n_points_per_layer_input)
+        interpolation_indices_scalar_game(ji,jk) = find_min_index(distance_vector)
         interpolation_weights_scalar_game(ji,jk) = 1._wp/distance_vector(interpolation_indices_scalar_game(ji,jk))**interpol_exp
         distance_vector(interpolation_indices_scalar_game(ji,jk)) = 2._wp*M_PI
         sum_of_weights = sum_of_weights + interpolation_weights_scalar_game(ji,jk)
@@ -244,7 +244,7 @@ program control
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
-        interpolation_indices_vector(ji,jk) = find_min_index(distance_vector,n_points_per_layer_input)
+        interpolation_indices_vector(ji,jk) = find_min_index(distance_vector)
         interpolation_weights_vector(ji,jk) = 1._wp/distance_vector(interpolation_indices_vector(ji,jk))**interpol_exp
         distance_vector(interpolation_indices_vector(ji,jk)) = 2._wp*M_PI
         sum_of_weights = sum_of_weights + interpolation_weights_vector(ji,jk)
@@ -266,7 +266,7 @@ program control
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
-        interpolation_indices_sst_game(ji,jk) = find_min_index(distance_vector,n_sst_points)
+        interpolation_indices_sst_game(ji,jk) = find_min_index(distance_vector)
         interpolation_weights_sst_game(ji,jk) = 1._wp/distance_vector(interpolation_indices_sst_game(ji,jk))**interpol_exp
         distance_vector(interpolation_indices_sst_game(ji,jk)) = 2._wp*M_PI
         sum_of_weights = sum_of_weights + interpolation_weights_sst_game(ji,jk)
@@ -403,7 +403,7 @@ program control
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_scalar_lgame(ji,jk,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_indices_scalar_lgame(ji,jk,jm) = find_min_index(distance_vector)
           interpolation_weights_scalar_lgame(ji,jk,jm) = 1._wp/ &
                                       distance_vector(interpolation_indices_scalar_lgame(ji,jk,jm))**interpol_exp
           distance_vector(interpolation_indices_scalar_lgame(ji,jk,jm)) = 2._wp*M_PI
@@ -426,7 +426,7 @@ program control
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_vector_u(ji,jk,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_indices_vector_u(ji,jk,jm) = find_min_index(distance_vector)
           interpolation_weights_vector_u(ji,jk,jm) = 1._wp/distance_vector(interpolation_indices_vector_u(ji,jk,jm))**interpol_exp
           distance_vector(interpolation_indices_vector_u(ji,jk,jm)) = 2._wp*M_PI
           sum_of_weights = sum_of_weights + interpolation_weights_vector_u(ji,jk,jm)
@@ -448,7 +448,7 @@ program control
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_vector_v(ji,jk,jm) = find_min_index(distance_vector,n_points_per_layer_input)
+          interpolation_indices_vector_v(ji,jk,jm) = find_min_index(distance_vector)
           interpolation_weights_vector_v(ji,jk,jm) = 1._wp/distance_vector(interpolation_indices_vector_v(ji,jk,jm))**interpol_exp
           distance_vector(interpolation_indices_vector_v(ji,jk,jm)) = 2._wp*M_PI
           sum_of_weights = sum_of_weights + interpolation_weights_vector_v(ji,jk,jm)
@@ -460,6 +460,9 @@ program control
     enddo
     !$omp end parallel do
     
+    deallocate(distance_vector)
+    allocate(distance_vector(n_sst_points))
+    
     ! SST
     !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
     do ji=1,ny
@@ -469,7 +472,7 @@ program control
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_sst_lgame(ji,jk,jm) = find_min_index(distance_vector,n_sst_points)
+          interpolation_indices_sst_lgame(ji,jk,jm) = find_min_index(distance_vector)
           interpolation_weights_sst_lgame(ji,jk,jm) = 1._wp/ &
                                       distance_vector(interpolation_indices_sst_lgame(ji,jk,jm))**interpol_exp
           distance_vector(interpolation_indices_sst_lgame(ji,jk,jm)) = 2._wp*M_PI

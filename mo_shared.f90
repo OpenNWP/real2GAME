@@ -59,13 +59,12 @@ module mo_shared
     
   end function calculate_distance_h
 
-  function find_min_index(vector,vector_length)
+  function find_min_index(vector)
   
     ! This function returns the index where a vector has its minimum.
     
-    integer,  intent(in) :: vector_length         ! length of the vector of which the minimum has to be found
-    real(wp), intent(in) :: vector(vector_length) ! vector of which to find the minimum
-    integer              :: find_min_index        ! result
+    real(wp), intent(in) :: vector(:)      ! vector of which to find the minimum
+    integer              :: find_min_index ! result
     
     ! local variables
     integer  :: ji          ! loop index
@@ -76,7 +75,7 @@ module mo_shared
     current_min = vector(1)
     
     ! loop over all remaining elements of the vector
-    do ji=2,vector_length
+    do ji=2,size(vector)
       if (vector(ji)<current_min) then
         current_min = vector(ji) 
         find_min_index = ji
