@@ -15,7 +15,7 @@ mo_shared.f90)
 add_definitions(-Wall)
 find_package(OpenMP)
 SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -ftree-vectorize -funroll-loops -Wall -Wpedantic -I/usr/include")
-# switching on boundary checking of arrays
+# switching on debugging options
 if(BOUNDS_CHECKS)
   SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fbounds-check")
 endif()
