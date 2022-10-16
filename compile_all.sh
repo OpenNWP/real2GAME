@@ -25,7 +25,7 @@ while getopts "d" opt; do
   esac
 done
 
-cmake -DBOUNDS_CHECKS=$d_value ..
+cmake -DDEBUGGING=$d_value ..
 make
 
 cd ..
@@ -41,7 +41,7 @@ fi
 
 cd build
 
-cmake -DBOUNDS_CHECKS=$d_value ..
+cmake -DDEBUGGING=$d_value ..
 make
 
 cd ..
@@ -56,10 +56,16 @@ fi
 
 cd build
 
-cmake -DBOUNDS_CHECKS=$d_value ..
+cmake -DDEBUGGING=$d_value ..
 make
 
 cd ..
+
+
+
+
+
+
 
 
 

@@ -16,7 +16,7 @@ find_package(OpenMP)
 SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -ftree-vectorize -funroll-loops -Wall -Wpedantic -I/usr/include \
 -I/usr/lib/x86_64-linux-gnu/fortran/gfortran-mod-15/ -I/usr/lib/aarch64-linux-gnu/fortran/gfortran-mod-15")
 # switching on debugging options
-if(BOUNDS_CHECKS)
-  SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fbounds-check")
+if(DEBUGGING)
+  SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fbounds-check -ffpe-trap=invalid,zero,overflow,underflow,denormal -fbacktrace -fdump-core")
 endif()
 target_link_libraries(formatter m netcdff eccodes_f90)
