@@ -192,12 +192,12 @@ program control
     write(*,*) "Grid file of GAME read."
   
     ! allocating memory for the result arrays
-    allocate(interpolation_indices_scalar_game(n_cells,n_avg_points))
-    allocate(interpolation_weights_scalar_game(n_cells,n_avg_points))
-    allocate(interpolation_indices_vector(n_edges,n_avg_points))
-    allocate(interpolation_weights_vector(n_edges,n_avg_points))
-    allocate(interpolation_indices_sst_game(n_cells,n_avg_points))
-    allocate(interpolation_weights_sst_game(n_cells,n_avg_points))
+    allocate(interpolation_indices_scalar_game(n_avg_points,n_cells))
+    allocate(interpolation_weights_scalar_game(n_avg_points,n_cells))
+    allocate(interpolation_indices_vector(n_avg_points,n_edges))
+    allocate(interpolation_weights_vector(n_avg_points,n_edges))
+    allocate(interpolation_indices_sst_game(n_avg_points,n_cells))
+    allocate(interpolation_weights_sst_game(n_avg_points,n_cells))
     !$omp parallel workshare
     interpolation_indices_scalar_game = 0
     interpolation_weights_scalar_game = 0._wp
@@ -224,13 +224,13 @@ program control
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
-        interpolation_indices_scalar_game(ji,jk) = find_min_index(distance_vector)
-        interpolation_weights_scalar_game(ji,jk) = 1._wp/distance_vector(interpolation_indices_scalar_game(ji,jk))**interpol_exp
-        distance_vector(interpolation_indices_scalar_game(ji,jk)) = 2._wp*M_PI
-        sum_of_weights = sum_of_weights + interpolation_weights_scalar_game(ji,jk)
+        interpolation_indices_scalar_game(jk,ji) = find_min_index(distance_vector)
+        interpolation_weights_scalar_game(jk,ji) = 1._wp/distance_vector(interpolation_indices_scalar_game(jk,ji))**interpol_exp
+        distance_vector(interpolation_indices_scalar_game(jk,ji)) = 2._wp*M_PI
+        sum_of_weights = sum_of_weights + interpolation_weights_scalar_game(jk,ji)
       enddo
       do jk=1,n_avg_points
-        interpolation_weights_scalar_game(ji,jk) = interpolation_weights_scalar_game(ji,jk)/sum_of_weights
+        interpolation_weights_scalar_game(jk,ji) = interpolation_weights_scalar_game(jk,ji)/sum_of_weights
       enddo
     enddo
     !$omp end parallel do
@@ -244,13 +244,13 @@ program control
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
-        interpolation_indices_vector(ji,jk) = find_min_index(distance_vector)
-        interpolation_weights_vector(ji,jk) = 1._wp/distance_vector(interpolation_indices_vector(ji,jk))**interpol_exp
-        distance_vector(interpolation_indices_vector(ji,jk)) = 2._wp*M_PI
-        sum_of_weights = sum_of_weights + interpolation_weights_vector(ji,jk)
+        interpolation_indices_vector(jk,ji) = find_min_index(distance_vector)
+        interpolation_weights_vector(jk,ji) = 1._wp/distance_vector(interpolation_indices_vector(jk,ji))**interpol_exp
+        distance_vector(interpolation_indices_vector(jk,ji)) = 2._wp*M_PI
+        sum_of_weights = sum_of_weights + interpolation_weights_vector(jk,ji)
       enddo
       do jk=1,n_avg_points
-        interpolation_weights_vector(ji,jk) = interpolation_weights_vector(ji,jk)/sum_of_weights
+        interpolation_weights_vector(jk,ji) = interpolation_weights_vector(jk,ji)/sum_of_weights
       enddo
     enddo
     !$omp end parallel do
@@ -266,13 +266,13 @@ program control
       enddo
       sum_of_weights = 0._wp
       do jk=1,n_avg_points
-        interpolation_indices_sst_game(ji,jk) = find_min_index(distance_vector)
-        interpolation_weights_sst_game(ji,jk) = 1._wp/distance_vector(interpolation_indices_sst_game(ji,jk))**interpol_exp
-        distance_vector(interpolation_indices_sst_game(ji,jk)) = 2._wp*M_PI
-        sum_of_weights = sum_of_weights + interpolation_weights_sst_game(ji,jk)
+        interpolation_indices_sst_game(jk,ji) = find_min_index(distance_vector)
+        interpolation_weights_sst_game(jk,ji) = 1._wp/distance_vector(interpolation_indices_sst_game(jk,ji))**interpol_exp
+        distance_vector(interpolation_indices_sst_game(jk,ji)) = 2._wp*M_PI
+        sum_of_weights = sum_of_weights + interpolation_weights_sst_game(jk,ji)
       enddo
       do jk=1,n_avg_points
-        interpolation_weights_sst_game(ji,jk) = interpolation_weights_sst_game(ji,jk)/sum_of_weights
+        interpolation_weights_sst_game(jk,ji) = interpolation_weights_sst_game(jk,ji)/sum_of_weights
       enddo
     enddo
     !$omp end parallel do
@@ -298,14 +298,14 @@ program control
     call nc_check(nf90_def_dim(ncid,"cell_index",n_cells,cell_dimid))
     call nc_check(nf90_def_dim(ncid,"vector_index",n_edges,edge_dimid))
     call nc_check(nf90_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
-    dim_vector_2(1) = cell_dimid
-    dim_vector_2(2) = avg_dimid
+    dim_vector_2(1) = avg_dimid
+    dim_vector_2(2) = cell_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector_2,interpolation_indices_scalar_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector_2,interpolation_weights_scalar_id))
     call nc_check(nf90_def_var(ncid,"interpolation_indices_sst",NF90_INT,dim_vector_2,interpolation_indices_sst_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_sst",NF90_REAL,dim_vector_2,interpolation_weights_sst_id))
-    dim_vector_2(1) = edge_dimid
-    dim_vector_2(2) = avg_dimid
+    dim_vector_2(1) = avg_dimid
+    dim_vector_2(2) = edge_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_vector",NF90_INT,dim_vector_2,interpolation_indices_vector_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_vector",NF90_REAL,dim_vector_2,interpolation_weights_vector_id))
     call nc_check(nf90_enddef(ncid))
@@ -366,14 +366,14 @@ program control
     write(*,*) "Grid file of L-GAME read."
     
     ! allocating memory for the result arrays
-    allocate(interpolation_indices_scalar_lgame(ny,nx,n_avg_points))
-    allocate(interpolation_weights_scalar_lgame(ny,nx,n_avg_points))
-    allocate(interpolation_indices_vector_u(ny,nx+1,n_avg_points))
-    allocate(interpolation_weights_vector_u(ny,nx+1,n_avg_points))
-    allocate(interpolation_indices_vector_v(ny+1,nx,n_avg_points))
-    allocate(interpolation_weights_vector_v(ny+1,nx,n_avg_points))
-    allocate(interpolation_indices_sst_lgame(ny,nx,n_avg_points))
-    allocate(interpolation_weights_sst_lgame(ny,nx,n_avg_points))
+    allocate(interpolation_indices_scalar_lgame(n_avg_points,ny,nx))
+    allocate(interpolation_weights_scalar_lgame(n_avg_points,ny,nx))
+    allocate(interpolation_indices_vector_u(n_avg_points,ny,nx+1))
+    allocate(interpolation_weights_vector_u(n_avg_points,ny,nx+1))
+    allocate(interpolation_indices_vector_v(n_avg_points,ny+1,nx))
+    allocate(interpolation_weights_vector_v(n_avg_points,ny+1,nx))
+    allocate(interpolation_indices_sst_lgame(n_avg_points,ny,nx))
+    allocate(interpolation_weights_sst_lgame(n_avg_points,ny,nx))
     !$omp parallel workshare
     interpolation_indices_scalar_lgame = 0
     interpolation_weights_scalar_lgame = 0._wp
@@ -395,22 +395,22 @@ program control
     
     ! scalar points
     !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
-    do ji=1,ny
-      do jk=1,nx
+    do jk=1,nx
+      do ji=1,ny
         do jm=1,n_points_per_layer_input
           distance_vector(jm) = calculate_distance_h(lat_lgame(ji,jk),lon_lgame(ji,jk), &
                                                      lat_input_model(jm),lon_input_model(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_scalar_lgame(ji,jk,jm) = find_min_index(distance_vector)
-          interpolation_weights_scalar_lgame(ji,jk,jm) = 1._wp/ &
-                                      distance_vector(interpolation_indices_scalar_lgame(ji,jk,jm))**interpol_exp
-          distance_vector(interpolation_indices_scalar_lgame(ji,jk,jm)) = 2._wp*M_PI
-          sum_of_weights = sum_of_weights + interpolation_weights_scalar_lgame(ji,jk,jm)
+          interpolation_indices_scalar_lgame(jm,ji,jk) = find_min_index(distance_vector)
+          interpolation_weights_scalar_lgame(jm,ji,jk) = 1._wp/ &
+                                      distance_vector(interpolation_indices_scalar_lgame(jm,ji,jk))**interpol_exp
+          distance_vector(interpolation_indices_scalar_lgame(jm,ji,jk)) = 2._wp*M_PI
+          sum_of_weights = sum_of_weights + interpolation_weights_scalar_lgame(jm,ji,jk)
         enddo
         do jm=1,n_avg_points
-          interpolation_weights_scalar_lgame(ji,jk,jm) = interpolation_weights_scalar_lgame(ji,jk,jm)/sum_of_weights
+          interpolation_weights_scalar_lgame(jm,ji,jk) = interpolation_weights_scalar_lgame(jm,ji,jk)/sum_of_weights
         enddo
       enddo
     enddo
@@ -418,21 +418,21 @@ program control
     
     ! u vector points
     !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
-    do ji=1,ny
-      do jk=1,nx+1
+    do jk=1,nx+1
+      do ji=1,ny
         do jm=1,n_points_per_layer_input
           distance_vector(jm) = calculate_distance_h(lat_lgame_wind_u(ji,jk), &
                                 lon_lgame_wind_u(ji,jk),lat_input_model(jm),lon_input_model(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_vector_u(ji,jk,jm) = find_min_index(distance_vector)
-          interpolation_weights_vector_u(ji,jk,jm) = 1._wp/distance_vector(interpolation_indices_vector_u(ji,jk,jm))**interpol_exp
-          distance_vector(interpolation_indices_vector_u(ji,jk,jm)) = 2._wp*M_PI
-          sum_of_weights = sum_of_weights + interpolation_weights_vector_u(ji,jk,jm)
+          interpolation_indices_vector_u(jm,ji,jk) = find_min_index(distance_vector)
+          interpolation_weights_vector_u(jm,ji,jk) = 1._wp/distance_vector(interpolation_indices_vector_u(jm,ji,jk))**interpol_exp
+          distance_vector(interpolation_indices_vector_u(jm,ji,jk)) = 2._wp*M_PI
+          sum_of_weights = sum_of_weights + interpolation_weights_vector_u(jm,ji,jk)
         enddo
         do jm=1,n_avg_points
-          interpolation_weights_vector_u(ji,jk,jm) = interpolation_weights_vector_u(ji,jk,jm)/sum_of_weights
+          interpolation_weights_vector_u(jm,ji,jk) = interpolation_weights_vector_u(jm,ji,jk)/sum_of_weights
         enddo
       enddo
     enddo
@@ -440,21 +440,21 @@ program control
     
     ! v vector points
     !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
-    do ji=1,ny+1
-      do jk=1,nx
+    do jk=1,nx
+      do ji=1,ny+1
         do jm=1,n_points_per_layer_input
           distance_vector(jm) = calculate_distance_h(lat_lgame_wind_v(ji,jk),lon_lgame_wind_v(ji,jk), &
                                                      lat_input_model(jm),lon_input_model(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_vector_v(ji,jk,jm) = find_min_index(distance_vector)
-          interpolation_weights_vector_v(ji,jk,jm) = 1._wp/distance_vector(interpolation_indices_vector_v(ji,jk,jm))**interpol_exp
-          distance_vector(interpolation_indices_vector_v(ji,jk,jm)) = 2._wp*M_PI
-          sum_of_weights = sum_of_weights + interpolation_weights_vector_v(ji,jk,jm)
+          interpolation_indices_vector_v(jm,ji,jk) = find_min_index(distance_vector)
+          interpolation_weights_vector_v(jm,ji,jk) = 1._wp/distance_vector(interpolation_indices_vector_v(jm,ji,jk))**interpol_exp
+          distance_vector(interpolation_indices_vector_v(jm,ji,jk)) = 2._wp*M_PI
+          sum_of_weights = sum_of_weights + interpolation_weights_vector_v(jm,ji,jk)
         enddo
         do jm=1,n_avg_points
-          interpolation_weights_vector_v(ji,jk,jm) = interpolation_weights_vector_v(ji,jk,jm)/sum_of_weights
+          interpolation_weights_vector_v(jm,ji,jk) = interpolation_weights_vector_v(jm,ji,jk)/sum_of_weights
         enddo
       enddo
     enddo
@@ -465,21 +465,21 @@ program control
     
     ! SST
     !$omp parallel do private(ji,jk,jm,sum_of_weights,distance_vector)
-    do ji=1,ny
-      do jk=1,nx
+    do jk=1,nx
+      do ji=1,ny
         do jm=1,n_sst_points
           distance_vector(jm) = calculate_distance_h(lat_lgame(ji,jk),lon_lgame(ji,jk),lat_sst(jm),lon_sst(jm),1._wp)
         enddo
         sum_of_weights = 0._wp
         do jm=1,n_avg_points
-          interpolation_indices_sst_lgame(ji,jk,jm) = find_min_index(distance_vector)
-          interpolation_weights_sst_lgame(ji,jk,jm) = 1._wp/ &
-                                      distance_vector(interpolation_indices_sst_lgame(ji,jk,jm))**interpol_exp
-          distance_vector(interpolation_indices_sst_lgame(ji,jk,jm)) = 2._wp*M_PI
-          sum_of_weights = sum_of_weights + interpolation_weights_sst_lgame(ji,jk,jm)
+          interpolation_indices_sst_lgame(jm,ji,jk) = find_min_index(distance_vector)
+          interpolation_weights_sst_lgame(jm,ji,jk) = 1._wp/ &
+                                      distance_vector(interpolation_indices_sst_lgame(jm,ji,jk))**interpol_exp
+          distance_vector(interpolation_indices_sst_lgame(jm,ji,jk)) = 2._wp*M_PI
+          sum_of_weights = sum_of_weights + interpolation_weights_sst_lgame(jm,ji,jk)
         enddo
         do jm=1,n_avg_points
-          interpolation_weights_sst_lgame(ji,jk,jm) = interpolation_weights_sst_lgame(ji,jk,jm)/sum_of_weights
+          interpolation_weights_sst_lgame(jm,ji,jk) = interpolation_weights_sst_lgame(jm,ji,jk)/sum_of_weights
         enddo
       enddo
     enddo
@@ -510,21 +510,21 @@ program control
     call nc_check(nf90_def_dim(ncid,"yp1_index",ny+1,yp1_dimid))
     call nc_check(nf90_def_dim(ncid,"xp1_index",nx+1,xp1_dimid))
     call nc_check(nf90_def_dim(ncid,"interpol_index",n_avg_points,avg_dimid))
-    dim_vector_3(1) = y_dimid
-    dim_vector_3(2) = x_dimid
-    dim_vector_3(3) = avg_dimid
+    dim_vector_3(1) = avg_dimid
+    dim_vector_3(2) = y_dimid
+    dim_vector_3(3) = x_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_scalar",NF90_INT,dim_vector_3,interpolation_indices_scalar_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_scalar",NF90_REAL,dim_vector_3,interpolation_weights_scalar_id))
     call nc_check(nf90_def_var(ncid,"interpolation_indices_sst",NF90_INT,dim_vector_3,interpolation_indices_sst_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_sst",NF90_REAL,dim_vector_3,interpolation_weights_sst_id))
-    dim_vector_3(1) = y_dimid
-    dim_vector_3(2) = xp1_dimid
-    dim_vector_3(3) = avg_dimid
+    dim_vector_3(1) = avg_dimid
+    dim_vector_3(2) = y_dimid
+    dim_vector_3(3) = xp1_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_u",NF90_INT,dim_vector_3,interpolation_indices_vector_u_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_u",NF90_REAL,dim_vector_3,interpolation_weights_vector_u_id))
-    dim_vector_3(1) = yp1_dimid
-    dim_vector_3(2) = x_dimid
-    dim_vector_3(3) = avg_dimid
+    dim_vector_3(1) = avg_dimid
+    dim_vector_3(2) = yp1_dimid
+    dim_vector_3(3) = x_dimid
     call nc_check(nf90_def_var(ncid,"interpolation_indices_vector_v",NF90_INT,dim_vector_3,interpolation_indices_vector_v_id))
     call nc_check(nf90_def_var(ncid,"interpolation_weights_vector_v",NF90_REAL,dim_vector_3,interpolation_weights_vector_v_id))
     call nc_check(nf90_enddef(ncid))

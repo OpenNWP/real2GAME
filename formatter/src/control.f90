@@ -92,11 +92,9 @@ program control
     call codes_release(jgrib)
     call codes_close_file(jfile)
     
-    !$omp parallel do private(ji)
-    do ji=1,n_points_per_layer_input
-      z_height_amsl(ji,jl) = z_height_amsl_one_layer(ji)
-    enddo
-    !$omp end parallel do
+    !$omp parallel workshare
+    z_height_amsl(:,jl) = z_height_amsl_one_layer
+    !$omp end parallel workshare
     
     ! reading the temperature
     temperature_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // month_string &
@@ -125,11 +123,9 @@ program control
     call codes_release(jgrib)
     call codes_close_file(jfile)
     
-    !$omp parallel do private(ji)
-    do ji=1,n_points_per_layer_input
-      spec_hum(ji,jl) = spec_hum_one_layer(ji)
-    enddo
-    !$omp end parallel do
+    !$omp parallel workshare
+    spec_hum(:,jl) = spec_hum_one_layer
+    !$omp end parallel workshare
     
     ! reading the u wind
     u_wind_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // month_string // &
@@ -142,11 +138,9 @@ program control
     call codes_release(jgrib)
     call codes_close_file(jfile)
     
-    !$omp parallel do private(ji)
-    do ji=1,n_points_per_layer_input
-      u_wind(ji,jl) = u_one_layer(ji)
-    enddo
-    !$omp end parallel do
+    !$omp parallel workshare
+    u_wind(:,jl) = u_one_layer
+    !$omp end parallel workshare
     
     ! reading the v wind
     v_wind_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // &
@@ -159,11 +153,9 @@ program control
     call codes_release(jgrib)
     call codes_close_file(jfile)
     
-    !$omp parallel do private(ji)
-    do ji=1,n_points_per_layer_input
-      v_wind(ji,jl) = v_one_layer(ji)
-    enddo
-    !$omp end parallel do
+    !$omp parallel workshare
+    v_wind(:,jl) = v_one_layer
+    !$omp end parallel workshare
   
   enddo
   

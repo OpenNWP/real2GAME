@@ -200,12 +200,12 @@ program control
   write(*,*) "Input read."
   
   ! memory alloction for the interpolation indices and weights
-  allocate(interpolation_indices_scalar(n_cells,n_avg_points))
-  allocate(interpolation_weights_scalar(n_cells,n_avg_points))
-  allocate(interpolation_indices_vector(n_edges,n_avg_points))
-  allocate(interpolation_weights_vector(n_edges,n_avg_points))
-  allocate(interpolation_indices_sst(n_cells,n_avg_points))
-  allocate(interpolation_weights_sst(n_cells,n_avg_points))
+  allocate(interpolation_indices_scalar(n_avg_points,n_cells))
+  allocate(interpolation_weights_scalar(n_avg_points,n_cells))
+  allocate(interpolation_indices_vector(n_avg_points,n_edges))
+  allocate(interpolation_weights_vector(n_avg_points,n_edges))
+  allocate(interpolation_indices_sst(n_avg_points,n_cells))
+  allocate(interpolation_weights_sst(n_avg_points,n_cells))
   !$omp parallel workshare
   interpolation_indices_scalar = 0
   interpolation_weights_scalar = 0._wp
@@ -267,17 +267,17 @@ program control
         ! computing linear vertical interpolation
         ! vertical distance vector
         do jn=1,n_layers_input
-          vector_to_minimize(jn) = abs(z_game(ji,jl) - z_coords_input_model(interpolation_indices_scalar(ji,jm),jn))
+          vector_to_minimize(jn) = abs(z_game(ji,jl) - z_coords_input_model(interpolation_indices_scalar(jm,ji),jn))
         enddo
         
         ! closest vertical index
         closest_index = find_min_index(vector_to_minimize)
         
         ! value at the closest vertical index
-        closest_value = temperature_in(interpolation_indices_scalar(ji,jm),closest_index)
+        closest_value = temperature_in(interpolation_indices_scalar(jm,ji),closest_index)
         
         other_index = closest_index-1
-        if (z_game(ji,jl)<z_coords_input_model(interpolation_indices_scalar(ji,jm),closest_index)) then
+        if (z_game(ji,jl)<z_coords_input_model(interpolation_indices_scalar(jm,ji),closest_index)) then
           other_index = closest_index+1
         endif
         
@@ -287,28 +287,28 @@ program control
         endif
         
         ! the value at the second point used for vertical interpolation
-        other_value = temperature_in(interpolation_indices_scalar(ji,jm),other_index)
+        other_value = temperature_in(interpolation_indices_scalar(jm,ji),other_index)
         
         ! computing the vertical gradient of u in the input model
         df = closest_value - other_value
-        dz = z_coords_input_model(interpolation_indices_scalar(ji,jm),closest_index) &
-             - z_coords_input_model(interpolation_indices_scalar(ji,jm),other_index)
+        dz = z_coords_input_model(interpolation_indices_scalar(jm,ji),closest_index) &
+             - z_coords_input_model(interpolation_indices_scalar(jm,ji),other_index)
         gradient = df/dz
         
-        delta_z = z_game(ji,jl) - z_coords_input_model(interpolation_indices_scalar(ji,jm),closest_index)
+        delta_z = z_game(ji,jl) - z_coords_input_model(interpolation_indices_scalar(jm,ji),closest_index)
         
         ! vertical interpolation of the temperature
-        temperature_out(ji,jl) = temperature_out(ji,jl) + interpolation_weights_scalar(ji,jm)*(closest_value + delta_z*gradient)
+        temperature_out(ji,jl) = temperature_out(ji,jl) + interpolation_weights_scalar(jm,ji)*(closest_value + delta_z*gradient)
         
         ! vertical interpolation of the specific humidity
-        closest_value = spec_hum_in(interpolation_indices_scalar(ji,jm),closest_index)
-        other_value = spec_hum_in(interpolation_indices_scalar(ji,jm),other_index)
+        closest_value = spec_hum_in(interpolation_indices_scalar(jm,ji),closest_index)
+        other_value = spec_hum_in(interpolation_indices_scalar(jm,ji),other_index)
         ! computing the vertical gradient of the specific humidity in the input model
         df = closest_value - other_value
         gradient = df/dz
         
         ! specific humidity
-        spec_hum_out(ji,jl) = spec_hum_out(ji,jl) + interpolation_weights_scalar(ji,jm)*(closest_value + delta_z*gradient)
+        spec_hum_out(ji,jl) = spec_hum_out(ji,jl) + interpolation_weights_scalar(jm,ji)*(closest_value + delta_z*gradient)
       enddo
       ! avoiding negative humidities, which can occur through vertical extrapolation
       if (spec_hum_out(ji,jl)<0._wp) then
@@ -332,9 +332,9 @@ program control
     do jm=1,n_avg_points
       pressure_lowest_layer_out(ji) = pressure_lowest_layer_out(ji) &
       ! horizontal component of the interpolation
-      + interpolation_weights_scalar(ji,jm)*p_surf_in(interpolation_indices_scalar(ji,jm)) &
+      + interpolation_weights_scalar(jm,ji)*p_surf_in(interpolation_indices_scalar(jm,ji)) &
       ! vertical component of the interpolation according to the barometric height formula
-      *exp(-(z_game(ji,n_layers) - z_surf_in(interpolation_indices_scalar(ji,jm)))/scale_height)
+      *exp(-(z_game(ji,n_layers) - z_surf_in(interpolation_indices_scalar(jm,ji)))/scale_height)
     enddo
   enddo
   !$omp end parallel do
@@ -413,15 +413,15 @@ program control
         ! computing linear vertical interpolation
         ! vertical distance vector
         do jn=1,n_layers_input
-          vector_to_minimize(jn) = abs(z_game_wind(ji,jl) - z_coords_input_model(interpolation_indices_vector(ji,jm),jn))
+          vector_to_minimize(jn) = abs(z_game_wind(ji,jl) - z_coords_input_model(interpolation_indices_vector(jm,ji),jn))
         enddo
         ! closest vertical index
         closest_index = find_min_index(vector_to_minimize)
         ! value at the closest vertical index
-        closest_value = u_wind_in(interpolation_indices_vector(ji,jm),closest_index)
+        closest_value = u_wind_in(interpolation_indices_vector(jm,ji),closest_index)
       
         other_index = closest_index-1
-        if (z_game_wind(ji,jl)<z_coords_input_model(interpolation_indices_vector(ji,jm),closest_index)) then
+        if (z_game_wind(ji,jl)<z_coords_input_model(interpolation_indices_vector(jm,ji),closest_index)) then
           other_index = closest_index+1
         endif
         ! avoiding array excess
@@ -430,26 +430,26 @@ program control
         endif
       
         ! the value at the second point used for vertical interpolation
-        other_value = u_wind_in(interpolation_indices_vector(ji,jm),other_index)
+        other_value = u_wind_in(interpolation_indices_vector(jm,ji),other_index)
       
         ! computing the vertical gradient of u in the input model
         df = closest_value - other_value
-        dz = z_coords_input_model(interpolation_indices_vector(ji,jm),closest_index) &
-             - z_coords_input_model(interpolation_indices_vector(ji,jm),other_index)
+        dz = z_coords_input_model(interpolation_indices_vector(jm,ji),closest_index) &
+             - z_coords_input_model(interpolation_indices_vector(jm,ji),other_index)
         gradient = df/dz
       
-        delta_z = z_game_wind(ji,jl) - z_coords_input_model(interpolation_indices_vector(ji,jm),closest_index)
+        delta_z = z_game_wind(ji,jl) - z_coords_input_model(interpolation_indices_vector(jm,ji),closest_index)
       
-        u_local = u_local + interpolation_weights_vector(ji,jm)*(closest_value + gradient*delta_z)
+        u_local = u_local + interpolation_weights_vector(jm,ji)*(closest_value + gradient*delta_z)
       
         ! vertical interpolation of v
-        closest_value = v_wind_in(interpolation_indices_vector(ji,jm),closest_index)
-        other_value = v_wind_in(interpolation_indices_vector(ji,jm),other_index)
+        closest_value = v_wind_in(interpolation_indices_vector(jm,ji),closest_index)
+        other_value = v_wind_in(interpolation_indices_vector(jm,ji),other_index)
         ! computing the vertical gradient of v in the input model
         df = closest_value - other_value
         gradient = df/dz
         
-        v_local = v_local + interpolation_weights_vector(ji,jm)*(closest_value + gradient*delta_z)
+        v_local = v_local + interpolation_weights_vector(jm,ji)*(closest_value + gradient*delta_z)
         
       enddo
     
@@ -480,7 +480,7 @@ program control
   !$omp parallel do private(ji,jm)
   do ji=1,n_cells
     do jm=1,n_avg_points
-      sst_out(ji) = sst_out(ji) + interpolation_weights_sst(ji,jm)*sst_in(interpolation_indices_sst(ji,jm))
+      sst_out(ji) = sst_out(ji) + interpolation_weights_sst(jm,ji)*sst_in(interpolation_indices_sst(jm,ji))
     enddo
   enddo
   !$omp end parallel do
