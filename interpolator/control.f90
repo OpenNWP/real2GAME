@@ -259,8 +259,8 @@ program control
   
   !$omp parallel do private(ji,jl,jm,jn,vector_to_minimize,closest_index,closest_value,other_index,other_value,df,dz, &
   !$omp gradient,delta_z)
-  do ji=1,n_cells
-    do jl=1,n_layers
+  do jl=1,n_layers
+    do ji=1,n_cells
     
       ! loop over all points over which the averaging is executed
       do jm=1,n_avg_points
@@ -402,8 +402,8 @@ program control
   ! loop over all horizontal vector points
   !$omp parallel do private(ji,jl,jm,jn,vector_to_minimize,closest_index,other_index,closest_value, &
   !$omp other_value,df,dz,gradient,delta_z,u_local,v_local)
-  do ji=1,n_edges
-    do jl=1,n_layers
+  do jl=1,n_layers
+    do ji=1,n_edges
     
       ! the u- and v-components of the wind at the grid point of GAME
       u_local = 0._wp
@@ -518,8 +518,8 @@ program control
     maximum_cloud_water_content = 0.2e-3_wp
     
     !$omp parallel do private(ji,jl,rh)
-    do ji=1,n_cells
-      do jl=1,n_layers
+    do jl=1,n_layers
+      do ji=1,n_cells
         ! computing the relative humidity at the grid point
         rh = rel_humidity(densities_out(ji,jl,n_condensed_constituents+2),temperature_out(ji,jl))
         ! in the case of a relative humidity above 99.5 %, we add clouds and precipitation
