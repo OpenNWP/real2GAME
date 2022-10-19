@@ -20,5 +20,5 @@ SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -ftree-vectorize -funroll-l
 if(DEBUGGING)
   SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fbounds-check -ffpe-trap=invalid,zero,overflow,underflow,denormal -fbacktrace -fdump-core")
 endif()
-target_link_libraries(interpolation_creator m netcdff eccodes_f90)
+target_link_libraries(interpolation_creator netcdff eccodes_f90)
 enable_testing()
