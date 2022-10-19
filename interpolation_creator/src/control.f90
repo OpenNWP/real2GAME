@@ -229,9 +229,7 @@ program control
         distance_vector(interpolation_indices_scalar_game(jk,ji)) = 2._wp*M_PI
         sum_of_weights = sum_of_weights + interpolation_weights_scalar_game(jk,ji)
       enddo
-      do jk=1,n_avg_points
-        interpolation_weights_scalar_game(jk,ji) = interpolation_weights_scalar_game(jk,ji)/sum_of_weights
-      enddo
+      interpolation_weights_scalar_game(:,ji) = interpolation_weights_scalar_game(:,ji)/sum_of_weights
     enddo
     !$omp end parallel do
   
@@ -249,9 +247,7 @@ program control
         distance_vector(interpolation_indices_vector(jk,ji)) = 2._wp*M_PI
         sum_of_weights = sum_of_weights + interpolation_weights_vector(jk,ji)
       enddo
-      do jk=1,n_avg_points
-        interpolation_weights_vector(jk,ji) = interpolation_weights_vector(jk,ji)/sum_of_weights
-      enddo
+      interpolation_weights_vector(:,ji) = interpolation_weights_vector(:,ji)/sum_of_weights
     enddo
     !$omp end parallel do
     
@@ -271,9 +267,7 @@ program control
         distance_vector(interpolation_indices_sst_game(jk,ji)) = 2._wp*M_PI
         sum_of_weights = sum_of_weights + interpolation_weights_sst_game(jk,ji)
       enddo
-      do jk=1,n_avg_points
-        interpolation_weights_sst_game(jk,ji) = interpolation_weights_sst_game(jk,ji)/sum_of_weights
-      enddo
+      interpolation_weights_sst_game(:,ji) = interpolation_weights_sst_game(:,ji)/sum_of_weights
     enddo
     !$omp end parallel do
     
@@ -409,9 +403,7 @@ program control
           distance_vector(interpolation_indices_scalar_lgame(jm,ji,jk)) = 2._wp*M_PI
           sum_of_weights = sum_of_weights + interpolation_weights_scalar_lgame(jm,ji,jk)
         enddo
-        do jm=1,n_avg_points
-          interpolation_weights_scalar_lgame(jm,ji,jk) = interpolation_weights_scalar_lgame(jm,ji,jk)/sum_of_weights
-        enddo
+        interpolation_weights_scalar_lgame(:,ji,jk) = interpolation_weights_scalar_lgame(:,ji,jk)/sum_of_weights
       enddo
     enddo
     !$omp end parallel do
@@ -431,9 +423,7 @@ program control
           distance_vector(interpolation_indices_vector_u(jm,ji,jk)) = 2._wp*M_PI
           sum_of_weights = sum_of_weights + interpolation_weights_vector_u(jm,ji,jk)
         enddo
-        do jm=1,n_avg_points
-          interpolation_weights_vector_u(jm,ji,jk) = interpolation_weights_vector_u(jm,ji,jk)/sum_of_weights
-        enddo
+        interpolation_weights_vector_u(:,ji,jk) = interpolation_weights_vector_u(:,ji,jk)/sum_of_weights
       enddo
     enddo
     !$omp end parallel do
@@ -453,9 +443,7 @@ program control
           distance_vector(interpolation_indices_vector_v(jm,ji,jk)) = 2._wp*M_PI
           sum_of_weights = sum_of_weights + interpolation_weights_vector_v(jm,ji,jk)
         enddo
-        do jm=1,n_avg_points
-          interpolation_weights_vector_v(jm,ji,jk) = interpolation_weights_vector_v(jm,ji,jk)/sum_of_weights
-        enddo
+        interpolation_weights_vector_v(:,ji,jk) = interpolation_weights_vector_v(:,ji,jk)/sum_of_weights
       enddo
     enddo
     !$omp end parallel do
@@ -478,9 +466,7 @@ program control
           distance_vector(interpolation_indices_sst_lgame(jm,ji,jk)) = 2._wp*M_PI
           sum_of_weights = sum_of_weights + interpolation_weights_sst_lgame(jm,ji,jk)
         enddo
-        do jm=1,n_avg_points
-          interpolation_weights_sst_lgame(jm,ji,jk) = interpolation_weights_sst_lgame(jm,ji,jk)/sum_of_weights
-        enddo
+        interpolation_weights_sst_lgame(:,ji,jk) = interpolation_weights_sst_lgame(:,ji,jk)/sum_of_weights
       enddo
     enddo
     !$omp end parallel do
