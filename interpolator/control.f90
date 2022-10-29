@@ -2,7 +2,7 @@
 ! Github repository: https:!github.com/OpenNWP/real2GAME
 
 program control
-
+  
   ! This program coordinates the data interpolation process.
   
   use netcdf
@@ -17,7 +17,7 @@ program control
   logical               :: lno_hydrometeors_found ! switch indicating if hydrometeors are missing from the background state
   integer               :: ji,jl,jm,jn,latitudes_game_id,longitudes_game_id,z_game_id,z_game_wind_id, &
                            gravity_potential_game_id,constituent_dimid,cell_dimid,n_constituents, &
-                           directions_id,ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,& 
+                           directions_id,ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,&
                            interpolation_indices_vector_id,dimids_vector_2(2),n_condensed_constituents, &
                            interpolation_weights_vector_id,closest_index,other_index, sp_id,z_surf_id, &
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,sst_id,densities_background_id, &
@@ -42,7 +42,7 @@ program control
   character(len=2)      :: month_string,day_string,hour_string,res_id_string,nsoillays_string,oro_id_string
   character(len=128)    :: real2game_root_dir,model_home_dir
   character(len=256)    :: background_state_file,geo_prop_file,input_file,interpol_file,output_file
-
+  
   call get_command_argument(1,res_id_string)
   read(res_id_string,*) res_id
   call get_command_argument(2,n_layers_string)
@@ -261,7 +261,7 @@ program control
   !$omp gradient,delta_z)
   do jl=1,n_layers
     do ji=1,n_cells
-    
+      
       ! loop over all points over which the averaging is executed
       do jm=1,n_avg_points
         ! computing linear vertical interpolation
@@ -404,7 +404,7 @@ program control
   !$omp other_value,df,dz,gradient,delta_z,u_local,v_local)
   do jl=1,n_layers
     do ji=1,n_edges
-    
+      
       ! the u- and v-components of the wind at the grid point of GAME
       u_local = 0._wp
       v_local = 0._wp
@@ -419,7 +419,7 @@ program control
         closest_index = find_min_index(vector_to_minimize)
         ! value at the closest vertical index
         closest_value = u_wind_in(interpolation_indices_vector(jm,ji),closest_index)
-      
+        
         other_index = closest_index-1
         if (z_game_wind(ji,jl)<z_coords_input_model(interpolation_indices_vector(jm,ji),closest_index)) then
           other_index = closest_index+1
@@ -428,20 +428,20 @@ program control
         if (other_index==n_layers_input+1) then
           other_index = closest_index-1
         endif
-      
+        
         ! the value at the second point used for vertical interpolation
         other_value = u_wind_in(interpolation_indices_vector(jm,ji),other_index)
-      
+        
         ! computing the vertical gradient of u in the input model
         df = closest_value - other_value
         dz = z_coords_input_model(interpolation_indices_vector(jm,ji),closest_index) &
              - z_coords_input_model(interpolation_indices_vector(jm,ji),other_index)
         gradient = df/dz
-      
+        
         delta_z = z_game_wind(ji,jl) - z_coords_input_model(interpolation_indices_vector(jm,ji),closest_index)
-      
+        
         u_local = u_local + interpolation_weights_vector(jm,ji)*(closest_value + gradient*delta_z)
-      
+        
         ! vertical interpolation of v
         closest_value = v_wind_in(interpolation_indices_vector(jm,ji),closest_index)
         other_value = v_wind_in(interpolation_indices_vector(jm,ji),other_index)
@@ -452,10 +452,10 @@ program control
         v_local = v_local + interpolation_weights_vector(jm,ji)*(closest_value + gradient*delta_z)
         
       enddo
-    
+      
       ! projection onto the direction of the vector in GAME
       wind_out_h(ji,jl) = u_local*cos(directions(ji)) + v_local*sin(directions(ji))
-    
+      
     enddo
   enddo
   !$omp end parallel do

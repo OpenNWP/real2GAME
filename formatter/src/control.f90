@@ -2,16 +2,16 @@
 ! Github repository: https:!github.com/OpenNWP/real2GAME
 
 program control
-
+  
   ! This tool reads the output from other models / data assimilation systems and brings it into a standardized format.
-
+  
   use netcdf
   use eccodes
   use mo_shared, only: wp,n_layers_input,n_sst_points,n_points_per_layer_input_icon_global,nc_check,int2string,M_PI, &
                        n_points_per_layer_input_icon_d2
-
+  
   implicit none
-
+  
   integer               :: ji,jl,ncid,h_dimid,v_dimid,z_surf_id,sp_id,sst_dimid,t_id,spec_hum_id,z_id,u_id,v_id, &
                            sst_id,dim_vector(2),layers_vector(n_layers_input),jfile,jgrib, &
                            n_points_per_layer_input
@@ -24,7 +24,7 @@ program control
   character(len=128)    :: real2game_root_dir
   character(len=256)    :: z_input_model_file,temperature_file,u_wind_file,v_wind_file,sfc_height_file, &
                            sfc_pres_file,sst_file,output_file,spec_hum_file
-
+  
   ! defining the levels of the model we want to use
   layers_vector(1) = 1
   layers_vector(2) = 10
@@ -99,7 +99,7 @@ program control
     ! reading the temperature
     temperature_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // month_string &
                        // day_string // hour_string // "_000_" // trim(int2string(layers_vector(jl))) // "_T.grib2"
-                       
+    
     call codes_open_file(jfile,trim(temperature_file),"r")
     call codes_grib_new_from_file(jfile,jgrib)
     call codes_get(jgrib,"values",temperature_one_layer)
@@ -156,7 +156,7 @@ program control
     !$omp parallel workshare
     v_wind(:,jl) = v_one_layer
     !$omp end parallel workshare
-  
+    
   enddo
   
   deallocate(z_height_amsl_one_layer)
@@ -207,11 +207,11 @@ program control
   call codes_get(jgrib,"values",sst)
   call codes_release(jgrib)
   call codes_close_file(jfile)
-    
+  
   ! Writing the observations to a netcdf file.
   output_file = trim(real2game_root_dir) // "/input/obs_" // year_string // month_string // day_string // &
                 hour_string // ".nc"
-    
+  
   call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
   ! Defining the dimensions.
   call nc_check(nf90_def_dim(ncid,"h_index",n_points_per_layer_input,h_dimid))
@@ -238,7 +238,7 @@ program control
   call nc_check(nf90_put_var(ncid,v_id,v_wind))
   call nc_check(nf90_put_var(ncid,sst_id,sst))
   call nc_check(nf90_close(ncid))
-    
+  
   ! freeing the memory
   deallocate(z_height_amsl)
   deallocate(surface_height)
@@ -248,7 +248,7 @@ program control
   deallocate(temperature)
   deallocate(spec_hum)
   deallocate(sst)
-
+  
 end program control
 
 

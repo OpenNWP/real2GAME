@@ -7,7 +7,7 @@ echo "Creating directories ..."
 
 if [ ! -d interpolation_files ]
 then
-mkdir interpolation_files
+  mkdir interpolation_files
 fi
 
 echo "Completed."

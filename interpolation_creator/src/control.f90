@@ -2,7 +2,7 @@
 ! Github repository: https:!github.com/OpenNWP/real2GAME
 
 program control
-
+  
   ! This file prepares the horizontal interpolation from the foreign model to GAME.
   
   use netcdf
@@ -100,7 +100,7 @@ program control
   lat_input_model = 0._wp
   lon_input_model = 0._wp
   !$omp end parallel workshare
-    
+  
   call codes_open_file(jfile,trim(lat_obs_file),"r")
   call codes_grib_new_from_file(jfile,jgrib)
   call codes_get(jgrib,"values",lat_input_model)
@@ -162,7 +162,7 @@ program control
   
   ! GAME
   if (model_target_id==1) then
-  
+    
     ! reading the horizontal coordinates of the grid of GAME
     allocate(lat_game(n_cells))
     allocate(lon_game(n_cells))
@@ -179,7 +179,7 @@ program control
     write(*,*) "Grid file: ",trim(geo_pro_file)
     write(*,*) "Reading grid file of GAME ..."
     call nc_check(nf90_open(trim(geo_pro_file),NF90_NOWRITE,ncid))
-     
+    
     call nc_check(nf90_inq_varid(ncid,"lat_c",lat_game_id))
     call nc_check(nf90_inq_varid(ncid,"lon_c",lon_game_id))
     call nc_check(nf90_inq_varid(ncid,"lat_e",lat_game_wind_id))
@@ -190,7 +190,7 @@ program control
     call nc_check(nf90_get_var(ncid,lon_game_wind_id,lon_game_wind))
     call nc_check(nf90_close(ncid))
     write(*,*) "Grid file of GAME read."
-  
+    
     ! allocating memory for the result arrays
     allocate(interpolation_indices_scalar_game(n_avg_points,n_cells))
     allocate(interpolation_weights_scalar_game(n_avg_points,n_cells))
@@ -232,7 +232,7 @@ program control
       interpolation_weights_scalar_game(:,ji) = interpolation_weights_scalar_game(:,ji)/sum_of_weights
     enddo
     !$omp end parallel do
-  
+    
     ! edges
     !$omp parallel do private(ji,jk,sum_of_weights,distance_vector)
     do ji=1,n_edges
@@ -310,7 +310,7 @@ program control
     call nc_check(nf90_put_var(ncid,interpolation_indices_sst_id,interpolation_indices_sst_game))
     call nc_check(nf90_put_var(ncid,interpolation_weights_sst_id,interpolation_weights_sst_game))
     call nc_check(nf90_close(ncid))
-      
+    
     ! freeing the memory
     deallocate(interpolation_indices_scalar_game)
     deallocate(interpolation_weights_scalar_game)
@@ -323,7 +323,7 @@ program control
   
   ! L-GAME
   if (model_target_id==2) then
-  
+    
     ! reading the horizontal coordinates of the grid of L-GAME
     allocate(lat_lgame(ny,nx))
     allocate(lon_lgame(ny,nx))
@@ -533,7 +533,7 @@ program control
     deallocate(interpolation_weights_vector_v)
     deallocate(interpolation_indices_sst_lgame)
     deallocate(interpolation_weights_sst_lgame)
-  
+    
   endif
   
   write(*,*) "Finished."
