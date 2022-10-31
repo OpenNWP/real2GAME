@@ -12,7 +12,7 @@ program control
   
   implicit none
   
-  integer               :: ji,jl,ncid,h_dimid,v_dimid,z_surf_id,sp_id,sst_dimid,t_id,spec_hum_id,z_id,u_id,v_id, &
+  integer               :: jl,ncid,h_dimid,v_dimid,z_surf_id,sp_id,sst_dimid,t_id,spec_hum_id,z_id,u_id,v_id, &
                            sst_id,dim_vector(2),layers_vector(n_layers_input),jfile,jgrib, &
                            n_points_per_layer_input
   real(wp), allocatable :: z_height_amsl_one_layer(:),temperature_one_layer(:),spec_hum_one_layer(:), &
@@ -106,11 +106,9 @@ program control
     call codes_release(jgrib)
     call codes_close_file(jfile)
     
-    !$omp parallel do private(ji)
-    do ji=1,n_points_per_layer_input
-      temperature(ji,jl) = temperature_one_layer(ji)
-    enddo
-    !$omp end parallel do
+    !$omp parallel workshare
+    temperature(:,jl) = temperature_one_layer
+    !$omp end parallel workshare
     
     ! reading the specific humidity
     spec_hum_file = trim(real2game_root_dir) // "/input/icon_global_icosahedral_model-level_" // year_string // month_string // &
