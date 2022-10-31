@@ -351,9 +351,6 @@ program control
   allocate(temperature_v(n_cells,n_layers))
   !$omp parallel workshare
   density_moist_out = 0._wp
-  temperature_v = 0._wp
-  !$omp end parallel workshare
-  !$omp parallel workshare
   temperature_v = temperature_out*(1._wp + spec_hum_out*(m_d/m_v-1._wp))
   !$omp end parallel workshare
   
@@ -497,9 +494,6 @@ program control
   
   ! setting the mass densities of the result
   allocate(densities_out(n_cells,n_layers,n_constituents))
-  !$omp parallel workshare
-  densities_out = 0._wp
-  !$omp end parallel workshare
   !$omp parallel workshare
   ! clouds and precipitation are set equal to the background state
   densities_out(:,:,1:n_condensed_constituents) = densities_background(:,:,1:n_condensed_constituents)
