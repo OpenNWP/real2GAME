@@ -22,19 +22,21 @@ program control
                            edge_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id, &
                            res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_edges,model_source_id,dim_vector_3(3), &
                            y_dimid,x_dimid,yp1_dimid,xp1_dimid,n_points_per_layer_input
-  integer               :: interpolation_indices_sst_id           ! netCDF ID of the SST interpolation indices
-  integer               :: interpolation_weights_sst_id           ! netCDF ID of the SST interpolation weights
-  real(wp)              :: sum_of_weights                         ! sum of interpolation weights used for normalization
-  real(wp)              :: interpol_exp                           ! interpolation exponent (1/distance**interpol_exp-interpolation)
-  integer,  allocatable :: interpolation_indices_scalar_game(:,:),interpolation_indices_vector(:,:), &
-                           interpolation_indices_vector_u(:,:,:),interpolation_indices_vector_v(:,:,:), &
-                           interpolation_indices_scalar_lgame(:,:,:)
-  integer,  allocatable :: interpolation_indices_sst_game(:,:)    ! interpolation indices of the SST to the GAME grid
-  integer,  allocatable :: interpolation_indices_sst_lgame(:,:,:) ! interpolation indices of the SST to the L-GAME grid
-  real(wp), allocatable :: interpolation_weights_sst_game(:,:)    ! interpolation weights of the SST to the GAME grid
-  real(wp), allocatable :: interpolation_weights_sst_lgame(:,:,:) ! interpolation weights of the SST to the L-GAME grid
-  real(wp), allocatable :: lat_sst(:)                             ! latitudes of the SST grid
-  real(wp), allocatable :: lon_sst(:)                             ! longitudes of the SST grid
+  integer               :: interpolation_indices_sst_id              ! netCDF ID of the SST interpolation indices
+  integer               :: interpolation_weights_sst_id              ! netCDF ID of the SST interpolation weights
+  real(wp)              :: sum_of_weights                            ! sum of interpolation weights used for normalization
+  real(wp)              :: interpol_exp                              ! interpolation exponent (1/distance**interpol_exp-interpolation)
+  integer,  allocatable :: interpolation_indices_scalar_game(:,:)    ! interpolation indices of scalar quantities to the GAME grid
+  integer,  allocatable :: interpolation_indices_vector(:,:)         ! interpolation indices of vector quantities to the GAME grid
+  integer,  allocatable :: interpolation_indices_vector_u(:,:,:)     ! interpolation indices of vector quantities to the u-vector points of the L-GAME grid
+  integer,  allocatable :: interpolation_indices_vector_v(:,:,:)     ! interpolation indices of vector quantities to the v-vector points of the L-GAME grid
+  integer,  allocatable :: interpolation_indices_scalar_lgame(:,:,:) ! interpolation indices of scalar quantities to the scalar data points of the L-GAME grid
+  integer,  allocatable :: interpolation_indices_sst_game(:,:)       ! interpolation indices of the SST to the GAME grid
+  integer,  allocatable :: interpolation_indices_sst_lgame(:,:,:)    ! interpolation indices of the SST to the L-GAME grid
+  real(wp), allocatable :: interpolation_weights_sst_game(:,:)       ! interpolation weights of the SST to the GAME grid
+  real(wp), allocatable :: interpolation_weights_sst_lgame(:,:,:)    ! interpolation weights of the SST to the L-GAME grid
+  real(wp), allocatable :: lat_sst(:)                                ! latitudes of the SST grid
+  real(wp), allocatable :: lon_sst(:)                                ! longitudes of the SST grid
   real(wp), allocatable :: lat_input_model(:),lon_input_model(:),lat_game(:),lon_game(:), &
                            lat_game_wind(:),lon_game_wind(:),interpolation_weights_scalar_game(:,:), &
                            interpolation_weights_vector(:,:),distance_vector(:),lat_lgame(:,:), &
