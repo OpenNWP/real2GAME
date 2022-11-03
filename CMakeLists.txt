@@ -10,8 +10,8 @@ project(real2GAME VERSION ${version})
 enable_language(Fortran)
 add_executable(
 real2game
-interpolator/control.f90
-mo_shared.f90)
+interpolator/control.F90
+mo_shared.F90)
 add_definitions(-Wall)
 find_package(OpenMP)
 # aggressive optimization

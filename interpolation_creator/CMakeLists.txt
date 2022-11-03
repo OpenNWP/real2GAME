@@ -10,8 +10,8 @@ project(real2GAME VERSION ${version})
 enable_language(Fortran)
 add_executable(
 interpolation_creator
-src/control.f90
-../mo_shared.f90)
+src/control.F90
+../mo_shared.F90)
 add_definitions(-Wall)
 find_package(OpenMP)
 SET(CMAKE_Fortran_FLAGS "${OpenMP_Fortran_FLAGS} -O2 -ftree-vectorize -funroll-loops -Wall -Wpedantic -I/usr/include \

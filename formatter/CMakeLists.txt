@@ -10,8 +10,8 @@ project(real2GAME VERSION ${version})
 enable_language(Fortran)
 add_executable(
 formatter
-src/control.f90
-../mo_shared.f90)
+src/control.F90
+../mo_shared.F90)
 find_package(OpenMP)
 # aggressive optimization
 if (FAST)
