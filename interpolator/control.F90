@@ -29,13 +29,33 @@ program control
   real(wp)              :: rh                          ! relative humidity value
   real(wp)              :: maximum_cloud_water_content ! maximum cloud water content in (kg cloud)/(kg dry air)
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
-  real(wp), allocatable :: latitudes_game(:),longitudes_game(:),z_game(:,:),directions(:),z_game_wind(:,:), &
-                           gravity_potential_game(:,:),densities_background(:,:,:),tke(:,:),t_soil(:,:),z_coords_input_model(:,:), &
-                           temperature_in(:,:),spec_hum_in(:,:),u_wind_in(:,:),v_wind_in(:,:),z_surf_in(:), &
-                           p_surf_in(:),sst_in(:), &
-                           temperature_out(:,:),spec_hum_out(:,:),pressure_lowest_layer_out(:), &
-                           density_moist_out(:,:),temperature_v(:,:),densities_out(:,:,:),exner(:,:), &
-                           wind_out_h(:,:),wind_out_v(:,:),sst_out(:)
+  real(wp), allocatable :: latitudes_game(:)               ! latitudes of the cell centers of GAME
+  real(wp), allocatable :: longitudes_game(:)              ! longitudes of the cell centers of GAME
+  real(wp), allocatable :: z_game(:,:)                     ! z-coordinates of the scalar points of GAME
+  real(wp), allocatable :: directions(:)                   ! directions of the horizontal vectors of GAME
+  real(wp), allocatable :: z_game_wind(:,:)                ! z-coordinates of the horizontal vector points of GAME
+  real(wp), allocatable :: gravity_potential_game(:,:)     ! gravity potential of GAME
+  real(wp), allocatable :: densities_background(:,:,:)     ! densities of the background state
+  real(wp), allocatable :: tke(:,:)                        ! specific turbulent kinetic energy (input = output)
+  real(wp), allocatable :: t_soil(:,:)                     ! soil temperature (input = output)
+  real(wp), allocatable :: z_coords_input_model(:,:)       ! vertical coordinates of the input model's grid points
+  real(wp), allocatable :: temperature_in(:,:)             ! input temperature
+  real(wp), allocatable :: spec_hum_in(:,:)                ! input specific humidity
+  real(wp), allocatable :: u_wind_in(:,:)                  ! input zonal wind
+  real(wp), allocatable :: v_wind_in(:,:)                  ! input meridional wind
+  real(wp), allocatable :: z_surf_in(:)                    ! input surface elevation
+  real(wp), allocatable :: p_surf_in(:)                    ! input surface pressure
+  real(wp), allocatable :: sst_in(:)                       ! input sea surface temperature
+  real(wp), allocatable :: temperature_out(:,:)            ! resulting sea surface temperature
+  real(wp), allocatable :: spec_hum_out(:,:)               ! resulting specific humidity
+  real(wp), allocatable :: pressure_lowest_layer_out(:)    ! resulting pressure in the lowest layer
+  real(wp), allocatable :: density_moist_out(:,:)          ! resulting mass density of the moist air
+  real(wp), allocatable :: temperature_v(:,:)              ! resulting virtual temperature (only needed as a helper variable)
+  real(wp), allocatable :: densities_out(:,:,:)            ! resulting mass densities
+  real(wp), allocatable :: exner(:,:)                      ! resulting Exner pressure, only needed as a helper variables
+  real(wp), allocatable :: wind_out_h(:,:)                 ! resulting horizontal wind
+  real(wp), allocatable :: wind_out_v(:,:)                 ! resulting vertical wind
+  real(wp), allocatable :: sst_out(:)                      ! resulting sea surface temperature
   integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:),interpolation_indices_sst(:,:)
   real(wp), allocatable :: interpolation_weights_scalar(:,:),interpolation_weights_vector(:,:),interpolation_weights_sst(:,:)
   character(len=4)      :: year_string,n_layers_string
