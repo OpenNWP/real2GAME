@@ -63,10 +63,10 @@ program control
   integer,  allocatable :: interpolation_indices_vector(:,:) ! interpolation indices for vector quantities
   integer,  allocatable :: interpolation_indices_sst(:,:)    ! interpolation indices for SST
   character(len=4)      :: year_string                       ! year of the initialization time as a string (command line argument)
-  character(len=4)      :: month_string                      ! month of the initialization time as a string (command line argument)
-  character(len=4)      :: day_string                        ! day of the initialization time as a string (command line argument)
-  character(len=4)      :: hour_string                       ! hour of the initialization time as a string (command line argument)
   character(len=4)      :: n_layers_string                   ! number of layers of GAME or L-GAME as a string (command line argument)
+  character(len=2)      :: month_string                      ! month of the initialization time as a string (command line argument)
+  character(len=2)      :: day_string                        ! day of the initialization time as a string (command line argument)
+  character(len=2)      :: hour_string                       ! hour of the initialization time as a string (command line argument)
   character(len=2)      :: res_id_string                     ! resolution ID of GAME as a string (command line argument)
   character(len=2)      :: nsoillays_string                  ! number of soil layer of GAME or L-GAME as a string (command line argument)
   character(len=128)    :: oro_id_string,real2game_root_dir,model_home_dir
