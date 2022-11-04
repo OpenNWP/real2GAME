@@ -12,9 +12,9 @@ program control
   
   implicit none
   
-  logical               :: ltke_avail             ! switch indicating if TKE (turbulent kinetic energy) is present in the background state
-  logical               :: lt_soil_avail          ! switch indicating if soil temperature is present in the background state
-  logical               :: lno_hydrometeors_found ! switch indicating if hydrometeors are missing from the background state
+  logical               :: ltke_avail                        ! switch indicating if TKE (turbulent kinetic energy) is present in the background state
+  logical               :: lt_soil_avail                     ! switch indicating if soil temperature is present in the background state
+  logical               :: lno_hydrometeors_found            ! switch indicating if hydrometeors are missing from the background state
   integer               :: ji,jl,jm,jn,latitudes_game_id,longitudes_game_id,z_game_id,z_game_wind_id, &
                            gravity_potential_game_id,constituent_dimid,cell_dimid,n_constituents, &
                            directions_id,ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,&
@@ -26,41 +26,50 @@ program control
                            res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_edges,n_layers,level_dimid, &
                            n_levels,nsoillays,layer_dimid,n_points_per_layer_input
   integer               :: interpolation_indices_sst_id,interpolation_weights_sst_id ! netCDF IDs of the interpolation indices and weights for the SST interpolation
-  real(wp)              :: rh                          ! relative humidity value
-  real(wp)              :: maximum_cloud_water_content ! maximum cloud water content in (kg cloud)/(kg dry air)
+  real(wp)              :: rh                                ! relative humidity value
+  real(wp)              :: maximum_cloud_water_content       ! maximum cloud water content in (kg cloud)/(kg dry air)
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
-  real(wp), allocatable :: latitudes_game(:)               ! latitudes of the cell centers of GAME
-  real(wp), allocatable :: longitudes_game(:)              ! longitudes of the cell centers of GAME
-  real(wp), allocatable :: z_game(:,:)                     ! z-coordinates of the scalar points of GAME
-  real(wp), allocatable :: directions(:)                   ! directions of the horizontal vectors of GAME
-  real(wp), allocatable :: z_game_wind(:,:)                ! z-coordinates of the horizontal vector points of GAME
-  real(wp), allocatable :: gravity_potential_game(:,:)     ! gravity potential of GAME
-  real(wp), allocatable :: densities_background(:,:,:)     ! densities of the background state
-  real(wp), allocatable :: tke(:,:)                        ! specific turbulent kinetic energy (input = output)
-  real(wp), allocatable :: t_soil(:,:)                     ! soil temperature (input = output)
-  real(wp), allocatable :: z_coords_input_model(:,:)       ! vertical coordinates of the input model's grid points
-  real(wp), allocatable :: temperature_in(:,:)             ! input temperature
-  real(wp), allocatable :: spec_hum_in(:,:)                ! input specific humidity
-  real(wp), allocatable :: u_wind_in(:,:)                  ! input zonal wind
-  real(wp), allocatable :: v_wind_in(:,:)                  ! input meridional wind
-  real(wp), allocatable :: z_surf_in(:)                    ! input surface elevation
-  real(wp), allocatable :: p_surf_in(:)                    ! input surface pressure
-  real(wp), allocatable :: sst_in(:)                       ! input sea surface temperature
-  real(wp), allocatable :: temperature_out(:,:)            ! resulting sea surface temperature
-  real(wp), allocatable :: spec_hum_out(:,:)               ! resulting specific humidity
-  real(wp), allocatable :: pressure_lowest_layer_out(:)    ! resulting pressure in the lowest layer
-  real(wp), allocatable :: density_moist_out(:,:)          ! resulting mass density of the moist air
-  real(wp), allocatable :: temperature_v(:,:)              ! resulting virtual temperature (only needed as a helper variable)
-  real(wp), allocatable :: densities_out(:,:,:)            ! resulting mass densities
-  real(wp), allocatable :: exner(:,:)                      ! resulting Exner pressure, only needed as a helper variables
-  real(wp), allocatable :: wind_out_h(:,:)                 ! resulting horizontal wind
-  real(wp), allocatable :: wind_out_v(:,:)                 ! resulting vertical wind
-  real(wp), allocatable :: sst_out(:)                      ! resulting sea surface temperature
-  integer,  allocatable :: interpolation_indices_scalar(:,:),interpolation_indices_vector(:,:),interpolation_indices_sst(:,:)
-  real(wp), allocatable :: interpolation_weights_scalar(:,:),interpolation_weights_vector(:,:),interpolation_weights_sst(:,:)
-  character(len=4)      :: year_string,n_layers_string
-  character(len=2)      :: month_string,day_string,hour_string,res_id_string,nsoillays_string,oro_id_string
-  character(len=128)    :: real2game_root_dir,model_home_dir
+  real(wp), allocatable :: latitudes_game(:)                 ! latitudes of the cell centers of GAME
+  real(wp), allocatable :: longitudes_game(:)                ! longitudes of the cell centers of GAME
+  real(wp), allocatable :: z_game(:,:)                       ! z-coordinates of the scalar points of GAME
+  real(wp), allocatable :: directions(:)                     ! directions of the horizontal vectors of GAME
+  real(wp), allocatable :: z_game_wind(:,:)                  ! z-coordinates of the horizontal vector points of GAME
+  real(wp), allocatable :: gravity_potential_game(:,:)       ! gravity potential of GAME
+  real(wp), allocatable :: densities_background(:,:,:)       ! densities of the background state
+  real(wp), allocatable :: tke(:,:)                          ! specific turbulent kinetic energy (input = output)
+  real(wp), allocatable :: t_soil(:,:)                       ! soil temperature (input = output)
+  real(wp), allocatable :: z_coords_input_model(:,:)         ! vertical coordinates of the input model's grid points
+  real(wp), allocatable :: temperature_in(:,:)               ! input temperature
+  real(wp), allocatable :: spec_hum_in(:,:)                  ! input specific humidity
+  real(wp), allocatable :: u_wind_in(:,:)                    ! input zonal wind
+  real(wp), allocatable :: v_wind_in(:,:)                    ! input meridional wind
+  real(wp), allocatable :: z_surf_in(:)                      ! input surface elevation
+  real(wp), allocatable :: p_surf_in(:)                      ! input surface pressure
+  real(wp), allocatable :: sst_in(:)                         ! input sea surface temperature
+  real(wp), allocatable :: temperature_out(:,:)              ! resulting sea surface temperature
+  real(wp), allocatable :: spec_hum_out(:,:)                 ! resulting specific humidity
+  real(wp), allocatable :: pressure_lowest_layer_out(:)      ! resulting pressure in the lowest layer
+  real(wp), allocatable :: density_moist_out(:,:)            ! resulting mass density of the moist air
+  real(wp), allocatable :: temperature_v(:,:)                ! resulting virtual temperature (only needed as a helper variable)
+  real(wp), allocatable :: densities_out(:,:,:)              ! resulting mass densities
+  real(wp), allocatable :: exner(:,:)                        ! resulting Exner pressure, only needed as a helper variables
+  real(wp), allocatable :: wind_out_h(:,:)                   ! resulting horizontal wind
+  real(wp), allocatable :: wind_out_v(:,:)                   ! resulting vertical wind
+  real(wp), allocatable :: sst_out(:)                        ! resulting sea surface temperature
+  real(wp), allocatable :: interpolation_weights_scalar(:,:) ! interpolation weights for scalar quantities
+  real(wp), allocatable :: interpolation_weights_vector(:,:) ! interpolation weights for vector quantities
+  real(wp), allocatable :: interpolation_weights_sst(:,:)    ! interpolation weights for SST
+  integer,  allocatable :: interpolation_indices_scalar(:,:) ! interpolation indices for scalar quantities
+  integer,  allocatable :: interpolation_indices_vector(:,:) ! interpolation indices for vector quantities
+  integer,  allocatable :: interpolation_indices_sst(:,:)    ! interpolation indices for SST
+  character(len=4)      :: year_string                       ! year of the initialization time as a string (command line argument)
+  character(len=4)      :: month_string                      ! month of the initialization time as a string (command line argument)
+  character(len=4)      :: day_string                        ! day of the initialization time as a string (command line argument)
+  character(len=4)      :: hour_string                       ! hour of the initialization time as a string (command line argument)
+  character(len=4)      :: n_layers_string                   ! number of layers of GAME or L-GAME as a string (command line argument)
+  character(len=2)      :: res_id_string                     ! resolution ID of GAME as a string (command line argument)
+  character(len=2)      :: nsoillays_string                  ! number of soil layer of GAME or L-GAME as a string (command line argument)
+  character(len=128)    :: oro_id_string,real2game_root_dir,model_home_dir
   character(len=256)    :: background_state_file,geo_prop_file,input_file,interpol_file,output_file
   
   call get_command_argument(1,res_id_string)
