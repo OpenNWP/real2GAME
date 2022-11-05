@@ -47,7 +47,7 @@ program control
   real(wp), allocatable :: densities_background(:,:,:)       ! densities of the background state
   real(wp), allocatable :: tke(:,:)                          ! specific turbulent kinetic energy (input = output)
   real(wp), allocatable :: t_soil(:,:)                       ! soil temperature (input = output)
-  real(wp), allocatable :: z_coords_input_model(:,:)         ! vertical coordinates of the input model's grid points
+  real(wp), allocatable :: z_coords_input_model(:,:)         ! vertical coordinates of the input model's gridpoints
   real(wp), allocatable :: temperature_in(:,:)               ! input temperature
   real(wp), allocatable :: spec_hum_in(:,:)                  ! input specific humidity
   real(wp), allocatable :: u_wind_in(:,:)                    ! input zonal wind
@@ -446,7 +446,7 @@ program control
   do jl=1,n_layers
     do ji=1,n_edges
       
-      ! the u- and v-components of the wind at the grid point of GAME
+      ! the u- and v-components of the wind at the gridpoint of GAME
       u_local = 0._wp
       v_local = 0._wp
       ! loop over all horizontal points that are used for averaging
@@ -558,7 +558,7 @@ program control
     !$omp parallel do private(ji,jl,rh)
     do jl=1,n_layers
       do ji=1,n_cells
-        ! computing the relative humidity at the grid point
+        ! computing the relative humidity at the gridpoint
         rh = rel_humidity(densities_out(ji,jl,n_condensed_constituents+2),temperature_out(ji,jl))
         ! in the case of a relative humidity above 99.5 %, we add clouds and precipitation
         if (rh>=0.995_wp) then
