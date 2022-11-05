@@ -23,9 +23,18 @@ program control
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,sst_id,densities_background_id, &
                            tke_id,t_soil_id,dimids_vector_3(3), &
                            edge_dimid,single_double_dimid,densities_id,temperature_id,wind_h_id,wind_v_id,soil_layer_dimid, &
-                           res_id,oro_id,n_pentagons,n_hexagons,n_cells,n_edges,n_layers,level_dimid, &
-                           n_levels,nsoillays,layer_dimid,n_points_per_layer_input
-  integer               :: interpolation_indices_sst_id,interpolation_weights_sst_id ! netCDF IDs of the interpolation indices and weights for the SST interpolation
+                           level_dimid, &
+                           nsoillays,layer_dimid,n_points_per_layer_input
+  integer               :: n_pentagons                       ! number of pentagons of the GAME grid
+  integer               :: n_hexagons                        ! number of hexagons of the GAME grid
+  integer               :: n_cells                           ! number of cells of the GAME grid
+  integer               :: n_edges                           ! number of edges of the GAME grid
+  integer               :: n_layers                          ! number of layers of the GAME grid
+  integer               :: n_levels                          ! number of levels of the GAME grid
+  integer               :: res_id                            ! resolution ID of GAME
+  integer               :: oro_id                            ! orography ID of GAME or L-GAME
+  integer               :: interpolation_indices_sst_id      ! netCDF ID of the interpolation indices for the SST interpolation
+  integer               :: interpolation_weights_sst_id      ! netCDF ID of the interpolation weights for the SST interpolation
   real(wp)              :: rh                                ! relative humidity value
   real(wp)              :: maximum_cloud_water_content       ! maximum cloud water content in (kg cloud)/(kg dry air)
   real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
@@ -69,8 +78,14 @@ program control
   character(len=2)      :: hour_string                       ! hour of the initialization time as a string (command line argument)
   character(len=2)      :: res_id_string                     ! resolution ID of GAME as a string (command line argument)
   character(len=2)      :: nsoillays_string                  ! number of soil layer of GAME or L-GAME as a string (command line argument)
-  character(len=128)    :: oro_id_string,real2game_root_dir,model_home_dir
-  character(len=256)    :: background_state_file,geo_prop_file,input_file,interpol_file,output_file
+  character(len=128)    :: oro_id_string                     ! orography ID as a string (command line argument)
+  character(len=128)    :: real2game_root_dir                ! root directory of real2GAME (command line argument)
+  character(len=128)    :: model_home_dir                    ! root directory of GAME or L-GAME (command line argument)
+  character(len=256)    :: background_state_file             ! netCDF file containing the background state (command line argument)
+  character(len=256)    :: geo_prop_file                     ! grid file of GAME or L-GAME
+  character(len=256)    :: input_file                        ! file containing the data to interpolate to the model grid
+  character(len=256)    :: interpol_file                     ! nnetCDF file containing interpolation indices and weights
+  character(len=256)    :: output_file                       ! output filename
   
   call get_command_argument(1,res_id_string)
   read(res_id_string,*) res_id
