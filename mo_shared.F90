@@ -86,13 +86,13 @@ module mo_shared
   
   subroutine nc_check(i_status)
   
-    ! This subroutine checks wether a NetCDF function threw an error.
+    ! This subroutine checks wether a netCDF function threw an error.
   
     integer, intent(in) :: i_status ! status ID of a netCDF function
 
     if(i_status/=nf90_noerr) then 
       print *, trim(nf90_strerror(i_status))
-      stop "Netcdf threw an error."
+      stop "netCDF threw an error."
     end if
     
   end subroutine nc_check

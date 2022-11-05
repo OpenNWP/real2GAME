@@ -12,36 +12,51 @@ program control
   
   implicit none
   
-  integer               :: jl,ncid,h_dimid,v_dimid,z_surf_id,sp_id,sst_dimid,t_id,spec_hum_id,z_id,u_id,v_id, &
-                           sst_id,dim_vector(2),layers_vector(n_layers_input),jfile,jgrib
-  integer               :: n_points_per_layer_input   ! number of points per layer of the input system
-  real(wp), allocatable :: z_height_amsl_one_layer(:) ! vertical height above mean sea level on one layer
-  real(wp), allocatable :: temperature_one_layer(:)   ! temperature on one layer
-  real(wp), allocatable :: spec_hum_one_layer(:)      ! specific humidity on one layer
-  real(wp), allocatable :: u_one_layer(:)             ! zonal wind on one layer
-  real(wp), allocatable :: v_one_layer(:)             ! meridional wind on one layer
-  real(wp), allocatable :: z_height_amsl(:,:)         ! vertical height above mean sea level
-  real(wp), allocatable :: temperature(:,:)           ! temperature
-  real(wp), allocatable :: spec_hum(:,:)              ! specific humidity
-  real(wp), allocatable :: u_wind(:,:)                ! zonal wind
-  real(wp), allocatable :: v_wind(:,:)                ! meridional wind
-  real(wp), allocatable :: sst(:)                     ! sea surface temperature
-  real(wp), allocatable :: surface_height(:)          ! surface height
-  real(wp), allocatable :: pressure_surface(:)        ! surface pressure
-  character(len=4)      :: year_string                ! year of the initialization time as a string (command line argument)
-  character(len=2)      :: month_string               ! month of the initialization time as a string (command line argument)
-  character(len=2)      :: day_string                 ! day of the initialization time as a string (command line argument)
-  character(len=2)      :: hour_string                ! hour of the initialization time as a string (command line argument)
-  character(len=128)    :: real2game_root_dir         ! root directory of real2GAME (command line argument)
-  character(len=256)    :: z_input_model_file         ! name of file containing the z-coordinates of the input system
-  character(len=256)    :: temperature_file           ! name of file containing the temperature of the input system
-  character(len=256)    :: u_wind_file                ! name of file containing the zonal wind of the input system
-  character(len=256)    :: v_wind_file                ! name of file containing the meridional wind of the input system
-  character(len=256)    :: sfc_height_file            ! name of file containing the surface height of the input system
-  character(len=256)    :: sfc_pres_file              ! name of file containing the surface pressure of the input system
-  character(len=256)    :: sst_file                   ! name of file containing the sea surface temperature of the input system
-  character(len=256)    :: spec_hum_file              ! name of file containing the specific humidity of the input system
-  character(len=256)    :: output_file                ! name of the output file
+  integer               :: jl                            ! layer index
+  integer               :: ncid                          ! ID of the netCDF file
+  integer               :: h_dimid                       ! netCDF ID of the horizontal dimension
+  integer               :: v_dimid                       ! netCDF ID of the vertical dimension
+  integer               :: z_surf_id                     ! netCDF ID of the surface height
+  integer               :: sp_id                         ! netCDF ID of the surface pressure
+  integer               :: sst_dimid                     ! netCDF ID of the dimension of the sea surface temperature grid
+  integer               :: t_id                          ! netCDF ID of the temperature
+  integer               :: spec_hum_id                   ! netCDF ID of the specific humidity
+  integer               :: z_id                          ! netCDF ID of the z-coordinates
+  integer               :: u_id                          ! netCDF ID of the zonal wind
+  integer               :: v_id                          ! netCDF ID of the meridional wind
+  integer               :: sst_id                        ! netCDF ID of the sea surface temperature
+  integer               :: dim_vector(2)                 ! vector of two netCDF dimensions
+  integer               :: layers_vector(n_layers_input) ! vector containing the layers of the input system used for the initialization
+  integer               :: jfile                         ! ID of a grib file
+  integer               :: jgrib                         ! ID of a grib message
+  integer               :: n_points_per_layer_input      ! number of points per layer of the input system
+  real(wp), allocatable :: z_height_amsl_one_layer(:)    ! vertical height above mean sea level on one layer
+  real(wp), allocatable :: temperature_one_layer(:)      ! temperature on one layer
+  real(wp), allocatable :: spec_hum_one_layer(:)         ! specific humidity on one layer
+  real(wp), allocatable :: u_one_layer(:)                ! zonal wind on one layer
+  real(wp), allocatable :: v_one_layer(:)                ! meridional wind on one layer
+  real(wp), allocatable :: z_height_amsl(:,:)            ! vertical height above mean sea level
+  real(wp), allocatable :: temperature(:,:)              ! temperature
+  real(wp), allocatable :: spec_hum(:,:)                 ! specific humidity
+  real(wp), allocatable :: u_wind(:,:)                   ! zonal wind
+  real(wp), allocatable :: v_wind(:,:)                   ! meridional wind
+  real(wp), allocatable :: sst(:)                        ! sea surface temperature
+  real(wp), allocatable :: surface_height(:)             ! surface height
+  real(wp), allocatable :: pressure_surface(:)           ! surface pressure
+  character(len=4)      :: year_string                   ! year of the initialization time as a string (command line argument)
+  character(len=2)      :: month_string                  ! month of the initialization time as a string (command line argument)
+  character(len=2)      :: day_string                    ! day of the initialization time as a string (command line argument)
+  character(len=2)      :: hour_string                   ! hour of the initialization time as a string (command line argument)
+  character(len=128)    :: real2game_root_dir            ! root directory of real2GAME (command line argument)
+  character(len=256)    :: z_input_model_file            ! name of file containing the z-coordinates of the input system
+  character(len=256)    :: temperature_file              ! name of file containing the temperature of the input system
+  character(len=256)    :: u_wind_file                   ! name of file containing the zonal wind of the input system
+  character(len=256)    :: v_wind_file                   ! name of file containing the meridional wind of the input system
+  character(len=256)    :: sfc_height_file               ! name of file containing the surface height of the input system
+  character(len=256)    :: sfc_pres_file                 ! name of file containing the surface pressure of the input system
+  character(len=256)    :: sst_file                      ! name of file containing the sea surface temperature of the input system
+  character(len=256)    :: spec_hum_file                 ! name of file containing the specific humidity of the input system
+  character(len=256)    :: output_file                   ! name of the output file
   
   ! defining the levels of the model we want to use
   layers_vector(1) = 1

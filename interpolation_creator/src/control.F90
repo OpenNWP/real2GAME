@@ -495,7 +495,7 @@ program control
     deallocate(lat_lgame_wind_v)
     deallocate(lon_lgame_wind_v)
     
-    ! writing the result to a NetCDF file
+    ! writing the result to a netCDF file
     output_file = trim(real2game_root_dir) // "/interpolation_files/icon-d22lgame_" // trim(lgame_grid)
     write(*,*) "Starting to write to output file ..."
     call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
