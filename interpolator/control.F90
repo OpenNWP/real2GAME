@@ -15,7 +15,8 @@ program control
   logical               :: ltke_avail                        ! switch indicating if TKE (turbulent kinetic energy) is present in the background state
   logical               :: lt_soil_avail                     ! switch indicating if soil temperature is present in the background state
   logical               :: lno_hydrometeors_found            ! switch indicating if hydrometeors are missing from the background state
-  integer               :: ji,jl,jm,jn,latitudes_game_id,longitudes_game_id,z_game_id,z_game_wind_id, &
+  integer               :: ji                                ! cell index
+  integer               :: jl,jm,jn,latitudes_game_id,longitudes_game_id,z_game_id,z_game_wind_id, &
                            gravity_potential_game_id,constituent_dimid,cell_dimid,n_constituents, &
                            directions_id,ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,&
                            interpolation_indices_vector_id,dimids_vector_2(2),n_condensed_constituents, &
@@ -23,8 +24,9 @@ program control
                            z_coords_id,t_in_id,spec_hum_id,u_id,v_id,sst_id,densities_background_id, &
                            tke_id,t_soil_id,dimids_vector_3(3), &
                            edge_dimid,single_double_dimid,densities_id,temperature_id,wind_h_id,wind_v_id,soil_layer_dimid, &
-                           level_dimid, &
-                           nsoillays,layer_dimid,n_points_per_layer_input
+                           level_dimid,layer_dimid
+  integer               :: nsoillays                         ! number of soil layers of the GAME/L-GAME grid
+  integer               :: n_points_per_layer_input          ! number of points per layer of the input system (excluding SST)
   integer               :: n_pentagons                       ! number of pentagons of the GAME grid
   integer               :: n_hexagons                        ! number of hexagons of the GAME grid
   integer               :: n_cells                           ! number of cells of the GAME grid
@@ -37,7 +39,15 @@ program control
   integer               :: interpolation_weights_sst_id      ! netCDF ID of the interpolation weights for the SST interpolation
   real(wp)              :: rh                                ! relative humidity value
   real(wp)              :: maximum_cloud_water_content       ! maximum cloud water content in (kg cloud)/(kg dry air)
-  real(wp)              :: closest_value,other_value,df,dz,gradient,delta_z,b,c,u_local,v_local,vector_to_minimize(n_layers_input)
+  real(wp)              :: closest_value                     ! vertical interpolation weight
+  real(wp)              :: other_value                       ! vertical interpolation weight
+  real(wp)              :: df                                ! used for computing the vertical gradient of a quantity
+  real(wp)              :: dz                                ! used for computing the vertical gradient of a quantity
+  real(wp)              :: gradient                          ! vertical gradient of a quantity
+  real(wp)              :: delta_z                           ! used for vertical interpolation/extrapolation
+  real(wp)              :: b                                 ! used for vertically integrating the hydrostatic equation
+  real(wp)              :: c                                 ! used for vertically integrating the hydrostatic equation
+  real(wp)              :: u_local,v_local,vector_to_minimize(n_layers_input)
   real(wp), allocatable :: latitudes_game(:)                 ! latitudes of the cell centers of GAME
   real(wp), allocatable :: longitudes_game(:)                ! longitudes of the cell centers of GAME
   real(wp), allocatable :: z_game(:,:)                       ! z-coordinates of the scalar points of GAME
