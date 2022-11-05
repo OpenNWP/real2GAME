@@ -49,11 +49,16 @@ program control
                            lat_lgame_wind_v(:,:),lon_lgame_wind_v(:,:),interpolation_weights_scalar_lgame(:,:,:), &
                            interpolation_weights_vector_u(:,:,:),interpolation_weights_vector_v(:,:,:)
   character(len=4)      :: year_string,ny_string,nx_string,n_layers_string
-  character(len=8)      :: interpol_exp_string
+  character(len=8)      :: interpol_exp_string                       ! the interpolation exponent as a string (command line argument)
   character(len=2)      :: month_string,day_string,hour_string,oro_id_string,model_target_id_string, &
                            res_id_string,model_source_id_string
-  character(len=128)    :: real2game_root_dir,model_home_dir,lgame_grid
-  character(len=256)    :: lat_obs_file,lon_obs_file,geo_pro_file,output_file
+  character(len=128)    :: real2game_root_dir                        ! root directory of real2GAME
+  character(len=128)    :: model_home_dir                            ! root directory of GAME or L-GAME
+  character(len=128)    :: lgame_grid                                ! name of the grid file of L-GAME (excluding directory)
+  character(len=256)    :: lat_obs_file                              ! name of the file containing the latitudes of the input system
+  character(len=256)    :: lon_obs_file                              ! name of the file containing the longitudes of the input system
+  character(len=256)    :: geo_pro_file                              ! name of the grid file of GAME or L-GAME (including directory)
+  character(len=256)    :: output_file                               ! name of the output file
   character(len=256)    :: sst_file                                  ! file containing the sea surface temperature
   
   ! shell arguments
