@@ -41,8 +41,10 @@ program control
   real(wp), allocatable :: lon_input_model(:)                        ! longitudes of the input system's gridpoints
   real(wp), allocatable :: lat_game(:)                               ! latitudes of the cell centers of GAME
   real(wp), allocatable :: lon_game(:)                               ! longitudes of the cell centers of GAME
-  real(wp), allocatable :: lat_game_wind(:),lon_game_wind(:),interpolation_weights_scalar_game(:,:), &
-                           interpolation_weights_vector(:,:),distance_vector(:),lat_lgame(:,:), &
+  real(wp), allocatable :: lat_game_wind(:)                          ! latitudes of the edges of GAME
+  real(wp), allocatable :: lon_game_wind(:)                          ! longitudes of the edges of GAME
+  real(wp), allocatable :: interpolation_weights_scalar_game(:,:)    ! interpolation weights for scalar quantities of the GAME grid
+  real(wp), allocatable :: interpolation_weights_vector(:,:),distance_vector(:),lat_lgame(:,:), &
                            lon_lgame(:,:),lat_lgame_wind_u(:,:),lon_lgame_wind_u(:,:), &
                            lat_lgame_wind_v(:,:),lon_lgame_wind_v(:,:),interpolation_weights_scalar_lgame(:,:,:), &
                            interpolation_weights_vector_u(:,:,:),interpolation_weights_vector_v(:,:,:)
@@ -52,7 +54,7 @@ program control
                            res_id_string,model_source_id_string
   character(len=128)    :: real2game_root_dir,model_home_dir,lgame_grid
   character(len=256)    :: lat_obs_file,lon_obs_file,geo_pro_file,output_file
-  character(len=256)    :: sst_file
+  character(len=256)    :: sst_file                                  ! file containing the sea surface temperature
   
   ! shell arguments
   call get_command_argument(1,year_string)
