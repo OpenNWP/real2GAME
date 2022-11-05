@@ -21,29 +21,29 @@ program control
   integer               :: nx                                        ! number of points in the x-direction of the L-GAME grid
   integer               :: ncid                                      ! netCDF file ID
   integer               :: lat_game_id                               ! netCDF ID of the latitudes of the cell centers of GAME
-  integer               :: lat_game_wind_id
+  integer               :: lat_game_wind_id                          ! netCDF ID of the latitudes of the edges of GAME
   integer               :: lon_game_id                               ! netCDF ID of the longitudes of the cell centers of GAME
-  integer               :: lon_game_wind_id
-  integer               :: lat_lgame_id
-  integer               :: lon_lgame_id
-  integer               :: lon_lgame_wind_u_id
-  integer               :: lat_lgame_wind_u_id
-  integer               :: lon_lgame_wind_v_id
-  integer               :: lat_lgame_wind_v_id
+  integer               :: lon_game_wind_id                          ! netCDF ID of the longitudes of the edges of GAME
+  integer               :: lat_lgame_id                              ! netCDF ID of the latitudes of the cell centers of L-GAME
+  integer               :: lon_lgame_id                              ! netCDF ID of the longitudes of the cell centers of L-GAME
+  integer               :: lat_lgame_wind_u_id                       ! netCDF ID of the latitudes of the u-vector points of L-GAME
+  integer               :: lon_lgame_wind_u_id                       ! netCDF ID of the longitudes of the u-vector points of L-GAME
+  integer               :: lat_lgame_wind_v_id                       ! netCDF ID of the latitudes of the v-vector points of L-GAME
+  integer               :: lon_lgame_wind_v_id                       ! netCDF ID of the longitudes of the v-vector points of L-GAME
   integer               :: dim_vector_2(2)                           ! vector of two netCDF dimensions
-  integer               :: interpolation_indices_scalar_id
-  integer               :: interpolation_weights_scalar_id
-  integer               :: interpolation_indices_vector_u_id
-  integer               :: interpolation_weights_vector_u_id
-  integer               :: interpolation_indices_vector_v_id
-  integer               :: interpolation_weights_vector_v_id
-  integer               :: cell_dimid
-  integer               :: avg_dimid
-  integer               :: edge_dimid
-  integer               :: jfile
-  integer               :: jgrib
-  integer               :: interpolation_indices_vector_id
-  integer               :: interpolation_weights_vector_id
+  integer               :: interpolation_indices_scalar_id           ! interpolation indices of the scalar gridpoints of L-GAME
+  integer               :: interpolation_weights_scalar_id           ! interpolation weights of the scalar gridpoints of L-GAME
+  integer               :: interpolation_indices_vector_u_id         ! interpolation indices of the u-vector gridpoints of L-GAME
+  integer               :: interpolation_weights_vector_u_id         ! interpolation weights of the u-vector gridpoints of L-GAME
+  integer               :: interpolation_indices_vector_v_id         ! interpolation indices of the v-vector gridpoints of L-GAME
+  integer               :: interpolation_weights_vector_v_id         ! interpolation weights of the v-vector gridpoints of L-GAME
+  integer               :: cell_dimid                                ! netCDF cell dimension ID
+  integer               :: avg_dimid                                 ! netCDF averaging dimension ID
+  integer               :: edge_dimid                                ! netCDF edge dimension ID
+  integer               :: jfile                                     ! eccodes grib file ID
+  integer               :: jgrib                                     ! eccodes grib message ID
+  integer               :: interpolation_indices_vector_id           ! interpolation inidces of the vector gridpoints of GAME
+  integer               :: interpolation_weights_vector_id           ! interpolation weights of the vector gridpoints of GAME
   integer               :: res_id                                    ! resolution ID of the GAME grid
   integer               :: n_layers                                  ! number of layers of the GAME grid
   integer               :: n_pentagons                               ! number of pentagons of the GAME grid
