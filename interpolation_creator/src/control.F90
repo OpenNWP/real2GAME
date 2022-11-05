@@ -12,16 +12,51 @@ program control
   
   implicit none
   
-  integer               :: ji,jk,jm,oro_id,model_target_id,ny,nx,ncid,lat_game_id,lat_game_wind_id
-  integer               :: lon_game_id,lon_game_wind_id,lat_lgame_id,lon_lgame_id
-  integer               :: lon_lgame_wind_u_id,lat_lgame_wind_u_id,lon_lgame_wind_v_id
-  integer               :: lat_lgame_wind_v_id,dim_vector_2(2),interpolation_indices_scalar_id
-  integer               :: interpolation_weights_scalar_id,interpolation_indices_vector_u_id
-  integer               :: interpolation_weights_vector_u_id,interpolation_indices_vector_v_id
-  integer               :: interpolation_weights_vector_v_id,cell_dimid,avg_dimid
-  integer               :: edge_dimid,jfile,jgrib,interpolation_indices_vector_id,interpolation_weights_vector_id
-  integer               :: res_id,n_layers,n_pentagons,n_hexagons,n_cells,n_edges,model_source_id,dim_vector_3(3)
-  integer               :: y_dimid,x_dimid,yp1_dimid,xp1_dimid,n_points_per_layer_input
+  integer               :: ji
+  integer               :: jk
+  integer               :: jm
+  integer               :: oro_id
+  integer               :: model_target_id
+  integer               :: ny
+  integer               :: nx
+  integer               :: ncid
+  integer               :: lat_game_id
+  integer               :: lat_game_wind_id
+  integer               :: lon_game_id
+  integer               :: lon_game_wind_id
+  integer               :: lat_lgame_id
+  integer               :: lon_lgame_id
+  integer               :: lon_lgame_wind_u_id
+  integer               :: lat_lgame_wind_u_id
+  integer               :: lon_lgame_wind_v_id
+  integer               :: lat_lgame_wind_v_id
+  integer               :: dim_vector_2(2)
+  integer               :: interpolation_indices_scalar_id
+  integer               :: interpolation_weights_scalar_id
+  integer               :: interpolation_indices_vector_u_id
+  integer               :: interpolation_weights_vector_u_id
+  integer               :: interpolation_indices_vector_v_id
+  integer               :: interpolation_weights_vector_v_id
+  integer               :: cell_dimid
+  integer               :: avg_dimid
+  integer               :: edge_dimid
+  integer               :: jfile
+  integer               :: jgrib
+  integer               :: interpolation_indices_vector_id
+  integer               :: interpolation_weights_vector_id
+  integer               :: res_id
+  integer               :: n_layers
+  integer               :: n_pentagons
+  integer               :: n_hexagons
+  integer               :: n_cells
+  integer               :: n_edges
+  integer               :: model_source_id
+  integer               :: dim_vector_3(3)
+  integer               :: y_dimid
+  integer               :: x_dimid
+  integer               :: yp1_dimid
+  integer               :: xp1_dimid
+  integer               :: n_points_per_layer_input
   integer               :: interpolation_indices_sst_id              ! netCDF ID of the SST interpolation indices
   integer               :: interpolation_weights_sst_id              ! netCDF ID of the SST interpolation weights
   real(wp)              :: sum_of_weights                            ! sum of interpolation weights used for normalization
@@ -44,13 +79,27 @@ program control
   real(wp), allocatable :: lat_game_wind(:)                          ! latitudes of the edges of GAME
   real(wp), allocatable :: lon_game_wind(:)                          ! longitudes of the edges of GAME
   real(wp), allocatable :: interpolation_weights_scalar_game(:,:)    ! interpolation weights for scalar quantities of the GAME grid
-  real(wp), allocatable :: interpolation_weights_vector(:,:),distance_vector(:),lat_lgame(:,:)
-  real(wp), allocatable :: lon_lgame(:,:),lat_lgame_wind_u(:,:),lon_lgame_wind_u(:,:)
-  real(wp), allocatable :: lat_lgame_wind_v(:,:),lon_lgame_wind_v(:,:),interpolation_weights_scalar_lgame(:,:,:)
-  real(wp), allocatable :: interpolation_weights_vector_u(:,:,:),interpolation_weights_vector_v(:,:,:)
-  character(len=4)      :: year_string,ny_string,nx_string,n_layers_string
+  real(wp), allocatable :: interpolation_weights_vector(:,:)
+  real(wp), allocatable :: distance_vector(:)
+  real(wp), allocatable :: lat_lgame(:,:)
+  real(wp), allocatable :: lon_lgame(:,:)
+  real(wp), allocatable :: lat_lgame_wind_u(:,:)
+  real(wp), allocatable :: lon_lgame_wind_u(:,:)
+  real(wp), allocatable :: lat_lgame_wind_v(:,:)
+  real(wp), allocatable :: lon_lgame_wind_v(:,:)
+  real(wp), allocatable :: interpolation_weights_scalar_lgame(:,:,:)
+  real(wp), allocatable :: interpolation_weights_vector_u(:,:,:)
+  real(wp), allocatable :: interpolation_weights_vector_v(:,:,:)
+  character(len=4)      :: year_string
+  character(len=4)      :: ny_string
+  character(len=4)      :: nx_string
+  character(len=4)      :: n_layers_string
   character(len=8)      :: interpol_exp_string                       ! the interpolation exponent as a string (command line argument)
-  character(len=2)      :: month_string,day_string,hour_string,oro_id_string,model_target_id_string
+  character(len=2)      :: month_string
+  character(len=2)      :: day_string
+  character(len=2)      :: hour_string
+  character(len=2)      :: oro_id_string
+  character(len=2)      :: model_target_id_string
   character(len=2)      :: res_id_string,model_source_id_string
   character(len=128)    :: real2game_root_dir                        ! root directory of real2GAME
   character(len=128)    :: model_home_dir                            ! root directory of GAME or L-GAME
