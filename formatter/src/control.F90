@@ -19,11 +19,20 @@ program control
                            u_one_layer(:),v_one_layer(:),z_height_amsl(:,:),temperature(:,:),spec_hum(:,:), &
                            u_wind(:,:),v_wind(:,:),sst(:),surface_height(:), &
                            pressure_surface(:)
-  character(len=4)      :: year_string
-  character(len=2)      :: month_string,day_string,hour_string
-  character(len=128)    :: real2game_root_dir
-  character(len=256)    :: z_input_model_file,temperature_file,u_wind_file,v_wind_file,sfc_height_file, &
-                           sfc_pres_file,sst_file,output_file,spec_hum_file
+  character(len=4)      :: year_string        ! year of the initialization time as a string (command line argument)
+  character(len=2)      :: month_string       ! month of the initialization time as a string (command line argument)
+  character(len=2)      :: day_string         ! day of the initialization time as a string (command line argument)
+  character(len=2)      :: hour_string        ! hour of the initialization time as a string (command line argument)
+  character(len=128)    :: real2game_root_dir ! root directory of real2GAME (command line argument)
+  character(len=256)    :: z_input_model_file ! name of file containing the z-coordinates of the input system
+  character(len=256)    :: temperature_file   ! name of file containing the temperature of the input system
+  character(len=256)    :: u_wind_file        ! name of file containing the zonal wind of the input system
+  character(len=256)    :: v_wind_file        ! name of file containing the meridional wind of the input system
+  character(len=256)    :: sfc_height_file    ! name of file containing the surface height of the input system
+  character(len=256)    :: sfc_pres_file      ! name of file containing the surface pressure of the input system
+  character(len=256)    :: sst_file           ! name of file containing the sea surface temperature of the input system
+  character(len=256)    :: spec_hum_file      ! name of file containing the specific humidity of the input system
+  character(len=256)    :: output_file        ! name of the output file
   
   ! defining the levels of the model we want to use
   layers_vector(1) = 1
