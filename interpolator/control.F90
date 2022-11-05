@@ -16,15 +16,48 @@ program control
   logical               :: lt_soil_avail                      ! switch indicating if soil temperature is present in the background state
   logical               :: lno_hydrometeors_found             ! switch indicating if hydrometeors are missing from the background state
   integer               :: ji                                 ! cell index
-  integer               :: jl,jm,jn,latitudes_game_id,longitudes_game_id,z_game_id,z_game_wind_id, &
-                           gravity_potential_game_id,constituent_dimid,cell_dimid,n_constituents, &
-                           directions_id,ncid,interpolation_indices_scalar_id,interpolation_weights_scalar_id,&
-                           interpolation_indices_vector_id,dimids_vector_2(2),n_condensed_constituents, &
-                           interpolation_weights_vector_id,closest_index,other_index, sp_id,z_surf_id, &
-                           z_coords_id,t_in_id,spec_hum_id,u_id,v_id,sst_id,densities_background_id, &
-                           tke_id,t_soil_id,dimids_vector_3(3), &
-                           edge_dimid,single_double_dimid,densities_id,temperature_id,wind_h_id,wind_v_id,soil_layer_dimid, &
-                           level_dimid,layer_dimid
+  integer               :: jl                                 ! layer index
+  integer               :: jm                                 ! interpolation index
+  integer               :: jn                                 ! another layer index
+  integer               :: latitudes_game_id                  ! netCDF ID of the latitudes of the cell centers of GAME
+  integer               :: longitudes_game_id                 ! netCDF ID of the longitudes of the cell centers of GAME
+  integer               :: z_game_id
+  integer               :: z_game_wind_id
+  integer               :: gravity_potential_game_id
+  integer               :: constituent_dimid
+  integer               :: cell_dimid
+  integer               :: directions_id                      ! netCDF ID of the directions of the vectors of GAME
+  integer               :: ncid                               ! netCDF file ID
+  integer               :: interpolation_indices_scalar_id    ! interpolation indices for scalar quantities
+  integer               :: interpolation_weights_scalar_id    ! interpolation weights for scalar quantities
+  integer               :: interpolation_indices_vector_id    ! interpolation indices for vector quantities
+  integer               :: interpolation_weights_vector_id    ! interpolation weights for vector quantities
+  integer               :: dimids_vector_2(2)                 ! vector of two netCDF dimensions
+  integer               :: dimids_vector_3(3)                 ! vector of three netCDF dimensions
+  integer               :: n_condensed_constituents           ! number of condensed constituents of GAME or L-GAME
+  integer               :: n_constituents                     ! number of constituents of GAME or L-GAME
+  integer               :: closest_index                      ! index needed for vertical interpolation/extrapolation
+  integer               :: other_index                        ! index needed for vertical interpolation/extrapolation
+  integer               :: sp_id                              ! netCDF ID of the surface pressure of the input system
+  integer               :: z_surf_id                          ! netCDF ID of the z-coordinates of the surface of the input system
+  integer               :: z_coords_id                        ! netCDF ID of the z-coordinates of the input system
+  integer               :: t_in_id                            ! netCDF ID of the temperature of the input system
+  integer               :: spec_hum_id                        ! netCDF ID of the specific humidity of the input system
+  integer               :: u_id                               ! netCDF ID of the zonal wind of the input system
+  integer               :: v_id                               ! netCDF ID of the meridional wind of the input system
+  integer               :: sst_id                             ! netCDF ID of the sea surface temperature of the input system
+  integer               :: densities_background_id            ! netCDF ID of the mass densities of the background state
+  integer               :: tke_id                             ! netCDF ID of the specific turbulent kinetic energy (input and output)
+  integer               :: t_soil_id
+  integer               :: edge_dimid
+  integer               :: single_double_dimid
+  integer               :: densities_id
+  integer               :: temperature_id
+  integer               :: wind_h_id
+  integer               :: wind_v_id
+  integer               :: soil_layer_dimid
+  integer               :: level_dimid
+  integer               :: layer_dimid
   integer               :: nsoillays                          ! number of soil layers of the GAME/L-GAME grid
   integer               :: n_points_per_layer_input           ! number of points per layer of the input system (excluding SST)
   integer               :: n_pentagons                        ! number of pentagons of the GAME grid
