@@ -9,19 +9,18 @@ module mo_shared
   
   implicit none
   
-  ! setting the floating pointeger :: precision
+  ! setting the floating point precision
   ! single precision
-  integer,  parameter :: ps = 6
-  integer,  parameter :: rs = 37
+  integer,  parameter :: ps = 6                                         ! single decimal precision
+  integer,  parameter :: rs = 37                                        ! single exponent precision
+  ! double precision
+  integer,  parameter :: pd = 12                                        ! double decimal precision
+  integer,  parameter :: rd = 37                                        ! double exponent precision
   
-  ! double :: precision
-  integer,  parameter :: pd = 12
-  integer,  parameter :: rd = 37
+  integer,  parameter :: sp = selected_real_kind(ps,rs)                 ! single precision
+  integer,  parameter :: dp = selected_real_kind(pd,rd)                 ! double precision
   
-  integer,  parameter :: sp = selected_real_kind(ps,rs)                 ! single precission
-  integer,  parameter :: dp = selected_real_kind(pd,rd)                 ! double precission
-  
-  integer,  parameter :: wp = dp                                        ! working precission
+  integer,  parameter :: wp = dp                                        ! working precision
   
   integer,  parameter :: n_layers_input = 12                            ! number of layers from the input model that are used
   integer,  parameter :: n_avg_points = 20                              ! number of points used for averaging from the source model (such as ICON) to the target model (such as GAME)
