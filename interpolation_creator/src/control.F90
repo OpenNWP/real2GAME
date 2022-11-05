@@ -12,17 +12,17 @@ program control
   
   implicit none
   
-  integer               :: ji
-  integer               :: jk
-  integer               :: jm
-  integer               :: oro_id
-  integer               :: model_target_id
-  integer               :: ny
-  integer               :: nx
-  integer               :: ncid
-  integer               :: lat_game_id
+  integer               :: ji                                        ! horizontal index
+  integer               :: jk                                        ! horizontal index
+  integer               :: jm                                        ! interpolation index
+  integer               :: oro_id                                    ! orography ID of GAME (only needed for reading the correct grid file)
+  integer               :: model_target_id                           ! the ID of the model to interpolate to (1: GAME, 2: L-GAME)
+  integer               :: ny                                        ! number of points in the y-direction of the L-GAME grid
+  integer               :: nx                                        ! number of points in the x-direction of the L-GAME grid
+  integer               :: ncid                                      ! netCDF file ID
+  integer               :: lat_game_id                               ! netCDF ID of the latitudes of the cell centers of GAME
   integer               :: lat_game_wind_id
-  integer               :: lon_game_id
+  integer               :: lon_game_id                               ! netCDF ID of the longitudes of the cell centers of GAME
   integer               :: lon_game_wind_id
   integer               :: lat_lgame_id
   integer               :: lon_lgame_id
@@ -30,7 +30,7 @@ program control
   integer               :: lat_lgame_wind_u_id
   integer               :: lon_lgame_wind_v_id
   integer               :: lat_lgame_wind_v_id
-  integer               :: dim_vector_2(2)
+  integer               :: dim_vector_2(2)                           ! vector of two netCDF dimensions
   integer               :: interpolation_indices_scalar_id
   integer               :: interpolation_weights_scalar_id
   integer               :: interpolation_indices_vector_u_id
@@ -44,19 +44,19 @@ program control
   integer               :: jgrib
   integer               :: interpolation_indices_vector_id
   integer               :: interpolation_weights_vector_id
-  integer               :: res_id
-  integer               :: n_layers
-  integer               :: n_pentagons
-  integer               :: n_hexagons
-  integer               :: n_cells
-  integer               :: n_edges
-  integer               :: model_source_id
-  integer               :: dim_vector_3(3)
-  integer               :: y_dimid
-  integer               :: x_dimid
-  integer               :: yp1_dimid
-  integer               :: xp1_dimid
-  integer               :: n_points_per_layer_input
+  integer               :: res_id                                    ! resolution ID of the GAME grid
+  integer               :: n_layers                                  ! number of layers of the GAME grid
+  integer               :: n_pentagons                               ! number of pentagons of the GAME grid
+  integer               :: n_hexagons                                ! number of hexagons of the GAME grid
+  integer               :: n_cells                                   ! number of cells of the GAME grid
+  integer               :: n_edges                                   ! number of edges of the GAME grid
+  integer               :: model_source_id                           ! ID of the input system (1: ICON-global, 2: GAME, 3: ICON-D2)
+  integer               :: dim_vector_3(3)                           ! vector of three netCDF dimensions
+  integer               :: y_dimid                                   ! netCDF dimid of the y-direction of L-GAME
+  integer               :: x_dimid                                   ! netCDF dimid of the x-direction of L-GAME
+  integer               :: yp1_dimid                                 ! netCDF dimid of the y-direction of L-GAME + 1 gridpoint
+  integer               :: xp1_dimid                                 ! netCDF dimid of the x-direction of L-GAME + 1 gridpoint
+  integer               :: n_points_per_layer_input                  ! number of points per layer of the input system
   integer               :: interpolation_indices_sst_id              ! netCDF ID of the SST interpolation indices
   integer               :: interpolation_weights_sst_id              ! netCDF ID of the SST interpolation weights
   real(wp)              :: sum_of_weights                            ! sum of interpolation weights used for normalization
@@ -66,12 +66,12 @@ program control
   integer,  allocatable :: interpolation_indices_vector_u(:,:,:)     ! interpolation indices of vector quantities to the u-vector points of the L-GAME grid
   integer,  allocatable :: interpolation_indices_vector_v(:,:,:)     ! interpolation indices of vector quantities to the v-vector points of the L-GAME grid
   integer,  allocatable :: interpolation_indices_scalar_lgame(:,:,:) ! interpolation indices of scalar quantities to the scalar data points of the L-GAME grid
-  integer,  allocatable :: interpolation_indices_sst_game(:,:)       ! interpolation indices of the SST to the GAME grid
-  integer,  allocatable :: interpolation_indices_sst_lgame(:,:,:)    ! interpolation indices of the SST to the L-GAME grid
-  real(wp), allocatable :: interpolation_weights_sst_game(:,:)       ! interpolation weights of the SST to the GAME grid
-  real(wp), allocatable :: interpolation_weights_sst_lgame(:,:,:)    ! interpolation weights of the SST to the L-GAME grid
-  real(wp), allocatable :: lat_sst(:)                                ! latitudes of the SST grid
-  real(wp), allocatable :: lon_sst(:)                                ! longitudes of the SST grid
+  integer,  allocatable :: interpolation_indices_sst_game(:,:)       ! interpolation indices of the sea surface temperature to the GAME grid
+  integer,  allocatable :: interpolation_indices_sst_lgame(:,:,:)    ! interpolation indices of the sea surface temperature to the L-GAME grid
+  real(wp), allocatable :: interpolation_weights_sst_game(:,:)       ! interpolation weights of the sea surface temperature to the GAME grid
+  real(wp), allocatable :: interpolation_weights_sst_lgame(:,:,:)    ! interpolation weights of the sea surface temperature to the L-GAME grid
+  real(wp), allocatable :: lat_sst(:)                                ! latitudes of the sea surface temperature grid
+  real(wp), allocatable :: lon_sst(:)                                ! longitudes of the sea surface temperature grid
   real(wp), allocatable :: lat_input_model(:)                        ! latitudes of the input system's gridpoints
   real(wp), allocatable :: lon_input_model(:)                        ! longitudes of the input system's gridpoints
   real(wp), allocatable :: lat_game(:)                               ! latitudes of the cell centers of GAME
@@ -79,28 +79,29 @@ program control
   real(wp), allocatable :: lat_game_wind(:)                          ! latitudes of the edges of GAME
   real(wp), allocatable :: lon_game_wind(:)                          ! longitudes of the edges of GAME
   real(wp), allocatable :: interpolation_weights_scalar_game(:,:)    ! interpolation weights for scalar quantities of the GAME grid
-  real(wp), allocatable :: interpolation_weights_vector(:,:)
-  real(wp), allocatable :: distance_vector(:)
-  real(wp), allocatable :: lat_lgame(:,:)
-  real(wp), allocatable :: lon_lgame(:,:)
-  real(wp), allocatable :: lat_lgame_wind_u(:,:)
-  real(wp), allocatable :: lon_lgame_wind_u(:,:)
-  real(wp), allocatable :: lat_lgame_wind_v(:,:)
-  real(wp), allocatable :: lon_lgame_wind_v(:,:)
-  real(wp), allocatable :: interpolation_weights_scalar_lgame(:,:,:)
-  real(wp), allocatable :: interpolation_weights_vector_u(:,:,:)
-  real(wp), allocatable :: interpolation_weights_vector_v(:,:,:)
-  character(len=4)      :: year_string
-  character(len=4)      :: ny_string
-  character(len=4)      :: nx_string
-  character(len=4)      :: n_layers_string
+  real(wp), allocatable :: interpolation_weights_vector(:,:)         ! interpolation weights for vector quantities of the GAME grid
+  real(wp), allocatable :: distance_vector(:)                        ! vector of geodetic distances needed for computing the interpolation
+  real(wp), allocatable :: lat_lgame(:,:)                            ! latitudes of the scalar gridpoints of L-GAME
+  real(wp), allocatable :: lon_lgame(:,:)                            ! longitudes of the scalar gridpoints of L-GAME
+  real(wp), allocatable :: lat_lgame_wind_u(:,:)                     ! latitudes of the u-vector gridpoints of L-GAME
+  real(wp), allocatable :: lon_lgame_wind_u(:,:)                     ! longitudes of the u-vector gridpoints of L-GAME
+  real(wp), allocatable :: lat_lgame_wind_v(:,:)                     ! latitudes of the v-vector gridpoints of L-GAME
+  real(wp), allocatable :: lon_lgame_wind_v(:,:)                     ! longitudes of the v-vector gridpoints of L-GAME
+  real(wp), allocatable :: interpolation_weights_scalar_lgame(:,:,:) ! interpolation weights for the scalar gridpoints of the L-GAME grid
+  real(wp), allocatable :: interpolation_weights_vector_u(:,:,:)     ! interpolation weights for the u-vector gridpoints of the L-GAME grid
+  real(wp), allocatable :: interpolation_weights_vector_v(:,:,:)     ! interpolation weights for the v-vector gridpoints of the L-GAME grid
+  character(len=4)      :: ny_string                                 ! number of gridpoints in y-direction of the L-GAME grid (command line argument)
+  character(len=4)      :: nx_string                                 ! number of gridpoints in x-direction of the L-GAME grid (command line argument)
+  character(len=4)      :: n_layers_string                           ! number of layers of GAME or L-GAME as a string (command line argument)
   character(len=8)      :: interpol_exp_string                       ! the interpolation exponent as a string (command line argument)
-  character(len=2)      :: month_string
-  character(len=2)      :: day_string
-  character(len=2)      :: hour_string
-  character(len=2)      :: oro_id_string
-  character(len=2)      :: model_target_id_string
-  character(len=2)      :: res_id_string,model_source_id_string
+  character(len=4)      :: year_string                               ! year of the grid file of the input system as a string (command line argument)
+  character(len=2)      :: month_string                              ! month of the grid file of the input system as a string (command line argument)
+  character(len=2)      :: day_string                                ! day of the grid file of the input system as a string (command line argument)
+  character(len=2)      :: hour_string                               ! hour of the grid file of the input system as a string (command line argument)
+  character(len=2)      :: oro_id_string                             ! orography ID of GAME or L-GAME as a string (command line argument)
+  character(len=2)      :: model_target_id_string                    ! ID of the model to interpolate to as a string (1: GAME, 2: L-GAME; command line argument)
+  character(len=2)      :: res_id_string                             ! resolution ID of the GAME grid as a string (command line argument)
+  character(len=2)      :: model_source_id_string                    ! ID of the input system as a string (1: ICON-global, 2: GAME, 3: ICON-D2; command line argument)
   character(len=128)    :: real2game_root_dir                        ! root directory of real2GAME
   character(len=128)    :: model_home_dir                            ! root directory of GAME or L-GAME
   character(len=128)    :: lgame_grid                                ! name of the grid file of L-GAME (excluding directory)
