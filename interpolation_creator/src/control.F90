@@ -37,8 +37,11 @@ program control
   real(wp), allocatable :: interpolation_weights_sst_lgame(:,:,:)    ! interpolation weights of the SST to the L-GAME grid
   real(wp), allocatable :: lat_sst(:)                                ! latitudes of the SST grid
   real(wp), allocatable :: lon_sst(:)                                ! longitudes of the SST grid
-  real(wp), allocatable :: lat_input_model(:),lon_input_model(:),lat_game(:),lon_game(:), &
-                           lat_game_wind(:),lon_game_wind(:),interpolation_weights_scalar_game(:,:), &
+  real(wp), allocatable :: lat_input_model(:)                        ! latitudes of the input system's gridpoints
+  real(wp), allocatable :: lon_input_model(:)                        ! longitudes of the input system's gridpoints
+  real(wp), allocatable :: lat_game(:)                               ! latitudes of the cell centers of GAME
+  real(wp), allocatable :: lon_game(:)                               ! longitudes of the cell centers of GAME
+  real(wp), allocatable :: lat_game_wind(:),lon_game_wind(:),interpolation_weights_scalar_game(:,:), &
                            interpolation_weights_vector(:,:),distance_vector(:),lat_lgame(:,:), &
                            lon_lgame(:,:),lat_lgame_wind_u(:,:),lon_lgame_wind_u(:,:), &
                            lat_lgame_wind_v(:,:),lon_lgame_wind_v(:,:),interpolation_weights_scalar_lgame(:,:,:), &
