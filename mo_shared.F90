@@ -216,7 +216,7 @@ module mo_shared
     real(wp)             :: saturation_pressure_ice_huang ! result
     
     ! local variables
-    real(wp) :: temp_c  ! temperature in degrees Celsius
+    real(wp) :: temp_c ! temperature in degrees Celsius
     
     temp_c = temperature - t_0
     
