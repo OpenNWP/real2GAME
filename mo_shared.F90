@@ -138,7 +138,7 @@ module mo_shared
     ! This function returns the saturation pressure in Pa over liquid water as a function of the temperature in K.
     ! It uses the formula by Huang: A Simple Accurate Formula for Calculating Saturation Vapor Pressure of Water and Ice, 2018, DOI: 10.1175/JAMC-D-17-0334.1.
     
-    real(wp), intent(in) :: temperature                    ! temperature in Kelvin
+    real(wp), intent(in) :: temperature                    ! temperature
     real(wp)             :: saturation_pressure_over_water ! result
     
     ! local variables
@@ -175,7 +175,7 @@ module mo_shared
     ! This function returns the saturation pressure in Pa over ice as a function of the temperature in K.
     ! It blends the two formulas of Huang and Murphy.
     
-    real(wp), intent(in) :: temperature                  ! temperature in Kelvin
+    real(wp), intent(in) :: temperature                  ! temperature
     real(wp)             :: saturation_pressure_over_ice ! result
     
     ! local variables
@@ -212,7 +212,7 @@ module mo_shared
     ! This function computes the saturation pressure over ice.
     ! It follows the formula by Huang: A Simple Accurate Formula for Calculating Saturation Vapor Pressure of Water and Ice, 2018, DOI: 10.1175/JAMC-D-17-0334.1.
     
-    real(wp), intent(in) :: temperature                   ! temperature in Kelvin
+    real(wp), intent(in) :: temperature                   ! temperature
     real(wp)             :: saturation_pressure_ice_huang ! result
     
     ! local variables
@@ -230,7 +230,7 @@ module mo_shared
     ! It follows Eq. (7) in Murphy DM, Koop T. Review of the vapour pressures of ice and supercooled water for atmospheric applications.
     ! QUARTERLY JOURNAL OF THE ROYAL METEOROLOGICAL SOCIETY. 2005;131(608):1539-1565.
 
-    real(wp), intent(in) :: temperature                    ! temperature in Kelvin
+    real(wp), intent(in) :: temperature                    ! temperature
     real(wp)             :: saturation_pressure_ice_murphy ! result
     
     ! computing the result
