@@ -605,8 +605,8 @@ program control
       do ji=1,n_cells
         ! computing the relative humidity at the gridpoint
         rh = rel_humidity(densities_out(ji,jl,n_condensed_constituents+2),temperature_out(ji,jl))
-        ! in the case of a relative humidity above 99.5 %, we add clouds and precipitation
-        if (rh>=0.995_wp) then
+        ! in the case of a relative humidity above 95 %, we add clouds and precipitation
+        if (rh>=0.95_wp) then
           if (temperature_out(ji,jl)>=t_0) then
             ! water clouds
             densities_out(ji,jl,4) = maximum_cloud_water_content &
@@ -620,15 +620,15 @@ program control
             ! snow
             densities_out(ji,jl,1) = 0.5_wp*densities_out(ji,jl,3)
           endif
-        ! in the case of a relative humidity above 99 %, we add clouds
-        elseif (rh>=0.99_wp) then
+        ! in the case of a relative humidity above 90 %, we add clouds
+        elseif (rh>=0.9_wp) then
           if (temperature_out(ji,jl)>=t_0) then
             ! water clouds
-            densities_out(ji,jl,4) = 0.5_wp*maximum_cloud_water_content &
+            densities_out(ji,jl,4) = 0.7_wp*maximum_cloud_water_content &
             *(densities_out(ji,jl,n_condensed_constituents+1) - densities_out(ji,jl,n_condensed_constituents+2))
           else
             ! ice clouds
-            densities_out(ji,jl,3) = 0.5_wp*maximum_cloud_water_content &
+            densities_out(ji,jl,3) = 0.7_wp*maximum_cloud_water_content &
             *(densities_out(ji,jl,n_condensed_constituents+1) - densities_out(ji,jl,n_condensed_constituents+2))
           endif
         endif
