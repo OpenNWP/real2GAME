@@ -386,6 +386,10 @@ program control
         
         delta_z = z_game(ji,jl) - z_coords_input_model(interpolation_indices_scalar(jm,ji),closest_index)
         
+        !if (abs(delta_z)>5000._wp) then
+        !  write(*,*) delta_z,closest_index,360._wp*latitudes_game(ji)/(2._wp*M_PI),360._wp*longitudes_game(ji)/(2._wp*M_PI)
+        !endif
+        
         ! vertical interpolation of the temperature
         temperature_out(ji,jl) = temperature_out(ji,jl) + interpolation_weights_scalar(jm,ji)*(closest_value + delta_z*gradient)
         
@@ -545,6 +549,7 @@ program control
     enddo
   enddo
   !$omp end parallel do
+  
   deallocate(u_wind_in)
   deallocate(v_wind_in)
   deallocate(z_coords_input_model)

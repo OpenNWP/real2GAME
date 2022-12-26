@@ -59,18 +59,17 @@ program control
   character(len=256)    :: output_file                   ! name of the output file
   
   ! defining the levels of the model we want to use
-  layers_vector(1) = 1
-  layers_vector(2) = 10
-  layers_vector(3) = 19
-  layers_vector(4) = 27
-  layers_vector(5) = 35
-  layers_vector(6) = 43
-  layers_vector(7) = 51
-  layers_vector(8) = 59
-  layers_vector(9) = 67
-  layers_vector(10) = 75
-  layers_vector(11) = 83
-  layers_vector(12) = 90
+  layers_vector(1) = 20
+  layers_vector(2) = 30
+  layers_vector(3) = 40
+  layers_vector(4) = 50
+  layers_vector(5) = 60
+  layers_vector(6) = 70
+  layers_vector(7) = 80
+  layers_vector(8) = 90
+  layers_vector(9) = 100
+  layers_vector(10) = 110
+  layers_vector(11) = 120
   
   ! shell arguments
   call get_command_argument(1,year_string)
