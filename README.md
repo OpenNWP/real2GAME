@@ -22,7 +22,7 @@ real2GAME incorporates different tools:
 	git clone https://github.com/OpenNWP/real2GAME.git
 	cd real2GAME
 	./create_directories.sh
-	./compile_all.sh
+	./compile_all.sh -f
 
 ## Execution
 
