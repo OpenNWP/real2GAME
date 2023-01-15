@@ -9,15 +9,13 @@ real2GAME incorporates different tools:
 * The interpolator executes the main task: it interpolates the data from another model to the grid of GAME or L-GAME.
 * The formatter needs to be executed before the interpolator. It brings the data from the foreign model into a standardized format.
 * The downloader needs to be executed before the formatter. It downloads the data from the server of the foreign model.
-* The interpolation creator prepares the interpolation indices and weights to increase the performance.
+* The interpolation creator prepares the interpolation indices and weights.
 
 ## Building
 
 ### Dependencies
 
-* eccodes (Ubuntu: `sudo apt-get install libeccodes-dev`)
-* bzip2 (Ubuntu: `sudo apt-get install bzip2`)
-* basic calculator (Ubuntu: `sudo apt-get install bc`)
+	sudo apt-get install libeccodes-dev bzip2 bc
 
 ### Download and installation
 
@@ -25,3 +23,15 @@ real2GAME incorporates different tools:
 	cd real2GAME
 	./create_directories.sh
 	./compile_all.sh
+
+## Execution
+
+This might be a first try for creating a model input file:
+
+	cd interpolation_creator
+	./run.sh
+	cd ..
+	./run_manually.sh
+
+Modify the directories according to your directory structure.
+	
