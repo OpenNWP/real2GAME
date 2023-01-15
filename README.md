@@ -17,7 +17,7 @@ real2GAME incorporates different tools:
 
 	sudo apt-get install libeccodes-dev bzip2 bc
 
-Additionally, GAME and/or L-GAME needs to be installed, depending on which model you want to use.
+Additionally, GAME and/or L-GAME need to be installed, depending on which model you want to use.
 
 ### Download and installation
 
