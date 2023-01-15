@@ -17,6 +17,8 @@ real2GAME incorporates different tools:
 
 	sudo apt-get install libeccodes-dev bzip2 bc
 
+Additionally, GAME and/or L-GAME needs to be installed, depending on which model you want to use.
+
 ### Download and installation
 
 	git clone https://github.com/OpenNWP/real2GAME.git
@@ -26,7 +28,7 @@ real2GAME incorporates different tools:
 
 ## Execution
 
-This might be a first try for creating a model input file:
+This is a first try for creating a model input file:
 
 	cd interpolation_creator
 	./run.sh
