@@ -33,5 +33,5 @@ This might be a first try for creating a model input file:
 	cd ..
 	./run_manually.sh
 
-Modify the directories according to your directory structure.
+Modify the directories in `run.sh` and `run_manually.sh` according to your directory structure.
 	
