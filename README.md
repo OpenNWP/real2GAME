@@ -13,6 +13,8 @@ real2GAME incorporates different tools:
 
 ## Building
 
+It is recommended to run real2GAME and (L-)GAME on Linux. These installation instructions are tested for Ubuntu, for other Linux distributions they might have to be modified.
+
 ### Dependencies
 
 	sudo apt-get install libeccodes-dev bzip2 bc
