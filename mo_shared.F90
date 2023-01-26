@@ -3,7 +3,7 @@
 
 module mo_shared
 
-  ! This file contains some definitions and helper functions.
+  ! This module contains some definitions and helper functions.
 
   use netcdf
   
