@@ -86,6 +86,7 @@ program control
   allocate(spec_hum_one_layer(n_points_per_layer_input))
   allocate(u_one_layer(n_points_per_layer_input))
   allocate(v_one_layer(n_points_per_layer_input))
+  
   !$omp parallel workshare
   z_height_amsl_one_layer = 0._wp
   temperature_one_layer = 0._wp
@@ -100,6 +101,7 @@ program control
   allocate(spec_hum(n_points_per_layer_input,n_layers_input))
   allocate(u_wind(n_points_per_layer_input,n_layers_input))
   allocate(v_wind(n_points_per_layer_input,n_layers_input))
+  
   !$omp parallel workshare
   z_height_amsl = 0._wp
   temperature = 0._wp
@@ -238,12 +240,13 @@ program control
   call codes_release(jgrib)
   call codes_close_file(jfile)
   
-  ! Writing the observations to a netcdf file.
+  ! writing the observations to a netCDF file
   output_file = trim(real2game_root_dir) // "/input/obs_" // year_string // month_string // day_string // &
                 hour_string // ".nc"
   
   call nc_check(nf90_create(trim(output_file),NF90_CLOBBER,ncid))
-  ! Defining the dimensions.
+  
+  ! defining the dimensions
   call nc_check(nf90_def_dim(ncid,"h_index",n_points_per_layer_input,h_dimid))
   call nc_check(nf90_def_dim(ncid,"v_index",n_layers_input,v_dimid))
   call nc_check(nf90_def_dim(ncid,"sst_index",n_sst_points,sst_dimid))
@@ -258,7 +261,8 @@ program control
   call nc_check(nf90_def_var(ncid,"v_wind",NF90_REAL,dim_vector,v_id))
   call nc_check(nf90_def_var(ncid,"sst",NF90_REAL,sst_dimid,sst_id))
   call nc_check(nf90_enddef(ncid))
-  ! Setting the variables.
+  
+  ! setting the variables
   call nc_check(nf90_put_var(ncid,z_surf_id,surface_height))
   call nc_check(nf90_put_var(ncid,sp_id,pressure_surface))
   call nc_check(nf90_put_var(ncid,z_id,z_height_amsl))
