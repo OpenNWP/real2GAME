@@ -3,7 +3,7 @@
 
 program control
   
-  ! This file prepares the horizontal interpolation from the foreign model to GAME.
+  ! This program computes the horizontal interpolation indices and weights for interpolating from a foreign model to GAME or L-GAME.
   
   use netcdf
   use eccodes
