@@ -25,7 +25,6 @@ Additionally, GAME and/or L-GAME need to be installed, depending on which model 
 
 	git clone https://github.com/OpenNWP/real2GAME.git
 	cd real2GAME
-	./create_directories.sh
 	./compile_all.sh -f
 
 ## Execution
