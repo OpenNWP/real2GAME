@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This downloads data from the global ICON model.
+# This script downloads data of the global ICON model.
 
 url_base="https://opendata.dwd.de/weather/nwp/icon/grib"
 

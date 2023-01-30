@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This downloads data from the German ICON model.
+# This script downloads data of the regional version of the ICON model for Germany.
 
 url_base="https://opendata.dwd.de/weather/nwp/icon-d2/grib"
 
