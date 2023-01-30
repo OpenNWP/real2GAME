@@ -7,8 +7,8 @@ program control
   
   use netcdf
   use mo_shared, only: wp,n_layers_input,n_sst_points,n_points_per_layer_input_icon_global,n_avg_points, &
-                       nc_check,int2string,find_min_index,calculate_distance_h,n_points_per_layer_input_icon_d2, &
-                       rel_humidity,M_PI,n_a,p_0,m_d,m_v,r_d,c_d_p,scale_height,t_0
+                       nc_check,int2string,find_min_index,rel_humidity,M_PI,n_a,p_0,m_d,m_v,r_d,c_d_p, &
+                       scale_height,t_0
   
   implicit none
   
@@ -578,7 +578,7 @@ program control
   deallocate(longitudes_game)
   
   write(*,*) "Interpolation of the SST completed."
-
+  
   ! PREPARING THE OUTPUT
   ! --------------------
   
